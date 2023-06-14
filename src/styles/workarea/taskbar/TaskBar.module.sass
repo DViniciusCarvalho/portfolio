@@ -1,0 +1,38 @@
+@use '../../variables'
+    
+.container
+    z-index: 99999999999999999999999999999999999999
+    display: flex
+    gap: 0.2%
+
+    &.default__theme
+        background-image: linear-gradient(to bottom left, #3b1424 60%, #2b151c)
+        border-style: solid
+        border-color: #350d1f94
+        border-width: 0px 2px 0px 0px
+        padding-top: 10px
+
+    &.default__layout
+        width: variables.$taskbar-width
+        height: variables.$taskbar-height
+        flex-direction: column
+        align-items: center
+        justify-content: flex-start
+
+    &.default__layout .process__icons__first__wrapper, 
+    &.default__layout .process__icons__second__wrapper
+        width: 100%
+        padding: 10%
+        flex-direction: column
+
+.process__icons__first__wrapper, .process__icons__second__wrapper
+    display: flex
+    gap: 4px
+    align-items: center
+    justify-content: center
+
+.process__trash__separator
+    width: 60%
+    height: 1px
+    background-color: #757373cb
+    border: none

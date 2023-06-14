@@ -1,0 +1,31 @@
+.container
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    background-color: transparent
+    border-radius: 14px
+    text-decoration: none
+    transition: background-color 0.1s
+    
+    &.default__layout
+        width: 100%
+        aspect-ratio: 1/1
+
+    &:hover
+        background-color: #ffffff2c
+
+    .icon
+        width: 70%
+        height: 70%
+        object-fit: cover
+
+    .openned__indicator
+        position: absolute
+        left: 0px
+        width: 5px
+        height: 5px
+        border-radius: 50%
+        background-color: #e74b03
+
+
