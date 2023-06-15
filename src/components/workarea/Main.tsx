@@ -1,17 +1,25 @@
 import React, { useState, createContext, useRef } from 'react';
+import mainStyles from "@/styles/workarea/Background.module.sass";
 import Desktop from './desktop/Desktop';
 import TaskBar from './taskbar/TaskBar';
-import backgroundStyles from "@/styles/workarea/Background.module.sass";
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
-import { deepClone, getCorrespondentRunningProcess } from '@/lib/utils';
+
+import { 
+    deepClone, 
+    getCorrespondentRunningProcess, 
+    getNewHeightAndYAxisOnTop, 
+    getNewWidthOnRight, 
+    getNewHeightAndYAxisOnBottom,
+    getNewWidthAndXAxisOnLeft
+} from '@/lib/utils';
 
 
 export const MainContext = createContext<any>(null);
 
 export default function Main() {
     
-    const taskBarRef = useRef(null);
+    const taskBarRef = useRef<HTMLDivElement | null>(null);
     const desktopRef = useRef<HTMLDivElement | null>(null);
 
     const [ lastPID, setLastPID ] = useState(1);
@@ -31,7 +39,7 @@ export default function Main() {
         minimizeProcessWindow,
         restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
-        taskBarRef
+        updateProcessWindowDimensions
     };
 
     const taskbarProps: Props.TaskBarProps = {
@@ -73,6 +81,7 @@ export default function Main() {
         return nextPID;
     }
 
+
     function elevateProcessWindowZIndex(PID: number): void {   
         setLastHighestZIndex(previousHighestZIndex => {
 
@@ -91,6 +100,7 @@ export default function Main() {
         });
     }
 
+
     function sendSIGKILLToProcess(PID: number): void { 
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
@@ -99,6 +109,7 @@ export default function Main() {
             return filteredPreviousDeepCopy;
         });
     }
+
 
     function updateProcessCoordinates(PID: number, XAxis: number, YAxis: number): void {
         const taskBarElement = taskBarRef.current! as HTMLDivElement;
@@ -117,6 +128,7 @@ export default function Main() {
         });
     }
 
+
     function minimizeProcessWindow(PID: number): void {
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
@@ -127,6 +139,7 @@ export default function Main() {
             return previousDeepCopy;
         });
     }
+
 
     function restorePreviousDimensions(PID: number): void {
 
@@ -139,6 +152,7 @@ export default function Main() {
             return previousDeepCopy;
         });
     }
+
 
     function restoreProcessWindowLastDimensions(
         PID: number, 
@@ -168,6 +182,7 @@ export default function Main() {
         });
     }
 
+
     function maximizeProcessWindow(PID: number): void {
         const desktopElement = desktopRef.current as HTMLDivElement;
 
@@ -194,8 +209,98 @@ export default function Main() {
         });
     }
 
+    function updateProcessWindowDimensions(
+        PID: number,
+        event: React.MouseEvent<HTMLDivElement, MouseEvent>, 
+        previousXAxis: number,
+        previousYAxis: number,
+        dragRef: React.MutableRefObject<HTMLDivElement | null>, 
+        resizeSide: string
+    ): void {
+
+        setOpennedProcessesData(previous => {
+            const previousDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+
+            const currentXAxis = event.clientX;
+            const currentYAxis = event.clientY;
+
+            const movementIsInFavorOfXAxis = currentXAxis > previousXAxis;
+            const movementIsInFavorOfYAxis = currentYAxis > previousYAxis;
+
+            if (resizeSide === "top") {
+                const { newHeight, newCoordinates } = getNewHeightAndYAxisOnTop(
+                    movementIsInFavorOfYAxis,
+                    elementPIDOwner!,
+                    previousYAxis,
+                    currentYAxis
+                );
+
+                elementPIDOwner!.dimensions = {
+                    width: elementPIDOwner!.dimensions.width,
+                    height: newHeight
+                };
+
+                elementPIDOwner!.coordinates = {
+                    x: elementPIDOwner!.coordinates.x,
+                    y: newCoordinates
+                };
+            }
+       
+            else if (resizeSide === "right") {
+                const newWidth = getNewWidthOnRight(
+                    movementIsInFavorOfXAxis, 
+                    elementPIDOwner!, 
+                    previousXAxis, 
+                    currentXAxis
+                );
+
+                elementPIDOwner!.dimensions = {
+                    width: newWidth,
+                    height: elementPIDOwner!.dimensions.height
+                };
+            }
+
+            else if (resizeSide === "bottom") {
+                const newHeight = getNewHeightAndYAxisOnBottom(
+                    movementIsInFavorOfYAxis,
+                    elementPIDOwner!,
+                    previousYAxis,
+                    currentYAxis
+                );
+
+                elementPIDOwner!.dimensions = {
+                    width: elementPIDOwner!.dimensions.width,
+                    height: newHeight
+                };
+            }
+
+            else if (resizeSide === "left") {
+                const { newWidth, newCoordinates } = getNewWidthAndXAxisOnLeft(
+                    movementIsInFavorOfXAxis, 
+                    elementPIDOwner!, 
+                    previousXAxis, 
+                    currentXAxis
+                );
+
+                elementPIDOwner!.dimensions = {
+                    width: newWidth,
+                    height: elementPIDOwner!.dimensions.height
+                };
+
+                elementPIDOwner!.coordinates = {
+                    x: newCoordinates,
+                    y: elementPIDOwner!.coordinates.y
+                };
+            }
+
+            
+            return previousDeepCopy;
+        });
+    }
+
     return (
-        <div className={backgroundStyles.container}>
+        <div className={mainStyles.container}>
             <MainContext.Provider value={{...contextValues}}>
                 <TaskBar {...taskbarProps}/>
                 <Desktop {...desktopProps}/>

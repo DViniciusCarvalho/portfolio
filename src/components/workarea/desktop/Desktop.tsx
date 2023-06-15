@@ -1,10 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useDrop } from "react-dnd";
 import desktopStyles from "@/styles/workarea/Desktop.module.sass";
-import { MainContext } from "../Main";
 import ProcessWindow from "../window/ProcessWindow";
 import { Data } from "@/types/data";
 import { Props } from "@/types/props";
+import { MainContext } from "../Main";
 
 
 export default function Desktop({ 
@@ -43,17 +43,14 @@ export default function Desktop({
             ${desktopStyles[layoutStyleClass]}
             `
           }
-
           ref={(node) => {
             desktopRef.current = node
             drop(node);
           }}
         >
-
             {opennedProcessesData.map((opennedProcessData, index) => (
                 <ProcessWindow {...opennedProcessData} key={index}/>)    
-            )}
-            
+            )}   
         </div>
     );
 }

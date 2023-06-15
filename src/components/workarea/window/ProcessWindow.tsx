@@ -1,13 +1,14 @@
 import React, { useContext, useRef, useState } from "react";
 import { useDrag } from "react-dnd";
-import Image from "next/image";
 import processWindowStyles from "@/styles/workarea/window/ProcessWindow.module.sass";
+import Image from "next/image";
 import WindowCloseIcon from "../../../../public/assets/window-close-symbolic.svg";
 import WindowRestoreIcon from "../../../../public/assets/window-restore-symbolic.svg";
 import WindowMaximizeIcon from "../../../../public/assets/window-maximize-symbolic.svg";
 import WindowMinimizeIcon from "../../../../public/assets/window-minimize-symbolic.svg";
 import { Props } from "@/types/props";
 import { MainContext } from "../Main";
+import { isResizeAction } from "@/lib/validation";
 
 
 export default function ProcessWindow({ 
@@ -26,10 +27,21 @@ export default function ProcessWindow({
 		sendSIGKILLToProcess, 
 		minimizeProcessWindow, 
 		restoreProcessWindowLastDimensions,
-		maximizeProcessWindow
+		maximizeProcessWindow,
+		updateProcessWindowDimensions
 	} = useContext(MainContext);
 
     const dragRef = useRef<HTMLDivElement | null>(null);
+
+	const [ resizeData, setResizeData ] = useState({
+		isResizing: false,
+		resizeSide: ""
+	});
+
+	const [ previousPressedCoordinates, setPreviousPressedCoordinates ] = useState({
+		x: 0,
+		y: 0
+	});
 
 	const [ pressedCoordinates, setPressedCoordinates ] = useState({
 		x: 0,
@@ -57,8 +69,51 @@ export default function ProcessWindow({
 
 	
 	function handleMouseDown(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+		const sideToResize = isResizeAction(event, dragRef);
+
+		if (sideToResize) {
+
+			setPreviousPressedCoordinates(previous => ({
+				x: event.clientX,
+				y: event.clientY
+			}));
+
+			setResizeData(previous => ({
+				isResizing: true,
+				resizeSide: sideToResize
+			}));
+
+		}
+
 		elevateProcessWindowZIndex(PID);
 		updateInitialCoordinates(event);
+	}
+
+	function handleMouseUpAndLeave(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+		if (resizeData.isResizing) {
+			setResizeData(previous => ({
+				isResizing: false,
+				resizeSide: ""
+			}));
+		}
+	}
+
+	function handleMouseMove(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+		if (resizeData.isResizing && isResizeAction(event, dragRef)) {
+			updateProcessWindowDimensions(
+				PID,
+				event, 
+				previousPressedCoordinates.x,
+				previousPressedCoordinates.y,
+				dragRef, 
+				resizeData.resizeSide
+			);
+
+			setPreviousPressedCoordinates(previous => ({
+				x: event.clientX,
+				y: event.clientY
+			}));
+		}
 	}
 
 	function updateInitialCoordinates(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
@@ -119,12 +174,10 @@ export default function ProcessWindow({
 			${processWindowStyles[isMinimized? "minimized" : "normal"]}
 			`
 		  }
-
           ref={(node) => {
-            dragRef.current = node
-            drag(node);
+            dragRef.current = node;
+            resizeData.isResizing? "" : drag(node);
           }}
-
           style={{
             display: isDragging? "none" : "block",
             left: coordinates.x,
@@ -133,8 +186,10 @@ export default function ProcessWindow({
 			height: dimensions.height,
 			zIndex: zIndex
           }}
-
 		  onMouseDown={(e) => handleMouseDown(e)}
+		  onMouseUp={(e) =>  handleMouseUpAndLeave(e)}
+		  onMouseLeave={(e) => handleMouseUpAndLeave(e)}
+		  onMouseMove={(e) => handleMouseMove(e)}
 		  id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
         >
             <div className={processWindowStyles.window__title__bar}>
@@ -142,7 +197,8 @@ export default function ProcessWindow({
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
-						  src={WindowMinimizeIcon} alt="window minimize icon"
+						  src={WindowMinimizeIcon} 
+						  alt="window minimize icon"
 						/>
 					</button>
 					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized)}>
@@ -153,7 +209,8 @@ export default function ProcessWindow({
 					</button>
 					<button onClick={() => sendSIGKILLToProcess(PID)}>
 						<Image 
-						  src={WindowCloseIcon} alt="window close icon"
+						  src={WindowCloseIcon} 
+						  alt="window close icon"
 						/>
 					</button>
 				</div>

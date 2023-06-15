@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import Image from 'next/image';
 import processIconStyles from "@/styles/workarea/taskbar/ProcessIcon.module.sass";
-import { MainContext } from '../Main';
 import { Props } from '@/types/props';
 import { Data } from '@/types/data';
+import { MainContext } from '../Main';
 import { getCorrespondentRunningProcess } from '@/lib/utils';
 
 
@@ -19,7 +19,7 @@ export default function ProcessIcon({
 
     const [ processPID, setProcessPID ] = useState(0);
 
-
+	
     function startProcessMiddleware(): void {
 		const processFound = getCorrespondentRunningProcess(opennedProcessesData, processPID);
 
@@ -27,9 +27,9 @@ export default function ProcessIcon({
             const startedProcessPID = startProcess(processName, processElement);
             setProcessPID(previous => startedProcessPID);
         }
-		else if (processFound?.isMinimized) {
-			restorePreviousDimensions(processPID);
-		}
+        else if (processFound?.isMinimized) {
+            restorePreviousDimensions(processPID);
+        }
     }
 
     function isProcessRunning(opennedProcessesData: Data.OpennedProcessData[], PID: number): boolean {

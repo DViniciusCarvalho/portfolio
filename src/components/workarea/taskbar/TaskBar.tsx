@@ -1,13 +1,11 @@
 import React, { useContext } from "react";
 import taskBarStyles from "@/styles/workarea/taskbar/TaskBar.module.sass";
-import { MainContext } from "../Main";
-
 import ProcessIcon from "./ProcessIcon";
 import NautilusIcon from "../../../../public/assets/nautilus.png";
 import TerminalIcon from "../../../../public/assets/terminal.png";
 import UserTrash from "../../../../public/assets/user-trash.png";
-
 import { Props } from "@/types/props";
+import { MainContext } from "../Main";
 
 
 export default function TaskBar({ 
@@ -21,28 +19,30 @@ export default function TaskBar({
         layoutStyleClass, 
     } = useContext(MainContext);
 
+    const commonProperties = {
+        startProcess: openProcess,
+        restorePreviousDimensions: restorePreviousDimensions
+    };
+
     const nautilusProps: Props.ProcessIconProps = {
         processIconStaticImage: NautilusIcon,
         processName: "Files",
         processElement: <></>,
-        startProcess: openProcess,
-        restorePreviousDimensions: restorePreviousDimensions
+        ...commonProperties
     };
 
     const terminalProps: Props.ProcessIconProps = {
         processIconStaticImage: TerminalIcon,
         processName: "Terminal",
         processElement: <></>,
-        startProcess: openProcess,
-        restorePreviousDimensions: restorePreviousDimensions
+        ...commonProperties
     };
 
     const userTrash: Props.ProcessIconProps = {
         processIconStaticImage: UserTrash,
         processName: "Trash",
         processElement: <></>,
-        startProcess: openProcess,
-        restorePreviousDimensions: restorePreviousDimensions
+        ...commonProperties
     };
 
 

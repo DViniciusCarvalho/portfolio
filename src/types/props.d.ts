@@ -4,7 +4,7 @@ import { Data } from "./data";
 export namespace Props {
 
     interface TaskBarProps {
-        taskBarRef: React.MutableRefObject<null>;
+        taskBarRef: React.MutableRefObject<HTMLDivElement | null>;
         openProcess: (processTitle: string, processElement: JSX.Element) => number;
         restorePreviousDimensions: (PID: number) => void;
     }
