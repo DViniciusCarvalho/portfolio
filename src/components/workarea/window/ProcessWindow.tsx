@@ -72,7 +72,6 @@ export default function ProcessWindow({
 		const sideToResize = isResizeAction(event, dragRef);
 
 		if (sideToResize) {
-
 			setPreviousPressedCoordinates(previous => ({
 				x: event.clientX,
 				y: event.clientY
@@ -82,14 +81,13 @@ export default function ProcessWindow({
 				isResizing: true,
 				resizeSide: sideToResize
 			}));
-
 		}
 
 		elevateProcessWindowZIndex(PID);
 		updateInitialCoordinates(event);
 	}
 
-	function handleMouseUpAndLeave(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+	function handleMouseUpAndLeave(event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent): void {
 		if (resizeData.isResizing) {
 			setResizeData(previous => ({
 				isResizing: false,
@@ -98,7 +96,7 @@ export default function ProcessWindow({
 		}
 	}
 
-	function handleMouseMove(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+	function handleMouseMove(event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent): void {
 		if (resizeData.isResizing && isResizeAction(event, dragRef)) {
 			updateProcessWindowDimensions(
 				PID,

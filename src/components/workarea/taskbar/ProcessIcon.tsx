@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
-import Image from 'next/image';
 import processIconStyles from "@/styles/workarea/taskbar/ProcessIcon.module.sass";
+import Image from 'next/image';
 import { Props } from '@/types/props';
 import { Data } from '@/types/data';
 import { MainContext } from '../Main';

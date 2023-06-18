@@ -48,9 +48,14 @@ export default function Desktop({
             drop(node);
           }}
         >
-            {opennedProcessesData.map((opennedProcessData, index) => (
-                <ProcessWindow {...opennedProcessData} key={index}/>)    
-            )}   
+            {   
+                opennedProcessesData.map((opennedProcessData, index) => (
+                    <ProcessWindow 
+                      {...opennedProcessData} 
+                      key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
+                    />
+                ))
+            }   
         </div>
     );
 }

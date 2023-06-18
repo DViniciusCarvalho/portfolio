@@ -8,9 +8,29 @@
     text-decoration: none
     transition: background-color 0.1s
     
-    &.default__layout
+    &.row__style
         width: 100%
         aspect-ratio: 1/1
+
+        .openned__indicator
+            position: absolute
+            left: 0px
+            width: 5px
+            height: 5px
+            border-radius: 50%
+            background-color: #e74b03
+
+    &.column__style
+        height: 100%
+        aspect-ratio: 1/1
+
+        .openned__indicator
+            position: absolute
+            bottom: 0px
+            width: 5px
+            height: 5px
+            border-radius: 50%
+            background-color: #e74b03
 
     &:hover
         background-color: #ffffff2c
@@ -20,12 +40,18 @@
         height: 70%
         object-fit: cover
 
-    .openned__indicator
-        position: absolute
-        left: 0px
-        width: 5px
-        height: 5px
-        border-radius: 50%
-        background-color: #e74b03
 
+@media only screen and (max-width: 500px) 
+    .container.row__style, .container.column__style
+        width: auto
+        height: 100%
+        aspect-ratio: 1/1
+
+        .openned__indicator
+            position: absolute
+            bottom: 0px
+            width: 5px
+            height: 5px
+            border-radius: 50%
+            background-color: #e74b03
 

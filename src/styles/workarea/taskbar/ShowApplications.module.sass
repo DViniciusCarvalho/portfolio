@@ -1,0 +1,30 @@
+.container
+    position: relative
+    display: flex
+    align-items: center
+    justify-content: center
+    background-color: transparent
+    border-radius: 14px
+    text-decoration: none
+    transition: background-color 0.1s
+    
+    &.row__style
+        width: 100%
+        aspect-ratio: 1/1
+
+    &.column__style
+        height: 100%
+        aspect-ratio: 1/1
+        
+    &:hover
+        background-color: #ffffff2c
+
+    .icon
+        width: 70%
+        height: 70%
+        object-fit: cover
+
+@media only screen and (max-width: 500px) 
+    .container.row__style, .container.column__style
+        height: 100%
+        aspect-ratio: 1/1

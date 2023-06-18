@@ -1,0 +1,20 @@
+@use '../variables'
+
+.container
+    height: 100%
+    width: 100%
+
+    .taskbar__desktop__wrapper
+        height: calc(100% - variables.$global-menu-height)
+        width: 100%
+        display: flex
+
+        &.row__style
+            flex-direction: row
+
+        &.column__style
+            flex-direction: column-reverse
+
+@media only screen and (max-width: 500px) 
+    .taskbar__desktop__wrapper.row__style, .taskbar__desktop__wrapper.column__style
+        flex-direction: column-reverse !important

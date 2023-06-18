@@ -13,6 +13,19 @@ export function deepClone<T>(object: T): T {
     return newObject as T;
 }
 
+export function getDateString(): string {
+    const currentDate = new Date();
+
+    const weekDay = currentDate.toLocaleDateString("en-us", { weekday: 'short' }).toLowerCase();
+    const month = currentDate.toLocaleDateString("en-us", { month: 'short' }).toLowerCase();
+    const monthDay = currentDate.toLocaleDateString("en-us", { day: '2-digit' });
+
+    const hours = currentDate.getHours().toString().padStart(2, '0');
+    const minutes = currentDate.getMinutes().toString().padStart(2, '0');
+
+    return `${weekDay} ${month} ${monthDay} ${hours}:${minutes}`;
+}
+
 export function getCorrespondentRunningProcess(
     opennedProcessesData: Data.OpennedProcessData[],
     PID: number

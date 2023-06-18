@@ -1,9 +1,18 @@
 import React, { useContext } from "react";
 import taskBarStyles from "@/styles/workarea/taskbar/TaskBar.module.sass";
 import ProcessIcon from "./ProcessIcon";
+import ShowApplications from "./ShowApplications";
+
 import NautilusIcon from "../../../../public/assets/nautilus.png";
 import TerminalIcon from "../../../../public/assets/terminal.png";
-import UserTrash from "../../../../public/assets/user-trash.png";
+import SettingsIcon from "../../../../public/assets/preferences-desktop.png";
+import UserTrashIcon from "../../../../public/assets/user-trash.png";
+
+import Nautilus from "@/components/processes/Nautilus";
+import Terminal from "@/components/processes/Terminal";
+import UserTrash from "@/components/processes/UserTrash";
+import Settings from "@/components/processes/Settings";
+
 import { Props } from "@/types/props";
 import { MainContext } from "../Main";
 
@@ -27,21 +36,28 @@ export default function TaskBar({
     const nautilusProps: Props.ProcessIconProps = {
         processIconStaticImage: NautilusIcon,
         processName: "Files",
-        processElement: <></>,
+        processElement: <Nautilus/>,
         ...commonProperties
     };
 
     const terminalProps: Props.ProcessIconProps = {
         processIconStaticImage: TerminalIcon,
         processName: "Terminal",
-        processElement: <></>,
+        processElement: <Terminal/>,
         ...commonProperties
     };
 
-    const userTrash: Props.ProcessIconProps = {
-        processIconStaticImage: UserTrash,
+    const userTrashProps: Props.ProcessIconProps = {
+        processIconStaticImage: UserTrashIcon,
         processName: "Trash",
-        processElement: <></>,
+        processElement: <UserTrash/>,
+        ...commonProperties
+    };
+
+    const settingsProps: Props.ProcessIconProps = {
+        processIconStaticImage: SettingsIcon,
+        processName: "Settings",
+        processElement: <Settings/>,
         ...commonProperties
     };
 
@@ -59,10 +75,14 @@ export default function TaskBar({
             <div className={taskBarStyles.process__icons__first__wrapper}>
                 <ProcessIcon {...nautilusProps}/>
                 <ProcessIcon {...terminalProps}/>
+                <ProcessIcon {...settingsProps}/>
             </div>
             <hr className={taskBarStyles.process__trash__separator}/>
             <div className={taskBarStyles.process__icons__second__wrapper}>
-                <ProcessIcon {...userTrash}/>
+                <ProcessIcon {...userTrashProps}/>
+            </div>
+            <div className={taskBarStyles.show__applications__wrapper}>
+                <ShowApplications/>
             </div>
         </div>
     );

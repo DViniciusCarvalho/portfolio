@@ -3,6 +3,10 @@ import { Data } from "./data";
 
 export namespace Props {
 
+    interface GlobalMenuProps {
+        globalMenuRef: React.MutableRefObject<HTMLDivElement | null>;
+    }
+
     interface TaskBarProps {
         taskBarRef: React.MutableRefObject<HTMLDivElement | null>;
         openProcess: (processTitle: string, processElement: JSX.Element) => number;

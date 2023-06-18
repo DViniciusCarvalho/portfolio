@@ -1,5 +1,5 @@
 export function isResizeAction(
-    event: React.MouseEvent<HTMLDivElement, MouseEvent>, 
+    event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent, 
     processWindowRef: React.MutableRefObject<HTMLDivElement | null>
 ): string | false {
 

@@ -1,0 +1,27 @@
+@use '../../variables'
+    
+.container
+    display: flex
+    position: relative
+    align-items: center
+    justify-content: center
+    width: 100%
+    height: variables.$global-menu-height
+    z-index: 999999999999
+    background-color: #1d1d1d
+    font-family: Arial, Helvetica, sans-serif
+
+    &.column__style
+        top: 0px
+
+    .date
+        color: white
+        border-radius: 20px
+        padding: 4px 16px
+        transition: background-color 0.5s
+        font-family: Arial, Helvetica, sans-serif
+        font-size: 0.95em
+
+        &:hover
+            background-color: #414141
+            cursor: default

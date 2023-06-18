@@ -6,7 +6,15 @@
     &.default__theme
         background-image: linear-gradient(to top left, #ff7755, #58233e)
 
-    &.default__layout
-        width: variables.$desktop-width
-        height: variables.$desktop-height
-        
+    &.row__style
+        width: variables.$desktop-row-style-width
+        height: variables.$desktop-row-style-height
+
+    &.column__style
+        width: variables.$desktop-column-style-width
+        height: variables.$desktop-column-style-height
+
+@media only screen and (max-width: 500px)
+    .container.row__style, .container.column__style
+        width: variables.$desktop-column-style-width
+        height: variables.$desktop-column-style-height

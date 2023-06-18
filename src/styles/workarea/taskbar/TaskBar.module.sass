@@ -1,7 +1,7 @@
 @use '../../variables'
     
 .container
-    z-index: 99999999999999999999999999999999999999
+    z-index: 999999
     display: flex
     gap: 0.2%
 
@@ -10,29 +10,93 @@
         border-style: solid
         border-color: #350d1f94
         border-width: 0px 2px 0px 0px
-        padding-top: 10px
 
-    &.default__layout
-        width: variables.$taskbar-width
-        height: variables.$taskbar-height
+    &.row__style
+        width: variables.$taskbar-row-style-width
+        height: variables.$taskbar-row-style-height
         flex-direction: column
         align-items: center
         justify-content: flex-start
+        padding: 10px 0px
 
-    &.default__layout .process__icons__first__wrapper, 
-    &.default__layout .process__icons__second__wrapper
-        width: 100%
-        padding: 10%
-        flex-direction: column
+        & .process__icons__first__wrapper, 
+        & .process__icons__second__wrapper,
+        & .show__applications__wrapper
+            width: 100%
+            padding: 10%
+            display: flex
+            gap: 4px
+            flex-direction: column
+            align-items: center
+            justify-content: center
+            
+        & .show__applications__wrapper
+            margin-top: auto
 
-.process__icons__first__wrapper, .process__icons__second__wrapper
-    display: flex
-    gap: 4px
-    align-items: center
-    justify-content: center
+        .process__trash__separator
+            width: 60%
+            height: 1px
+            background-color: #757373cb
+            border: none
 
-.process__trash__separator
-    width: 60%
-    height: 1px
-    background-color: #757373cb
-    border: none
+
+    &.column__style
+        width: variables.$taskbar-column-style-width
+        height: variables.$taskbar-column-style-height
+        flex-direction: row
+        align-items: center
+        justify-content: center
+        padding: 0px 10px
+
+        & .process__icons__first__wrapper, 
+        & .process__icons__second__wrapper,
+        & .show__applications__wrapper
+            display: flex
+            gap: 4px
+            align-items: center
+            justify-content: center
+            height: 100%
+            width: auto
+            padding: 0.739%
+            flex-direction: row
+
+        & .show__applications__wrapper
+            margin-left: auto
+
+        .process__trash__separator
+            width: 1px
+            height: 60%
+            background-color: #757373cb
+            border: none
+
+
+@media only screen and (max-width: 500px) 
+    .container.row__style, .container.column__style
+        width: variables.$taskbar-column-style-width
+        height: variables.$taskbar-column-style-height
+        flex-direction: row
+        align-items: center
+        justify-content: center
+        padding: 0px 2px
+
+        & .process__icons__first__wrapper, 
+        & .process__icons__second__wrapper,
+        & .show__applications__wrapper
+            display: flex
+            gap: 4px
+            align-items: center
+            justify-content: center
+            height: 86%
+            width: auto
+            padding: 2%
+            flex-direction: row
+
+        & .show__applications__wrapper
+            margin: 0 0 0 auto
+ 
+        .process__trash__separator
+            width: 1px
+            height: 60%
+            background-color: #757373cb
+            border: none
+

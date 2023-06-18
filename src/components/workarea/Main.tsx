@@ -1,5 +1,6 @@
 import React, { useState, createContext, useRef } from 'react';
-import mainStyles from "@/styles/workarea/Background.module.sass";
+import mainStyles from "@/styles/workarea/Main.module.sass";
+import GlobalMenuBar from './menu/GlobalMenuBar';
 import Desktop from './desktop/Desktop';
 import TaskBar from './taskbar/TaskBar';
 import { Data } from '@/types/data';
@@ -19,6 +20,7 @@ export const MainContext = createContext<any>(null);
 
 export default function Main() {
     
+    const globalMenuRef = useRef<HTMLDivElement | null>(null);
     const taskBarRef = useRef<HTMLDivElement | null>(null);
     const desktopRef = useRef<HTMLDivElement | null>(null);
 
@@ -28,7 +30,9 @@ export default function Main() {
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
 
     const [ themeStyleClass, setThemeStyleClass ] = useState("default__theme");
-    const [ layoutStyleClass, setLayoutStyleClass ] = useState("default__layout");
+    const [ layoutStyleClass, setLayoutStyleClass ] = useState(
+        localStorage.getItem("layout") ?? "column__style"
+    );
 
     const contextValues = {
         opennedProcessesData,
@@ -39,7 +43,12 @@ export default function Main() {
         minimizeProcessWindow,
         restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
-        updateProcessWindowDimensions
+        updateProcessWindowDimensions,
+        showAllApplicationsAndOpennedWindows
+    };
+
+    const globalMenuProps: Props.GlobalMenuProps = {
+        globalMenuRef
     };
 
     const taskbarProps: Props.TaskBarProps = {
@@ -70,8 +79,8 @@ export default function Main() {
                 y: 0
             },
             dimensions: {
-                width: 400,
-                height: 400
+                width: 700,
+                height: 600
             }
         };
 
@@ -115,13 +124,16 @@ export default function Main() {
         const taskBarElement = taskBarRef.current! as HTMLDivElement;
         const taskBarWidth = taskBarElement.getBoundingClientRect().width;
 
+        const globalMenuElement = globalMenuRef.current! as HTMLDivElement;
+        const globalMenuHeight = globalMenuElement.getBoundingClientRect().height;
+
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
             const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
 
             elementPIDOwner!.coordinates = {
-                x: XAxis - taskBarWidth,
-                y: YAxis
+                x: XAxis - (layoutStyleClass === "row__style"? taskBarWidth : 0),
+                y: YAxis - globalMenuHeight
             };
 
             return previousDeepCopy;
@@ -294,16 +306,22 @@ export default function Main() {
                 };
             }
 
-            
             return previousDeepCopy;
         });
+    }
+
+    function showAllApplicationsAndOpennedWindows(): void {
+
     }
 
     return (
         <div className={mainStyles.container}>
             <MainContext.Provider value={{...contextValues}}>
-                <TaskBar {...taskbarProps}/>
-                <Desktop {...desktopProps}/>
+                <GlobalMenuBar {...globalMenuProps}/>
+                <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[layoutStyleClass]}`}>
+                    <TaskBar {...taskbarProps}/>
+                    <Desktop {...desktopProps}/>
+                </div>
             </MainContext.Provider>
         </div>
     );
