@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { useDrop } from "react-dnd";
 import desktopStyles from "@/styles/workarea/Desktop.module.sass";
 import ProcessWindow from "../window/ProcessWindow";
+import ApplicationsWindow from "../applications_window/ApplicationsWindow";
 import { Data } from "@/types/data";
 import { Props } from "@/types/props";
 import { MainContext } from "../Main";
@@ -48,14 +49,13 @@ export default function Desktop({
             drop(node);
           }}
         >
-            {   
-                opennedProcessesData.map((opennedProcessData, index) => (
-                    <ProcessWindow 
-                      {...opennedProcessData} 
-                      key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
-                    />
-                ))
-            }   
+			<ApplicationsWindow/>
+            {opennedProcessesData.map(opennedProcessData => (
+                <ProcessWindow 
+                    {...opennedProcessData} 
+                    key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
+                />
+			))}   
         </div>
     );
 }

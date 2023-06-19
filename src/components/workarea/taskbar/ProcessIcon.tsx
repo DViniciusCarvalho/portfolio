@@ -2,9 +2,12 @@ import React, { useContext, useState } from 'react';
 import processIconStyles from "@/styles/workarea/taskbar/ProcessIcon.module.sass";
 import Image from 'next/image';
 import { Props } from '@/types/props';
-import { Data } from '@/types/data';
 import { MainContext } from '../Main';
-import { getCorrespondentRunningProcess } from '@/lib/utils';
+import { 
+	getCorrespondentRunningProcess, 
+	processIsRunning, 
+	processIsTheCurrentOpenned 
+} from '@/lib/utils';
 
 
 export default function ProcessIcon({ 
@@ -23,7 +26,7 @@ export default function ProcessIcon({
     function startProcessMiddleware(): void {
 		const processFound = getCorrespondentRunningProcess(opennedProcessesData, processPID);
 
-        if (!isProcessRunning(opennedProcessesData, processPID)) {
+        if (!processIsRunning(opennedProcessesData, processPID)) {
             const startedProcessPID = startProcess(processName, processElement);
             setProcessPID(previous => startedProcessPID);
         }
@@ -32,16 +35,14 @@ export default function ProcessIcon({
         }
     }
 
-    function isProcessRunning(opennedProcessesData: Data.OpennedProcessData[], PID: number): boolean {
-		const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
-        return processFound ? true : false;
-    }
-
     return (
         <abbr 
           className={`
 		    ${processIconStyles.container} 
 			${processIconStyles[layoutStyleClass]}
+			${processIconStyles[
+				processIsTheCurrentOpenned(opennedProcessesData, processPID)? "active" : ""
+			]}
 			`
 	      }
           title={processName}
@@ -55,7 +56,7 @@ export default function ProcessIcon({
             <div 
               className={processIconStyles.openned__indicator}
               style={{
-                display: isProcessRunning(opennedProcessesData, processPID) ? "block" : "none"
+                display: processIsRunning(opennedProcessesData, processPID) ? "block" : "none"
               }}
             />
         </abbr>

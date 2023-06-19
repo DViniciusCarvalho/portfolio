@@ -3,6 +3,7 @@ import mainStyles from "@/styles/workarea/Main.module.sass";
 import GlobalMenuBar from './menu/GlobalMenuBar';
 import Desktop from './desktop/Desktop';
 import TaskBar from './taskbar/TaskBar';
+import ApplicationsWindow from './applications_window/ApplicationsWindow';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
 
@@ -25,19 +26,24 @@ export default function Main() {
     const desktopRef = useRef<HTMLDivElement | null>(null);
 
     const [ lastPID, setLastPID ] = useState(1);
-    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(1);
+    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(0);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
 
     const [ themeStyleClass, setThemeStyleClass ] = useState("default__theme");
     const [ layoutStyleClass, setLayoutStyleClass ] = useState(
-        localStorage.getItem("layout") ?? "column__style"
+        localStorage.getItem("layout") ?? "row__style"
     );
+    const [ applicationsAreBeingShowed, setApplicationsAreBeingShowed ] = useState(false);
 
     const contextValues = {
         opennedProcessesData,
+
         themeStyleClass,
         layoutStyleClass,
+        applicationsAreBeingShowed,
+        lastHighestZIndex,
+
         elevateProcessWindowZIndex,
         sendSIGKILLToProcess,
         minimizeProcessWindow,
@@ -66,12 +72,13 @@ export default function Main() {
 
     function openProcess(processTitle: string, processElement: JSX.Element): number {
         const nextPID = lastPID + 1;
+        const nextLastHighestZIndex = lastHighestZIndex + 1;
 
         const newProcessData = {
             PID: nextPID,
             processTitle: processTitle,
             processElement: processElement,
-            zIndex: 1,
+            zIndex: nextLastHighestZIndex,
             isMinimized: false,
             isMaximized: false,
             coordinates: {
@@ -85,6 +92,7 @@ export default function Main() {
         };
 
         setLastPID(previous => nextPID);
+        setLastHighestZIndex(previous => nextLastHighestZIndex);
         setOpennedProcessesData(previous => [...previous, newProcessData]);
 
         return nextPID;
@@ -311,7 +319,7 @@ export default function Main() {
     }
 
     function showAllApplicationsAndOpennedWindows(): void {
-
+        setApplicationsAreBeingShowed(previous => !previous);
     }
 
     return (
@@ -320,6 +328,7 @@ export default function Main() {
                 <GlobalMenuBar {...globalMenuProps}/>
                 <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[layoutStyleClass]}`}>
                     <TaskBar {...taskbarProps}/>
+                    {/* <ApplicationsWindow/> */}
                     <Desktop {...desktopProps}/>
                 </div>
             </MainContext.Provider>

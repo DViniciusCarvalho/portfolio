@@ -26,6 +26,7 @@ export default function TaskBar({
     const { 
         themeStyleClass, 
         layoutStyleClass, 
+        applicationsAreBeingShowed
     } = useContext(MainContext);
 
     const commonProperties = {
@@ -68,6 +69,7 @@ export default function TaskBar({
           className={`
             ${taskBarStyles.container} 
             ${taskBarStyles[themeStyleClass]} 
+            ${taskBarStyles[applicationsAreBeingShowed? "applications__showed" : ""]}
             ${taskBarStyles[layoutStyleClass]}
             `
           }

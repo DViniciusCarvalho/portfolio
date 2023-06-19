@@ -6,13 +6,18 @@ import { MainContext } from "../Main";
 
 export default function ShowApplications() {
 
-    const { layoutStyleClass, showAllApplicationsAndOpennedWindows } = useContext(MainContext);
+    const { 
+        layoutStyleClass, 
+        showAllApplicationsAndOpennedWindows, 
+        applicationsAreBeingShowed 
+    } = useContext(MainContext);
 
     return (
         <abbr 
           className={`
             ${showApplicationsStyles.container} 
             ${showApplicationsStyles[layoutStyleClass]}
+			${showApplicationsStyles[applicationsAreBeingShowed? "applications__showed" : ""]}
             `
           }
           title="Show Applications"

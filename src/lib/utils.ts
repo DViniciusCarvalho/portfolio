@@ -38,6 +38,28 @@ export function getCorrespondentRunningProcess(
     return processFound;
 }
 
+export function processIsRunning(opennedProcessesData: Data.OpennedProcessData[], PID: number): boolean {
+    const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
+    return processFound ? true : false;
+}
+
+export function processIsTheCurrentOpenned(
+    opennedProcessesData: Data.OpennedProcessData[], 
+    PID: number
+): boolean {
+    const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
+    const processZIndex = processFound ? processFound.zIndex : "";
+    const processIsMinimized = processFound ? processFound.isMinimized : false;
+
+    const highestZIndex = opennedProcessesData.reduce((acc, curr) => {
+        const processZIndex = curr.zIndex;
+
+        return processZIndex > acc ? processZIndex : acc;
+    }, 0);
+
+    return (processZIndex === highestZIndex) && !processIsMinimized;
+}
+
 export function getNewHeightAndYAxisOnTop(
     movementIsInFavorOfYAxis: boolean, 
     element: Data.OpennedProcessData,
