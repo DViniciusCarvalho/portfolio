@@ -7,6 +7,7 @@ export namespace Data {
         zIndex: number;
         isMinimized: boolean;
         isMaximized: boolean;
+        parentDesktopUUID: string;
         coordinates: {
             x: number;
             y: number;
@@ -15,6 +16,11 @@ export namespace Data {
             width: number,
             height: number
         }
+    }
+
+    interface DesktopActivityData {
+        UUID: string;
+
     }
 
     interface DraggableProcessWindow {

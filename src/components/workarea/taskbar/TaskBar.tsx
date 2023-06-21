@@ -1,20 +1,20 @@
-import React, { useContext } from "react";
-import taskBarStyles from "@/styles/workarea/taskbar/TaskBar.module.sass";
-import ProcessIcon from "./ProcessIcon";
-import ShowApplications from "./ShowApplications";
+import React, { useContext } from 'react';
+import taskBarStyles from '@/styles/workarea/taskbar/TaskBar.module.sass';
+import ProcessIcon from './ProcessIcon';
+import ShowApplications from './ShowApplications';
 
-import NautilusIcon from "../../../../public/assets/nautilus.png";
-import TerminalIcon from "../../../../public/assets/terminal.png";
-import SettingsIcon from "../../../../public/assets/preferences-desktop.png";
-import UserTrashIcon from "../../../../public/assets/user-trash.png";
+import NautilusIcon from '../../../../public/assets/nautilus.png';
+import TerminalIcon from '../../../../public/assets/terminal.png';
+import SettingsIcon from '../../../../public/assets/preferences-desktop.png';
+import UserTrashIcon from '../../../../public/assets/user-trash.png';
 
-import Nautilus from "@/components/processes/Nautilus";
-import Terminal from "@/components/processes/Terminal";
-import UserTrash from "@/components/processes/UserTrash";
-import Settings from "@/components/processes/Settings";
+import Nautilus from '@/components/processes/Nautilus';
+import Terminal from '@/components/processes/Terminal';
+import UserTrash from '@/components/processes/UserTrash';
+import Settings from '@/components/processes/Settings';
 
-import { Props } from "@/types/props";
-import { MainContext } from "../Main";
+import { Props } from '@/types/props';
+import { MainContext } from '../Main';
 
 
 export default function TaskBar({ 
@@ -36,28 +36,28 @@ export default function TaskBar({
 
     const nautilusProps: Props.ProcessIconProps = {
         processIconStaticImage: NautilusIcon,
-        processName: "Files",
+        processName: 'Files',
         processElement: <Nautilus/>,
         ...commonProperties
     };
 
     const terminalProps: Props.ProcessIconProps = {
         processIconStaticImage: TerminalIcon,
-        processName: "Terminal",
+        processName: 'Terminal',
         processElement: <Terminal/>,
         ...commonProperties
     };
 
     const userTrashProps: Props.ProcessIconProps = {
         processIconStaticImage: UserTrashIcon,
-        processName: "Trash",
+        processName: 'Trash',
         processElement: <UserTrash/>,
         ...commonProperties
     };
 
     const settingsProps: Props.ProcessIconProps = {
         processIconStaticImage: SettingsIcon,
-        processName: "Settings",
+        processName: 'Settings',
         processElement: <Settings/>,
         ...commonProperties
     };
@@ -65,14 +65,14 @@ export default function TaskBar({
 
     return (
         <div 
-          ref={taskBarRef}
-          className={`
-            ${taskBarStyles.container} 
-            ${taskBarStyles[themeStyleClass]} 
-            ${taskBarStyles[applicationsAreBeingShowed? "applications__showed" : ""]}
-            ${taskBarStyles[layoutStyleClass]}
-            `
-          }
+            ref={taskBarRef}
+            className={`
+                ${taskBarStyles.container} 
+                ${taskBarStyles[themeStyleClass]} 
+                ${taskBarStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
+                ${taskBarStyles[layoutStyleClass]}
+                `
+            }
         >
             <div className={taskBarStyles.process__icons__first__wrapper}>
                 <ProcessIcon {...nautilusProps}/>

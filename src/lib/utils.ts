@@ -13,6 +13,15 @@ export function deepClone<T>(object: T): T {
     return newObject as T;
 }
 
+export function generateUUID(): string {
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+
+    return uuid;
+}
+
 export function getDateString(): string {
     const currentDate = new Date();
 
@@ -38,27 +47,7 @@ export function getCorrespondentRunningProcess(
     return processFound;
 }
 
-export function processIsRunning(opennedProcessesData: Data.OpennedProcessData[], PID: number): boolean {
-    const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
-    return processFound ? true : false;
-}
 
-export function processIsTheCurrentOpenned(
-    opennedProcessesData: Data.OpennedProcessData[], 
-    PID: number
-): boolean {
-    const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
-    const processZIndex = processFound ? processFound.zIndex : "";
-    const processIsMinimized = processFound ? processFound.isMinimized : false;
-
-    const highestZIndex = opennedProcessesData.reduce((acc, curr) => {
-        const processZIndex = curr.zIndex;
-
-        return processZIndex > acc ? processZIndex : acc;
-    }, 0);
-
-    return (processZIndex === highestZIndex) && !processIsMinimized;
-}
 
 export function getNewHeightAndYAxisOnTop(
     movementIsInFavorOfYAxis: boolean, 

@@ -13,6 +13,14 @@ export namespace Props {
         restorePreviousDimensions: (PID: number) => void;
     }
 
+    interface ApplicationsWindowProps {
+        applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
+        opennedProcessesData: Data.OpennedProcessData[];
+        updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
+        desktopActivities: Data.DesktopActivityData[];
+        baseDesktopUUID: string;
+    }
+
     interface ProcessIconProps {
         processIconStaticImage: StaticImageData;
         processName: string;
@@ -22,9 +30,10 @@ export namespace Props {
     }
 
     interface DesktopProps {
-        desktopRef: React.MutableRefObject<HTMLDivElement | null>;
+        UUID: string;
         opennedProcessesData: Data.OpennedProcessData[];
         updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
+        applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
     }
     
     interface ProcessWindowProps {
@@ -34,6 +43,7 @@ export namespace Props {
         zIndex: number;
         isMinimized: boolean;
         isMaximized: boolean;
+        parentDesktopUUID: string;
         coordinates: {
             x: number;
             y: number;

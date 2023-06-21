@@ -1,7 +1,6 @@
-import React, { useState, createContext, useRef } from 'react';
-import mainStyles from "@/styles/workarea/Main.module.sass";
+import React, { useState, createContext, useRef, useEffect } from 'react';
+import mainStyles from '@/styles/workarea/Main.module.sass';
 import GlobalMenuBar from './menu/GlobalMenuBar';
-import Desktop from './desktop/Desktop';
 import TaskBar from './taskbar/TaskBar';
 import ApplicationsWindow from './applications_window/ApplicationsWindow';
 import { Data } from '@/types/data';
@@ -13,8 +12,11 @@ import {
     getNewHeightAndYAxisOnTop, 
     getNewWidthOnRight, 
     getNewHeightAndYAxisOnBottom,
-    getNewWidthAndXAxisOnLeft
+    getNewWidthAndXAxisOnLeft,
+    generateUUID
 } from '@/lib/utils';
+
+import { parentDesktopIsNowVoid } from '@/lib/validation';
 
 
 export const MainContext = createContext<any>(null);
@@ -23,17 +25,21 @@ export default function Main() {
     
     const globalMenuRef = useRef<HTMLDivElement | null>(null);
     const taskBarRef = useRef<HTMLDivElement | null>(null);
-    const desktopRef = useRef<HTMLDivElement | null>(null);
+    const applicationsWindowRef = useRef<HTMLDivElement | null>(null);
+
+    const initialBaseDesktopUUID = generateUUID();
 
     const [ lastPID, setLastPID ] = useState(1);
     const [ lastHighestZIndex, setLastHighestZIndex ] = useState(0);
+    const [ baseDesktopUUID ] = useState(initialBaseDesktopUUID);
+    const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
+    const [ desktopActivities, setDesktopActivities ] = useState<Data.DesktopActivityData[]>([]);
 
-    const [ themeStyleClass, setThemeStyleClass ] = useState("default__theme");
-    const [ layoutStyleClass, setLayoutStyleClass ] = useState(
-        localStorage.getItem("layout") ?? "row__style"
-    );
+    const [ themeStyleClass, setThemeStyleClass ] = useState('default__theme');
+    const [ layoutStyleClass, setLayoutStyleClass ] = useState('row__style');
+
     const [ applicationsAreBeingShowed, setApplicationsAreBeingShowed ] = useState(false);
 
     const contextValues = {
@@ -43,6 +49,7 @@ export default function Main() {
         layoutStyleClass,
         applicationsAreBeingShowed,
         lastHighestZIndex,
+        currentActiveDesktopUUID,
 
         elevateProcessWindowZIndex,
         sendSIGKILLToProcess,
@@ -50,7 +57,9 @@ export default function Main() {
         restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
         updateProcessWindowDimensions,
-        showAllApplicationsAndOpennedWindows
+        showAllApplicationsAndOpennedWindows,
+        handleChangeCurrentDesktop,
+        removeDesktopActivity
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -63,16 +72,30 @@ export default function Main() {
         restorePreviousDimensions
     };
 
-    const desktopProps: Props.DesktopProps = {
-        desktopRef,
+    const applicationsWindowProps: Props.ApplicationsWindowProps = {
+        applicationsWindowRef,
         opennedProcessesData,
-        updateProcessCoordinates
+        updateProcessCoordinates,
+        desktopActivities,
+        baseDesktopUUID
     };
 
 
+    useEffect(() => {
+        window!.addEventListener("resize", () => {
+            if (!applicationsAreBeingShowed) {
+                setApplicationsAreBeingShowed(previous => true);
+            }
+        });
+    }, []);
+
+    
     function openProcess(processTitle: string, processElement: JSX.Element): number {
         const nextPID = lastPID + 1;
         const nextLastHighestZIndex = lastHighestZIndex + 1;
+        const parentDesktopUUID = currentActiveDesktopUUID !== baseDesktopUUID 
+                                ? currentActiveDesktopUUID
+                                : generateUUID();
 
         const newProcessData = {
             PID: nextPID,
@@ -81,6 +104,7 @@ export default function Main() {
             zIndex: nextLastHighestZIndex,
             isMinimized: false,
             isMaximized: false,
+            parentDesktopUUID: parentDesktopUUID,
             coordinates: {
                 x: 0,
                 y: 0
@@ -90,6 +114,15 @@ export default function Main() {
                 height: 600
             }
         };
+
+        if (currentActiveDesktopUUID === baseDesktopUUID) {
+            const newCurrentDesktopData = {
+                UUID: parentDesktopUUID
+            };
+
+            setDesktopActivities(previous => [...previous, newCurrentDesktopData]);
+            setCurrentActiveDesktopUUID(previous => parentDesktopUUID);
+        }
 
         setLastPID(previous => nextPID);
         setLastHighestZIndex(previous => nextLastHighestZIndex);
@@ -121,10 +154,19 @@ export default function Main() {
     function sendSIGKILLToProcess(PID: number): void { 
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const { parentDesktopUUID } = elementPIDOwner!;
+
+            if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
+                removeDesktopActivity(parentDesktopUUID);
+                setApplicationsAreBeingShowed(previous => false);
+            }
+
             const filteredPreviousDeepCopy = previousDeepCopy.filter(processData => processData.PID !== PID);
 
             return filteredPreviousDeepCopy;
         });
+
     }
 
 
@@ -140,7 +182,7 @@ export default function Main() {
             const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
 
             elementPIDOwner!.coordinates = {
-                x: XAxis - (layoutStyleClass === "row__style"? taskBarWidth : 0),
+                x: XAxis - (layoutStyleClass === 'row__style'? taskBarWidth : 0),
                 y: YAxis - globalMenuHeight
             };
 
@@ -203,11 +245,9 @@ export default function Main() {
     }
 
 
-    function maximizeProcessWindow(PID: number): void {
-        const desktopElement = desktopRef.current as HTMLDivElement;
-
-        const desktopWidth = desktopElement.getBoundingClientRect().width;
-        const desktopHeight = desktopElement.getBoundingClientRect().height;
+    function maximizeProcessWindow(PID: number, parentDesktopElement: HTMLDivElement): void {
+        const parentDesktopWidth = parentDesktopElement.getBoundingClientRect().width;
+        const parentDesktopHeight = parentDesktopElement.getBoundingClientRect().height;
 
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
@@ -216,8 +256,8 @@ export default function Main() {
             elementPIDOwner!.isMaximized = true;
 
             elementPIDOwner!.dimensions = {
-                width: desktopWidth,
-                height: desktopHeight
+                width: parentDesktopWidth,
+                height: parentDesktopHeight
             };
 
             elementPIDOwner!.coordinates = {
@@ -228,6 +268,7 @@ export default function Main() {
             return previousDeepCopy;
         });
     }
+
 
     function updateProcessWindowDimensions(
         PID: number,
@@ -248,7 +289,7 @@ export default function Main() {
             const movementIsInFavorOfXAxis = currentXAxis > previousXAxis;
             const movementIsInFavorOfYAxis = currentYAxis > previousYAxis;
 
-            if (resizeSide === "top") {
+            if (resizeSide === 'top') {
                 const { newHeight, newCoordinates } = getNewHeightAndYAxisOnTop(
                     movementIsInFavorOfYAxis,
                     elementPIDOwner!,
@@ -267,7 +308,7 @@ export default function Main() {
                 };
             }
        
-            else if (resizeSide === "right") {
+            else if (resizeSide === 'right') {
                 const newWidth = getNewWidthOnRight(
                     movementIsInFavorOfXAxis, 
                     elementPIDOwner!, 
@@ -281,7 +322,7 @@ export default function Main() {
                 };
             }
 
-            else if (resizeSide === "bottom") {
+            else if (resizeSide === 'bottom') {
                 const newHeight = getNewHeightAndYAxisOnBottom(
                     movementIsInFavorOfYAxis,
                     elementPIDOwner!,
@@ -295,7 +336,7 @@ export default function Main() {
                 };
             }
 
-            else if (resizeSide === "left") {
+            else if (resizeSide === 'left') {
                 const { newWidth, newCoordinates } = getNewWidthAndXAxisOnLeft(
                     movementIsInFavorOfXAxis, 
                     elementPIDOwner!, 
@@ -318,9 +359,32 @@ export default function Main() {
         });
     }
 
+
     function showAllApplicationsAndOpennedWindows(): void {
         setApplicationsAreBeingShowed(previous => !previous);
     }
+
+
+    function handleChangeCurrentDesktop(UUID: string): void {
+        setCurrentActiveDesktopUUID(previous => UUID);
+        setApplicationsAreBeingShowed(previous => false);
+    }
+
+
+    function removeDesktopActivity(UUID: string): void {
+        setDesktopActivities(previous => {
+            const previousDeepCopy = deepClone(previous);
+            const desktopActivitiesWithoutRemovedActivity = previousDeepCopy.filter(desktopActivity => {
+                return desktopActivity.UUID !== UUID;
+            });
+
+            return desktopActivitiesWithoutRemovedActivity;
+        });
+
+        console.log("aq")
+        setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
+    }
+
 
     return (
         <div className={mainStyles.container}>
@@ -328,8 +392,7 @@ export default function Main() {
                 <GlobalMenuBar {...globalMenuProps}/>
                 <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[layoutStyleClass]}`}>
                     <TaskBar {...taskbarProps}/>
-                    {/* <ApplicationsWindow/> */}
-                    <Desktop {...desktopProps}/>
+                    <ApplicationsWindow {...applicationsWindowProps}/>
                 </div>
             </MainContext.Provider>
         </div>

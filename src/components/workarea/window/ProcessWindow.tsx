@@ -1,14 +1,14 @@
-import React, { useContext, useRef, useState } from "react";
-import { useDrag } from "react-dnd";
-import processWindowStyles from "@/styles/workarea/window/ProcessWindow.module.sass";
-import Image from "next/image";
-import WindowCloseIcon from "../../../../public/assets/window-close-symbolic.svg";
-import WindowRestoreIcon from "../../../../public/assets/window-restore-symbolic.svg";
-import WindowMaximizeIcon from "../../../../public/assets/window-maximize-symbolic.svg";
-import WindowMinimizeIcon from "../../../../public/assets/window-minimize-symbolic.svg";
-import { Props } from "@/types/props";
-import { MainContext } from "../Main";
-import { isResizeAction } from "@/lib/validation";
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { useDrag } from 'react-dnd';
+import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
+import Image from 'next/image';
+import WindowCloseIcon from '../../../../public/assets/window-close-symbolic.svg';
+import WindowRestoreIcon from '../../../../public/assets/window-restore-symbolic.svg';
+import WindowMaximizeIcon from '../../../../public/assets/window-maximize-symbolic.svg';
+import WindowMinimizeIcon from '../../../../public/assets/window-minimize-symbolic.svg';
+import { Props } from '@/types/props';
+import { MainContext } from '../Main';
+import { isResizeAction } from '@/lib/validation';
 
 
 export default function ProcessWindow({ 
@@ -18,6 +18,7 @@ export default function ProcessWindow({
 	zIndex,
 	isMinimized,
 	isMaximized,
+	parentDesktopUUID,
 	coordinates,
 	dimensions
 }: Props.ProcessWindowProps) {
@@ -28,14 +29,16 @@ export default function ProcessWindow({
 		minimizeProcessWindow, 
 		restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
-		updateProcessWindowDimensions
+		updateProcessWindowDimensions,
+		currentActiveDesktopUUID,
+		applicationsAreBeingShowed
 	} = useContext(MainContext);
 
     const dragRef = useRef<HTMLDivElement | null>(null);
 
 	const [ resizeData, setResizeData ] = useState({
 		isResizing: false,
-		resizeSide: ""
+		resizeSide: ''
 	});
 
 	const [ previousPressedCoordinates, setPreviousPressedCoordinates ] = useState({
@@ -60,14 +63,13 @@ export default function ProcessWindow({
 	});
 
     const [ { isDragging }, drag ] = useDrag(() => ({
-        type: "element",
+        type: 'element',
         item: { dragRef, PID },
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
     }));
 
-	
 	function handleMouseDown(event: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
 		const sideToResize = isResizeAction(event, dragRef);
 
@@ -91,7 +93,7 @@ export default function ProcessWindow({
 		if (resizeData.isResizing) {
 			setResizeData(previous => ({
 				isResizing: false,
-				resizeSide: ""
+				resizeSide: ''
 			}));
 		}
 	}
@@ -127,12 +129,20 @@ export default function ProcessWindow({
 		}));
 	}
 
-	function handleRestoreMaximizeWindow(PID: number, isMaximized: boolean): void {
+	function handleRestoreMaximizeWindow(
+		PID: number, 
+		isMaximized: boolean, 
+		processWindowRef: React.MutableRefObject<HTMLDivElement | null>
+	): void {
+
 		const widthMemoization = dimensions.width;
 		const heightMemoization = dimensions.height;
 
 		const xAxisMemoization = coordinates.x;
 		const yAxisMemoization = coordinates.y;
+
+		const processWindowElement = processWindowRef.current! as HTMLDivElement;
+		const processWindowParentDesktop = processWindowElement.parentElement! as HTMLDivElement;
 
 		if (isMaximized) {
 			const memoizedWidth = lastDimensionsCoordBeforeMaximize.dimensions.width;
@@ -151,7 +161,7 @@ export default function ProcessWindow({
 			return;
 		}
 			
-		maximizeProcessWindow(PID);
+		maximizeProcessWindow(PID, processWindowParentDesktop);
 
 		setLastDimensionsCoordBeforeMaximize(previous => ({
 			dimensions: {
@@ -167,48 +177,53 @@ export default function ProcessWindow({
 
     return (
         <div 
-		  className={`
-		    ${processWindowStyles.container} 
-			${processWindowStyles[isMinimized? "minimized" : "normal"]}
-			`
-		  }
-          ref={(node) => {
-            dragRef.current = node;
-            resizeData.isResizing? "" : drag(node);
-          }}
-          style={{
-            display: isDragging? "none" : "block",
-            left: coordinates.x,
-            top: coordinates.y,
-			width: dimensions.width,
-			height: dimensions.height,
-			zIndex: zIndex
-          }}
-		  onMouseDown={(e) => handleMouseDown(e)}
-		  onMouseUp={(e) =>  handleMouseUpAndLeave(e)}
-		  onMouseLeave={(e) => handleMouseUpAndLeave(e)}
-		  onMouseMove={(e) => handleMouseMove(e)}
-		  id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
+			className={`
+				${processWindowStyles.container} 
+				${processWindowStyles[isMinimized? 'minimized' : 'normal']}
+				`
+			}
+			ref={(node) => {
+				dragRef.current = node;
+				resizeData.isResizing? '' : drag(node);
+			}}
+			style={{
+				display: isDragging 
+						 || (currentActiveDesktopUUID !== parentDesktopUUID 
+						 && !applicationsAreBeingShowed)
+						 ? 'none' 
+						 : 'block',
+
+				left: coordinates.x,
+				top: coordinates.y,
+				width: dimensions.width,
+				height: dimensions.height,
+				zIndex: zIndex
+			}}
+			onMouseDown={(e) => handleMouseDown(e)}
+			onMouseUp={(e) =>  handleMouseUpAndLeave(e)}
+			onMouseLeave={(e) => handleMouseUpAndLeave(e)}
+			onMouseMove={(e) => handleMouseMove(e)}
+			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
         >
             <div className={processWindowStyles.window__title__bar}>
 				{processTitle}
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
-						  src={WindowMinimizeIcon} 
-						  alt="window minimize icon"
+							src={WindowMinimizeIcon} 
+							alt='window minimize icon'
 						/>
 					</button>
-					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized)}>
+					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, dragRef)}>
 						<Image 
-						  src={isMaximized? WindowRestoreIcon : WindowMaximizeIcon} 
-						  alt="window restore size icon"
+							src={isMaximized? WindowRestoreIcon : WindowMaximizeIcon} 
+							alt='window restore size icon'
 						/>
 					</button>
 					<button onClick={() => sendSIGKILLToProcess(PID)}>
 						<Image 
-						  src={WindowCloseIcon} 
-						  alt="window close icon"
+							src={WindowCloseIcon} 
+							alt='window close icon'
 						/>
 					</button>
 				</div>
