@@ -3,6 +3,7 @@ import applicationsWindowStyles from '@/styles/workarea/applications/Application
 import Image from 'next/image';
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
 import Desktop from '../desktop/Desktop';
+import BaseDesktop from '../desktop/BaseDesktop';
 import { MainContext } from '../Main';
 import { Props } from '@/types/props';
 
@@ -11,7 +12,7 @@ export default function ApplicationsWindow({
 	applicationsWindowRef,
 	opennedProcessesData, 
 	updateProcessCoordinates,
-	desktopActivities,
+	desktopActivitiesData,
 	baseDesktopUUID 
 }: Props.ApplicationsWindowProps) {
 
@@ -19,15 +20,17 @@ export default function ApplicationsWindow({
 
 	const [ applicationsWindowRefLoaded, setApplicationsWindowRefLoaded ] = useState(false);
 
-	useEffect(() => setApplicationsWindowRefLoaded(previous => true), [applicationsWindowRef]);
+	useEffect(() => {
+		setApplicationsWindowRefLoaded(previous => true);
+	}, [applicationsWindowRef]);
     
-	const baseDesktopProps: Props.DesktopProps = {
-		applicationsWindowRef,
-		UUID: baseDesktopUUID,
-		opennedProcessesData, 
-		updateProcessCoordinates 
+	const baseDesktopProps: Props.BaseDesktopProps = {
+		baseDesktopUUID: baseDesktopUUID,
+		desktopActivitiesData,
+		applicationsWindowRef
 	};
 
+	
     return ( 
         <div 
 			className={`
@@ -49,16 +52,16 @@ export default function ApplicationsWindow({
 				/>
             </div>
             <div className={applicationsWindowStyles.activities__wrapper}>
-				{desktopActivities.map((desktopActivity, index) => (
+				{desktopActivitiesData.map((desktopActivityData, index) => (
 					<Desktop 
-						key={index}
-						UUID={desktopActivity.UUID} 
+						key={desktopActivityData.UUID}
+						UUID={desktopActivityData.UUID} 
 						opennedProcessesData={opennedProcessesData}
 						updateProcessCoordinates={updateProcessCoordinates}
 						applicationsWindowRef={applicationsWindowRef}
 					/>
 				))}
-		  		{applicationsWindowRefLoaded && (<Desktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
+		  		{applicationsWindowRefLoaded && (<BaseDesktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
 			</div>
             <div className={applicationsWindowStyles.applications__wrapper}></div>
         </div>

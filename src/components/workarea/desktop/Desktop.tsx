@@ -5,6 +5,7 @@ import ProcessWindow from '../window/ProcessWindow';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
+import { getCorrespondentDesktop } from '@/lib/utils';
 
 
 export default function Desktop({ 
@@ -42,6 +43,7 @@ export default function Desktop({
         },
     }));
 
+
     function desktopCanBeShowed(
         applicationsAreBeingShowed: boolean, 
         currentActiveDesktopUUID: string, 
@@ -50,6 +52,7 @@ export default function Desktop({
         
         return !(applicationsAreBeingShowed || currentActiveDesktopUUID !== UUID);
     }
+
 
     function getCurrentDesktopProcessesWindow(
         opennedProcessesData: Data.OpennedProcessData[]
@@ -62,6 +65,37 @@ export default function Desktop({
         return currentDesktopProcessesWindow;
     }
 
+    function getDesktopResultantStyles(
+        applicationsAreBeingShowed: boolean, 
+        currentActiveDesktopUUID: string, 
+        UUID: string,
+        applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
+    ): any {
+
+        const applicationsAreHiddenAndIsNotCurrentDesktop = (!applicationsAreBeingShowed 
+                                                        && (currentActiveDesktopUUID !== UUID));
+ 
+        const currentDesktopCanBeShowed = desktopCanBeShowed(
+            applicationsAreBeingShowed, 
+            currentActiveDesktopUUID, 
+            UUID
+        );
+
+        const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
+        const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
+
+        return {
+            display: applicationsAreHiddenAndIsNotCurrentDesktop? 'none' : 'block',
+            position: currentDesktopCanBeShowed? 'absolute' : 'relative',
+            width: currentDesktopCanBeShowed? applicationsWindowWidth : '220px',
+            height: currentDesktopCanBeShowed? applicationsWindowHeight : '90%',
+            top: currentDesktopCanBeShowed? 0 : 0,
+            left: currentDesktopCanBeShowed? 0 : 0,
+            transform: `scale(${currentDesktopCanBeShowed? 1 : 0.9})`
+        };
+
+    }
+
 
     return (
         <div
@@ -69,33 +103,18 @@ export default function Desktop({
                 ${desktopStyles.container} 
                 ${desktopStyles[themeStyleClass]} 
                 ${desktopStyles[layoutStyleClass]}
+                ${desktopStyles[!applicationsAreBeingShowed? 'showed' : 'not__showed']}
                 `
             }
             style={{
-                display: !applicationsAreBeingShowed && (currentActiveDesktopUUID !== UUID) 
-                         ? 'none'
-                         : 'block',
-
-                position: desktopCanBeShowed(applicationsAreBeingShowed, currentActiveDesktopUUID, UUID) 
-                          ? 'absolute'
-                          : 'relative',
-
-                width: desktopCanBeShowed(applicationsAreBeingShowed, currentActiveDesktopUUID, UUID) 
-                       ? applicationsWindowRef.current?.getBoundingClientRect().width
-                       : '220px',
-
-                height: desktopCanBeShowed(applicationsAreBeingShowed, currentActiveDesktopUUID, UUID) 
-                        ? applicationsWindowRef.current?.getBoundingClientRect().height
-                        : '90%',
-
-                top: desktopCanBeShowed(applicationsAreBeingShowed, currentActiveDesktopUUID, UUID) 
-                     ? 0
-                     : 0,
-
-                left: desktopCanBeShowed(applicationsAreBeingShowed, currentActiveDesktopUUID, UUID) 
-                      ? 0
-                      : 0
+                ...getDesktopResultantStyles(
+                    applicationsAreBeingShowed, 
+                    currentActiveDesktopUUID, 
+                    UUID, 
+                    applicationsWindowRef
+                )
             }}
+            id={UUID}
             ref={drop}
             onClick={() => handleChangeCurrentDesktop(UUID)}
         >

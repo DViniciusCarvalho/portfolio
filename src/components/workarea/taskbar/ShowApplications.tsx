@@ -11,7 +11,7 @@ export default function ShowApplications() {
         showAllApplicationsAndOpennedWindows, 
         applicationsAreBeingShowed 
     } = useContext(MainContext);
-
+ 
     return (
         <abbr 
 			className={`

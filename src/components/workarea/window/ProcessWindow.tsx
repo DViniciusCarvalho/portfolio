@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import Image from 'next/image';
@@ -175,6 +175,63 @@ export default function ProcessWindow({
 		}));
 	}
 
+	
+	function getProcessWindowDisplay(
+		isDragging: boolean,
+		currentActiveDesktopUUID: string,
+		parentDesktopUUID: string,
+		applicationsAreBeingShowed: boolean
+	): string {
+
+		const currentActiveDesktopIsNotTheParentDesktop = currentActiveDesktopUUID !== parentDesktopUUID;
+
+		const processWindowCanNotBeDisplayed = currentActiveDesktopIsNotTheParentDesktop 
+												&& !applicationsAreBeingShowed;
+
+		return isDragging || processWindowCanNotBeDisplayed ? 'none' : 'block';
+
+	}
+
+
+	function calculateRelativeDimensionAndCoordinates(
+		width: number,
+		height: number,
+		XAxis: number,
+		YAxis: number
+	) {
+
+		const processWindowElement = dragRef.current! as HTMLDivElement;
+
+		if (processWindowElement) {
+			const parentDesktopElement = processWindowElement.parentElement as HTMLDivElement;
+			const parentDesktopWrapper = parentDesktopElement.parentElement as HTMLDivElement;
+			const applicationsWindowElement = parentDesktopWrapper.parentElement as HTMLDivElement;
+
+			const applicationsWindowWidth = applicationsWindowElement.getBoundingClientRect().width;
+			const applicationsWindowHeight = applicationsWindowElement.getBoundingClientRect().height;
+
+			const relativeWidth = width / applicationsWindowWidth * 100;
+			const relativeHeight = height / applicationsWindowHeight * 100;
+			const relativeXAxis = XAxis / applicationsWindowWidth * 100;
+			const relativeYAxis = YAxis / applicationsWindowHeight * 100;
+
+			return {
+				width: `${relativeWidth}%`,
+				height: `${relativeHeight}%`,
+				left: `${relativeXAxis}%`,
+				top: `${relativeYAxis}%`
+			};
+		}
+
+		return {
+			width: '60%',
+			height: '60%',
+			left: '0%',
+			top: '0%'
+		}
+	}
+
+
     return (
         <div 
 			className={`
@@ -187,17 +244,19 @@ export default function ProcessWindow({
 				resizeData.isResizing? '' : drag(node);
 			}}
 			style={{
-				display: isDragging 
-						 || (currentActiveDesktopUUID !== parentDesktopUUID 
-						 && !applicationsAreBeingShowed)
-						 ? 'none' 
-						 : 'block',
-
-				left: coordinates.x,
-				top: coordinates.y,
-				width: dimensions.width,
-				height: dimensions.height,
-				zIndex: zIndex
+				zIndex: zIndex,
+				display: getProcessWindowDisplay(
+					isDragging,
+					currentActiveDesktopUUID,
+					parentDesktopUUID,
+					applicationsAreBeingShowed
+				),
+				...calculateRelativeDimensionAndCoordinates(
+					dimensions.width,
+					dimensions.height,
+					coordinates.x,
+					coordinates.y
+				)
 			}}
 			onMouseDown={(e) => handleMouseDown(e)}
 			onMouseUp={(e) =>  handleMouseUpAndLeave(e)}
@@ -205,7 +264,15 @@ export default function ProcessWindow({
 			onMouseMove={(e) => handleMouseMove(e)}
 			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
         >
-            <div className={processWindowStyles.window__title__bar}>
+            <div 
+				className={`
+					${processWindowStyles.window__title__bar}
+					${processWindowStyles[
+						applicationsAreBeingShowed? 'applications__showed' : ''
+					]}
+					`
+				}
+			>
 				{processTitle}
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
@@ -228,7 +295,15 @@ export default function ProcessWindow({
 					</button>
 				</div>
             </div>
-			<div className={processWindowStyles.process__application__section}>
+			<div 
+				className={`
+					${processWindowStyles.process__application__section} 
+					${processWindowStyles[
+						applicationsAreBeingShowed? 'applications__showed' : ''
+					]}
+					`
+				}
+			>
 				{processElement}
 			</div>
         </div>

@@ -13,7 +13,9 @@ import {
     getNewWidthOnRight, 
     getNewHeightAndYAxisOnBottom,
     getNewWidthAndXAxisOnLeft,
-    generateUUID
+    generateUUID,
+    getParentDesktopUUID,
+    getRelativeInitialDimension
 } from '@/lib/utils';
 
 import { parentDesktopIsNowVoid } from '@/lib/validation';
@@ -35,7 +37,7 @@ export default function Main() {
     const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
-    const [ desktopActivities, setDesktopActivities ] = useState<Data.DesktopActivityData[]>([]);
+    const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
 
     const [ themeStyleClass, setThemeStyleClass ] = useState('default__theme');
     const [ layoutStyleClass, setLayoutStyleClass ] = useState('row__style');
@@ -44,12 +46,14 @@ export default function Main() {
 
     const contextValues = {
         opennedProcessesData,
+        desktopActivitiesData,
 
         themeStyleClass,
         layoutStyleClass,
         applicationsAreBeingShowed,
         lastHighestZIndex,
         currentActiveDesktopUUID,
+        baseDesktopUUID,
 
         elevateProcessWindowZIndex,
         sendSIGKILLToProcess,
@@ -76,7 +80,7 @@ export default function Main() {
         applicationsWindowRef,
         opennedProcessesData,
         updateProcessCoordinates,
-        desktopActivities,
+        desktopActivitiesData,
         baseDesktopUUID
     };
 
@@ -89,13 +93,21 @@ export default function Main() {
         });
     }, []);
 
-    
-    function openProcess(processTitle: string, processElement: JSX.Element): number {
+
+    function openProcess(
+        processTitle: string, 
+        processElement: JSX.Element, 
+        currentActiveDesktopDoesNotExists: boolean
+    ): number {
+
         const nextPID = lastPID + 1;
         const nextLastHighestZIndex = lastHighestZIndex + 1;
-        const parentDesktopUUID = currentActiveDesktopUUID !== baseDesktopUUID 
-                                ? currentActiveDesktopUUID
-                                : generateUUID();
+
+        const parentDesktopUUID = getParentDesktopUUID(
+            currentActiveDesktopUUID,
+            currentActiveDesktopDoesNotExists,
+            baseDesktopUUID
+        );
 
         const newProcessData = {
             PID: nextPID,
@@ -110,17 +122,17 @@ export default function Main() {
                 y: 0
             },
             dimensions: {
-                width: 700,
-                height: 600
+                width: getRelativeInitialDimension('x', 60, applicationsWindowRef),
+                height: getRelativeInitialDimension('y', 60, applicationsWindowRef)
             }
         };
 
-        if (currentActiveDesktopUUID === baseDesktopUUID) {
+        if (currentActiveDesktopUUID === baseDesktopUUID || currentActiveDesktopDoesNotExists) {
             const newCurrentDesktopData = {
                 UUID: parentDesktopUUID
             };
 
-            setDesktopActivities(previous => [...previous, newCurrentDesktopData]);
+            setDesktopActivitiesData(previous => [...previous, newCurrentDesktopData]);
             setCurrentActiveDesktopUUID(previous => parentDesktopUUID);
         }
 
@@ -134,7 +146,6 @@ export default function Main() {
 
     function elevateProcessWindowZIndex(PID: number): void {   
         setLastHighestZIndex(previousHighestZIndex => {
-
             const nextHighestZIndex = previousHighestZIndex + 1;
 
             setOpennedProcessesData(previous => {
@@ -158,6 +169,7 @@ export default function Main() {
             const { parentDesktopUUID } = elementPIDOwner!;
 
             if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
+                setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
                 removeDesktopActivity(parentDesktopUUID);
                 setApplicationsAreBeingShowed(previous => false);
             }
@@ -204,7 +216,6 @@ export default function Main() {
 
 
     function restorePreviousDimensions(PID: number): void {
-
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
             const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
@@ -372,17 +383,11 @@ export default function Main() {
 
 
     function removeDesktopActivity(UUID: string): void {
-        setDesktopActivities(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const desktopActivitiesWithoutRemovedActivity = previousDeepCopy.filter(desktopActivity => {
-                return desktopActivity.UUID !== UUID;
-            });
-
-            return desktopActivitiesWithoutRemovedActivity;
-        });
-
-        console.log("aq")
-        setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
+        setDesktopActivitiesData(previous => 
+            previous.filter(desktopActivity => 
+                desktopActivity.UUID !== UUID
+            )
+        );
     }
 
 

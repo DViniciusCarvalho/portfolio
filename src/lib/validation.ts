@@ -1,5 +1,5 @@
-import { Data } from "@/types/data";
-import { getCorrespondentRunningProcess } from "./utils";
+import { Data } from '@/types/data';
+import { getCorrespondentRunningProcess } from './utils';
 
 export function isResizeAction(
     event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent, 
@@ -38,10 +38,10 @@ export function isResizeAction(
     const isResizing = resizingTop || resizingRight || resizingBottom || resizingLeft;
 
     if (isResizing) {
-        if (resizingTop) return "top";
-        if (resizingRight) return "right";
-        if (resizingBottom) return "bottom";
-        if (resizingLeft) return "left";
+        if (resizingTop) return 'top';
+        if (resizingRight) return 'right';
+        if (resizingBottom) return 'bottom';
+        if (resizingLeft) return 'left';
     }
  
     return false;
@@ -70,7 +70,7 @@ export function processIsTheCurrentOpenned(
 ): boolean {
     
     const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
-    const processZIndex = processFound ? processFound.zIndex : "";
+    const processZIndex = processFound ? processFound.zIndex : '';
     const processIsMinimized = processFound ? processFound.isMinimized : false;
 
     const highestZIndex = opennedProcessesData.reduce((acc, curr) => {

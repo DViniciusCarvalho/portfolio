@@ -1,8 +1,8 @@
-import { isValidElement } from "react";
-import { Data } from "@/types/data";
+import { isValidElement } from 'react';
+import { Data } from '@/types/data';
 
 export function deepClone<T>(object: T): T {
-    if (typeof object !== "object" || object === null) return object;
+    if (typeof object !== 'object' || object === null) return object;
     if (isValidElement(object)) return object as unknown as T;
     
     const newObject: T | [] | {} = Array.isArray(object)? [] : {};
@@ -15,7 +15,9 @@ export function deepClone<T>(object: T): T {
 
 export function generateUUID(): string {
     const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+        const r = (Math.random() * 16) | 0;
+        const v = (c === 'x') ? r : (r & 0x3) | 0x8;
+
         return v.toString(16);
     });
 
@@ -25,9 +27,9 @@ export function generateUUID(): string {
 export function getDateString(): string {
     const currentDate = new Date();
 
-    const weekDay = currentDate.toLocaleDateString("en-us", { weekday: 'short' }).toLowerCase();
-    const month = currentDate.toLocaleDateString("en-us", { month: 'short' }).toLowerCase();
-    const monthDay = currentDate.toLocaleDateString("en-us", { day: '2-digit' });
+    const weekDay = currentDate.toLocaleDateString('en-us', { weekday: 'short' }).toLowerCase();
+    const month = currentDate.toLocaleDateString('en-us', { month: 'short' }).toLowerCase();
+    const monthDay = currentDate.toLocaleDateString('en-us', { day: '2-digit' });
 
     const hours = currentDate.getHours().toString().padStart(2, '0');
     const minutes = currentDate.getMinutes().toString().padStart(2, '0');
@@ -40,14 +42,36 @@ export function getCorrespondentRunningProcess(
     PID: number
 ): Data.OpennedProcessData | undefined {
 
-    const processFound = opennedProcessesData.find(
-        processData => processData.PID === PID
+    const processFound = opennedProcessesData.find(processData => 
+        processData.PID === PID
     );
     
     return processFound;
 }
 
+export function getCorrespondentDesktop(
+    desktopActivitiesData: Data.DesktopActivityData[],
+    UUID: string
+): Data.DesktopActivityData | undefined {
 
+    const desktopFound = desktopActivitiesData.find(desktopActivityData => 
+        desktopActivityData.UUID === UUID
+    );
+    
+    return desktopFound;
+}
+
+export function getParentDesktopUUID(
+    currentActiveDesktopUUID: string, 
+    currentActiveDesktopDoesNotExists: boolean,
+    baseDesktopUUID: string
+): string {
+
+    const currentUUIDEqualsToBaseDesktopUUID = currentActiveDesktopUUID === baseDesktopUUID;
+    const invalidUUID = currentActiveDesktopDoesNotExists || currentUUIDEqualsToBaseDesktopUUID;
+
+    return invalidUUID? generateUUID() : currentActiveDesktopUUID;
+}
 
 export function getNewHeightAndYAxisOnTop(
     movementIsInFavorOfYAxis: boolean, 
@@ -121,4 +145,20 @@ export function getNewWidthAndXAxisOnLeft(
         newCoordinates
     };
     
+}
+
+export function getRelativeInitialDimension(
+    axis: string, 
+    percentage: number, 
+    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
+) {
+    
+    const applicationsWindowElement = applicationsWindowRef.current as HTMLDivElement;
+
+    const applicationsWindowWidth = applicationsWindowElement.getBoundingClientRect().width;
+    const applicationsWindowHeight = applicationsWindowElement.getBoundingClientRect().height;
+
+    return axis === 'x'
+            ? applicationsWindowWidth * percentage / 100
+            : applicationsWindowHeight * percentage / 100;
 }

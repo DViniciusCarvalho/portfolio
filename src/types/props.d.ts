@@ -9,15 +9,20 @@ export namespace Props {
 
     interface TaskBarProps {
         taskBarRef: React.MutableRefObject<HTMLDivElement | null>;
-        openProcess: (processTitle: string, processElement: JSX.Element) => number;
+        openProcess: (
+            processTitle: string, 
+            processElement: JSX.Element, 
+            currentActiveDesktopDoesNotExists: boolean
+        ) => number;
         restorePreviousDimensions: (PID: number) => void;
+        
     }
 
     interface ApplicationsWindowProps {
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
         opennedProcessesData: Data.OpennedProcessData[];
         updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
-        desktopActivities: Data.DesktopActivityData[];
+        desktopActivitiesData: Data.DesktopActivityData[];
         baseDesktopUUID: string;
     }
 
@@ -25,7 +30,11 @@ export namespace Props {
         processIconStaticImage: StaticImageData;
         processName: string;
         processElement: JSX.Element;
-        startProcess: (processTitle: string, processElement: JSX.Element) => number;
+        startProcess: (
+            processTitle: string, 
+            processElement: JSX.Element, 
+            currentActiveDesktopDoesNotExists: boolean
+        ) => number;
         restorePreviousDimensions: (PID: number) => void;
     }
 
@@ -33,6 +42,12 @@ export namespace Props {
         UUID: string;
         opennedProcessesData: Data.OpennedProcessData[];
         updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
+        applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
+    }
+
+    interface BaseDesktopProps {
+        baseDesktopUUID: string;
+        desktopActivitiesData: Data.DesktopActivityData[];
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
     }
     
