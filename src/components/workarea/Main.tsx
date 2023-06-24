@@ -7,18 +7,35 @@ import { Data } from '@/types/data';
 import { Props } from '@/types/props';
 
 import { 
-    deepClone, 
-    getCorrespondentRunningProcess, 
+    getXAxisInterference, 
+    getYAxisInterference 
+} from '@/lib/coordinates';
+
+import { 
+    LAST_SYSTEM_ESSENTIAL_PID, 
+    INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX,
+    INITIAL_SYSTEM_THEME_STYLE_CLASS,
+    INITIAL_SYSTEM_LAYOUT_STYLE_CLASS
+} from '@/lib/constants';
+
+import { 
     getNewHeightAndYAxisOnTop, 
     getNewWidthOnRight, 
-    getNewHeightAndYAxisOnBottom,
-    getNewWidthAndXAxisOnLeft,
+    getNewHeightAndYAxisOnBottom, 
+    getNewWidthAndXAxisOnLeft 
+} from '@/lib/resize';
+
+import { 
+    deepClone, 
+    getCorrespondentRunningProcess,
     generateUUID,
     getParentDesktopUUID,
     getRelativeInitialDimension
 } from '@/lib/utils';
 
-import { parentDesktopIsNowVoid } from '@/lib/validation';
+import { 
+    parentDesktopIsNowVoid 
+} from '@/lib/validation';
 
 
 export const MainContext = createContext<any>(null);
@@ -31,16 +48,16 @@ export default function Main() {
 
     const initialBaseDesktopUUID = generateUUID();
 
-    const [ lastPID, setLastPID ] = useState(1);
-    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(0);
+    const [ lastPID, setLastPID ] = useState(LAST_SYSTEM_ESSENTIAL_PID);
+    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
     const [ baseDesktopUUID ] = useState(initialBaseDesktopUUID);
     const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
     const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
 
-    const [ themeStyleClass, setThemeStyleClass ] = useState('default__theme');
-    const [ layoutStyleClass, setLayoutStyleClass ] = useState('row__style');
+    const [ themeStyleClass, setThemeStyleClass ] = useState(INITIAL_SYSTEM_THEME_STYLE_CLASS);
+    const [ layoutStyleClass, setLayoutStyleClass ] = useState(INITIAL_SYSTEM_LAYOUT_STYLE_CLASS);
 
     const [ applicationsAreBeingShowed, setApplicationsAreBeingShowed ] = useState(false);
 
@@ -61,9 +78,11 @@ export default function Main() {
         restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
         updateProcessWindowDimensions,
-        showAllApplicationsAndOpennedWindows,
+        changeApplicationsAreBeingShowed,
         handleChangeCurrentDesktop,
-        removeDesktopActivity
+        removeDesktopActivity,
+        openProcess,
+        restorePreviousDimensions
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -71,9 +90,7 @@ export default function Main() {
     };
 
     const taskbarProps: Props.TaskBarProps = {
-        taskBarRef,
-        openProcess,
-        restorePreviousDimensions
+        taskBarRef
     };
 
     const applicationsWindowProps: Props.ApplicationsWindowProps = {
@@ -88,7 +105,7 @@ export default function Main() {
     useEffect(() => {
         window!.addEventListener("resize", () => {
             if (!applicationsAreBeingShowed) {
-                setApplicationsAreBeingShowed(previous => true);
+                changeApplicationsAreBeingShowed(true);
             }
         });
     }, []);
@@ -171,7 +188,7 @@ export default function Main() {
             if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
                 setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
                 removeDesktopActivity(parentDesktopUUID);
-                setApplicationsAreBeingShowed(previous => false);
+                changeApplicationsAreBeingShowed(false);
             }
 
             const filteredPreviousDeepCopy = previousDeepCopy.filter(processData => processData.PID !== PID);
@@ -182,20 +199,22 @@ export default function Main() {
     }
 
 
-    function updateProcessCoordinates(PID: number, XAxis: number, YAxis: number): void {
-        const taskBarElement = taskBarRef.current! as HTMLDivElement;
-        const taskBarWidth = taskBarElement.getBoundingClientRect().width;
+    function updateProcessCoordinates(
+        PID: number, 
+        XAxisWithoutInterference: number, 
+        YAxisWithoutInterference: number
+    ): void {
 
-        const globalMenuElement = globalMenuRef.current! as HTMLDivElement;
-        const globalMenuHeight = globalMenuElement.getBoundingClientRect().height;
+        const currentXAxis = XAxisWithoutInterference - getXAxisInterference(taskBarRef, layoutStyleClass);
+        const currentYAxis = YAxisWithoutInterference - getYAxisInterference(globalMenuRef);
 
         setOpennedProcessesData(previous => {
             const previousDeepCopy = deepClone(previous);
             const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
 
             elementPIDOwner!.coordinates = {
-                x: XAxis - (layoutStyleClass === 'row__style'? taskBarWidth : 0),
-                y: YAxis - globalMenuHeight
+                x: currentXAxis,
+                y: currentYAxis
             };
 
             return previousDeepCopy;
@@ -371,14 +390,14 @@ export default function Main() {
     }
 
 
-    function showAllApplicationsAndOpennedWindows(): void {
-        setApplicationsAreBeingShowed(previous => !previous);
+    function changeApplicationsAreBeingShowed(value: boolean): void {
+        setApplicationsAreBeingShowed(previous => value);
     }
 
 
     function handleChangeCurrentDesktop(UUID: string): void {
         setCurrentActiveDesktopUUID(previous => UUID);
-        setApplicationsAreBeingShowed(previous => false);
+        changeApplicationsAreBeingShowed(false);
     }
 
 

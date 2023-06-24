@@ -11,9 +11,7 @@ import { Data } from '@/types/data';
 export default function ProcessIcon({ 
     processIconStaticImage, 
     processName,
-    processElement,
-    startProcess,
-	restorePreviousDimensions
+    processElement
 }: Props.ProcessIconProps) {
 
     const { 
@@ -22,7 +20,11 @@ export default function ProcessIcon({
         desktopActivitiesData,
         elevateProcessWindowZIndex, 
         currentActiveDesktopUUID,
-        handleChangeCurrentDesktop
+        handleChangeCurrentDesktop,
+        openProcess,
+        restorePreviousDimensions,
+        applicationsAreBeingShowed,
+        changeApplicationsAreBeingShowed
     } = useContext(MainContext);
 
     const [ processPID, setProcessPID ] = useState(0);
@@ -40,10 +42,12 @@ export default function ProcessIcon({
             processPID
         );
 
-        const processIsNotRunning = !processIsRunning(
+        const processIsAlreadyRunning = processIsRunning(
             opennedProcessesData, 
             processPID
         );
+
+        const processIsNotRunning = !processIsAlreadyRunning;
 
         const currentDesktopDoesNotExists = !getCorrespondentDesktop(
             desktopActivitiesData, 
@@ -57,7 +61,7 @@ export default function ProcessIcon({
                                                         !== currentActiveDesktopUUID;
 
         if (processIsNotRunning) {
-            const startedProcessPID = startProcess(
+            const startedProcessPID = openProcess(
                 processName, 
                 processElement,
                 currentDesktopDoesNotExists
@@ -67,15 +71,23 @@ export default function ProcessIcon({
 
         }
 
+        if (processIsAlreadyRunning) {
+            elevateProcessWindowZIndex(processPID);
+        }
+
         if (processIsMinimized) {
             restorePreviousDimensions(processPID);
-            elevateProcessWindowZIndex(processPID);
         }
 
         if (processIsRunningAndNotInTheCurrentDesktop) {
             handleChangeCurrentDesktop(processFound!.parentDesktopUUID);
         }
 
+        if (processIsAlreadyRunning && applicationsAreBeingShowed) {
+            changeApplicationsAreBeingShowed(false);
+        }
+
+        
     }
 
     return (

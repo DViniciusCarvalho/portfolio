@@ -1,12 +1,12 @@
 import { Data } from '@/types/data';
 import { getCorrespondentRunningProcess } from './utils';
+import { TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS } from './constants';
 
-export function isResizeAction(
+
+export const isResizeAction = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent, 
     processWindowRef: React.MutableRefObject<HTMLDivElement | null>
-): string | false {
-
-    const touchableAreaToResizeInPixels = 4;
+): string | false => {
 
     const processWindowElement = processWindowRef.current! as HTMLDivElement;
 
@@ -18,22 +18,22 @@ export function isResizeAction(
     const resizingTop = event.clientY 
                         >= processWindowElementTop
                         && event.clientY 
-                        <= processWindowElementTop + touchableAreaToResizeInPixels;
+                        <= processWindowElementTop + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
     const resizingRight = event.clientX
                         <= processWindowElementRight
                         && event.clientX 
-                        >= processWindowElementRight - touchableAreaToResizeInPixels;
+                        >= processWindowElementRight - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
     const resizingBottom = event.clientY
                         <= processWindowElementBottom
                         && event.clientY
-                        >= processWindowElementBottom - touchableAreaToResizeInPixels;
+                        >= processWindowElementBottom - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
     const resizingLeft = event.clientX
                         >= processWindowElementLeft
                         && event.clientX
-                        <= processWindowElementLeft + touchableAreaToResizeInPixels;
+                        <= processWindowElementLeft + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
     const isResizing = resizingTop || resizingRight || resizingBottom || resizingLeft;
 
@@ -47,10 +47,11 @@ export function isResizeAction(
     return false;
 }
 
-export function parentDesktopIsNowVoid(
+
+export const parentDesktopIsNowVoid = (
     opennedProcessesData: Data.OpennedProcessData[], 
     UUID: string
-): boolean {
+): boolean => {
 
     const parentDesktopChildren = opennedProcessesData.filter(opennedProcessData => {
         return opennedProcessData.parentDesktopUUID === UUID;
@@ -59,25 +60,41 @@ export function parentDesktopIsNowVoid(
     return parentDesktopChildren.length <= 1;
 }
 
-export function processIsRunning(opennedProcessesData: Data.OpennedProcessData[], PID: number): boolean {
+
+export const processIsRunning = (
+    opennedProcessesData: Data.OpennedProcessData[], 
+    PID: number
+): boolean => {
+
     const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
+
     return processFound ? true : false;
 }
 
-export function processIsTheCurrentOpenned(
+
+export const processIsTheCurrentOpenned = (
     opennedProcessesData: Data.OpennedProcessData[], 
     PID: number
-): boolean {
+): boolean => {
     
     const processFound = getCorrespondentRunningProcess(opennedProcessesData, PID);
     const processZIndex = processFound ? processFound.zIndex : '';
     const processIsMinimized = processFound ? processFound.isMinimized : false;
 
     const highestZIndex = opennedProcessesData.reduce((acc, curr) => {
-        const processZIndex = curr.zIndex;
+        const currentProcessZIndex = curr.zIndex;
 
-        return processZIndex > acc ? processZIndex : acc;
+        return currentProcessZIndex > acc ? currentProcessZIndex : acc;
     }, 0);
 
     return (processZIndex === highestZIndex) && !processIsMinimized;
+}
+
+export const desktopCanBeShowed = (
+    applicationsAreBeingShowed: boolean, 
+    currentActiveDesktopUUID: string, 
+    UUID: string
+): boolean => {
+    
+    return !(applicationsAreBeingShowed || currentActiveDesktopUUID !== UUID);
 }

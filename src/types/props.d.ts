@@ -8,14 +8,7 @@ export namespace Props {
     }
 
     interface TaskBarProps {
-        taskBarRef: React.MutableRefObject<HTMLDivElement | null>;
-        openProcess: (
-            processTitle: string, 
-            processElement: JSX.Element, 
-            currentActiveDesktopDoesNotExists: boolean
-        ) => number;
-        restorePreviousDimensions: (PID: number) => void;
-        
+        taskBarRef: React.MutableRefObject<HTMLDivElement | null>; 
     }
 
     interface ApplicationsWindowProps {
@@ -30,12 +23,6 @@ export namespace Props {
         processIconStaticImage: StaticImageData;
         processName: string;
         processElement: JSX.Element;
-        startProcess: (
-            processTitle: string, 
-            processElement: JSX.Element, 
-            currentActiveDesktopDoesNotExists: boolean
-        ) => number;
-        restorePreviousDimensions: (PID: number) => void;
     }
 
     interface DesktopProps {

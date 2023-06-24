@@ -1,30 +1,39 @@
 import { isValidElement } from 'react';
 import { Data } from '@/types/data';
 
-export function deepClone<T>(object: T): T {
+
+export const deepClone = <T>(object: T): T => {
+
     if (typeof object !== 'object' || object === null) return object;
+
     if (isValidElement(object)) return object as unknown as T;
     
     const newObject: T | [] | {} = Array.isArray(object)? [] : {};
+
     for (let key in object) {
         const value = object[key];
         (newObject as T)[key] = deepClone(value);
     }
+
     return newObject as T;
 }
 
-export function generateUUID(): string {
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = (Math.random() * 16) | 0;
-        const v = (c === 'x') ? r : (r & 0x3) | 0x8;
 
-        return v.toString(16);
-    });
+export const generateUUID = (): string => {
+    const replaceFunction = (char: string): string => {
+        const randomNumber = (Math.random() * 16) | 0;
+        const value = (char === 'x') ? randomNumber : (randomNumber & 0x3) | 0x8;
+
+        return value.toString(16);
+    };
+
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, replaceFunction);
 
     return uuid;
 }
 
-export function getDateString(): string {
+
+export const getDateString = (): string => {
     const currentDate = new Date();
 
     const weekDay = currentDate.toLocaleDateString('en-us', { weekday: 'short' }).toLowerCase();
@@ -37,10 +46,11 @@ export function getDateString(): string {
     return `${weekDay} ${month} ${monthDay} ${hours}:${minutes}`;
 }
 
-export function getCorrespondentRunningProcess(
+
+export const getCorrespondentRunningProcess = (
     opennedProcessesData: Data.OpennedProcessData[],
     PID: number
-): Data.OpennedProcessData | undefined {
+): Data.OpennedProcessData | undefined => {
 
     const processFound = opennedProcessesData.find(processData => 
         processData.PID === PID
@@ -49,10 +59,11 @@ export function getCorrespondentRunningProcess(
     return processFound;
 }
 
-export function getCorrespondentDesktop(
+
+export const getCorrespondentDesktop = (
     desktopActivitiesData: Data.DesktopActivityData[],
     UUID: string
-): Data.DesktopActivityData | undefined {
+): Data.DesktopActivityData | undefined => {
 
     const desktopFound = desktopActivitiesData.find(desktopActivityData => 
         desktopActivityData.UUID === UUID
@@ -61,11 +72,12 @@ export function getCorrespondentDesktop(
     return desktopFound;
 }
 
-export function getParentDesktopUUID(
+
+export const getParentDesktopUUID = (
     currentActiveDesktopUUID: string, 
     currentActiveDesktopDoesNotExists: boolean,
     baseDesktopUUID: string
-): string {
+): string => {
 
     const currentUUIDEqualsToBaseDesktopUUID = currentActiveDesktopUUID === baseDesktopUUID;
     const invalidUUID = currentActiveDesktopDoesNotExists || currentUUIDEqualsToBaseDesktopUUID;
@@ -73,85 +85,25 @@ export function getParentDesktopUUID(
     return invalidUUID? generateUUID() : currentActiveDesktopUUID;
 }
 
-export function getNewHeightAndYAxisOnTop(
-    movementIsInFavorOfYAxis: boolean, 
-    element: Data.OpennedProcessData,
-    previousYAxis: number,
-    currentYAxis: number
-) {
 
-    const newHeight = movementIsInFavorOfYAxis
-                    ? element!.dimensions.height - (currentYAxis - previousYAxis)
-                    : element!.dimensions.height + (previousYAxis - currentYAxis);
+export const getCurrentDesktopProcessesWindow = (
+    opennedProcessesData: Data.OpennedProcessData[],
+    UUID: string
+): Data.OpennedProcessData[] => {
 
-    const newCoordinates = movementIsInFavorOfYAxis
-                         ? element!.coordinates.y + (currentYAxis - previousYAxis) 
-                         : element!.coordinates.y - (previousYAxis - currentYAxis);
+    const currentDesktopProcessesWindow = opennedProcessesData.filter(opennedProcessData => {
+        return opennedProcessData.parentDesktopUUID === UUID;
+    });
 
-    return {
-        newHeight,
-        newCoordinates
-    };
-
+    return currentDesktopProcessesWindow;
 }
 
-export function getNewWidthOnRight(
-    movementIsInFavorOfXAxis: boolean, 
-    element: Data.OpennedProcessData,
-    previousXAxis: number,
-    currentXAxis: number
-) {
 
-    const newWidth = movementIsInFavorOfXAxis
-                    ? element!.dimensions.width + (currentXAxis - previousXAxis)
-                    : element!.dimensions.width - (previousXAxis - currentXAxis);
-
-    return newWidth;
-    
-}
-
-export function getNewHeightAndYAxisOnBottom(
-    movementIsInFavorOfYAxis: boolean, 
-    element: Data.OpennedProcessData,
-    previousYAxis: number,
-    currentYAxis: number
-) {
-
-    const newHeight = movementIsInFavorOfYAxis
-                    ? element!.dimensions.height + (currentYAxis - previousYAxis)
-                    : element!.dimensions.height - (previousYAxis - currentYAxis);
-
-    return newHeight;
-
-}
-
-export function getNewWidthAndXAxisOnLeft(
-    movementIsInFavorOfXAxis: boolean, 
-    element: Data.OpennedProcessData,
-    previousXAxis: number,
-    currentXAxis: number
-) {
-
-    const newWidth = movementIsInFavorOfXAxis
-                    ? element!.dimensions.width - (currentXAxis - previousXAxis)
-                    : element!.dimensions.width + (previousXAxis - currentXAxis);
-
-    const newCoordinates = movementIsInFavorOfXAxis
-                         ? element!.coordinates.x + (currentXAxis - previousXAxis) 
-                         : element!.coordinates.x - (previousXAxis - currentXAxis);
-
-    return {
-        newWidth,
-        newCoordinates
-    };
-    
-}
-
-export function getRelativeInitialDimension(
+export const getRelativeInitialDimension = (
     axis: string, 
     percentage: number, 
     applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
-) {
+): number => {
     
     const applicationsWindowElement = applicationsWindowRef.current as HTMLDivElement;
 
@@ -161,4 +113,9 @@ export function getRelativeInitialDimension(
     return axis === 'x'
             ? applicationsWindowWidth * percentage / 100
             : applicationsWindowHeight * percentage / 100;
+}
+
+
+export const getFavoriteProcessesIcons = (a: {[key: string]: string}[]) => {
+    
 }

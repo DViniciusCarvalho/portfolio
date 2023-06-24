@@ -8,7 +8,7 @@ export default function ShowApplications() {
 
     const { 
         layoutStyleClass, 
-        showAllApplicationsAndOpennedWindows, 
+        changeApplicationsAreBeingShowed, 
         applicationsAreBeingShowed 
     } = useContext(MainContext);
  
@@ -21,7 +21,7 @@ export default function ShowApplications() {
 				`
 			} 
 			title='Show Applications' 
-			onClick={showAllApplicationsAndOpennedWindows}
+			onClick={() => changeApplicationsAreBeingShowed(true)}
         >
             <Image 
                 src={ShowApplicationsIcon} 

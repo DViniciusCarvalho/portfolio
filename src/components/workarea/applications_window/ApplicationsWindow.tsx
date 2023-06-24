@@ -2,6 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import applicationsWindowStyles from '@/styles/workarea/applications/ApplicationsWindow.module.sass';
 import Image from 'next/image';
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
+import A from '../../../../public/assets/terminal.png';
+import B from '../../../../public/assets/nautilus.png';
+import C from '../../../../public/assets/preferences-desktop.png';
 import Desktop from '../desktop/Desktop';
 import BaseDesktop from '../desktop/BaseDesktop';
 import { MainContext } from '../Main';
@@ -24,6 +27,9 @@ export default function ApplicationsWindow({
 		setApplicationsWindowRefLoaded(previous => true);
 	}, [applicationsWindowRef]);
     
+
+	const [ applicationsProps, setApplicationsProps ] = useState([]);
+	
 	const baseDesktopProps: Props.BaseDesktopProps = {
 		baseDesktopUUID: baseDesktopUUID,
 		desktopActivitiesData,
@@ -63,7 +69,26 @@ export default function ApplicationsWindow({
 				))}
 		  		{applicationsWindowRefLoaded && (<BaseDesktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
 			</div>
-            <div className={applicationsWindowStyles.applications__wrapper}></div>
+            <div className={applicationsWindowStyles.applications__wrapper}>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+					<div/>
+			</div>
         </div>
     );
 }

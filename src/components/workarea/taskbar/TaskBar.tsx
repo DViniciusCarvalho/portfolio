@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import taskBarStyles from '@/styles/workarea/taskbar/TaskBar.module.sass';
 import ProcessIcon from './ProcessIcon';
 import ShowApplications from './ShowApplications';
@@ -15,12 +15,11 @@ import Settings from '@/components/processes/Settings';
 
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
+import { deepClone, generateUUID } from '@/lib/utils';
 
 
 export default function TaskBar({ 
-    taskBarRef, 
-    openProcess, 
-    restorePreviousDimensions 
+    taskBarRef 
 }: Props.TaskBarProps) {
 
     const { 
@@ -29,38 +28,38 @@ export default function TaskBar({
         applicationsAreBeingShowed
     } = useContext(MainContext);
 
-    const commonProperties = {
-        startProcess: openProcess,
-        restorePreviousDimensions: restorePreviousDimensions
-    };
 
     const nautilusProps: Props.ProcessIconProps = {
         processIconStaticImage: NautilusIcon,
         processName: 'Files',
-        processElement: <Nautilus/>,
-        ...commonProperties
+        processElement: <Nautilus/>
     };
 
     const terminalProps: Props.ProcessIconProps = {
         processIconStaticImage: TerminalIcon,
         processName: 'Terminal',
-        processElement: <Terminal/>,
-        ...commonProperties
+        processElement: <Terminal/>
     };
 
     const userTrashProps: Props.ProcessIconProps = {
         processIconStaticImage: UserTrashIcon,
         processName: 'Trash',
-        processElement: <UserTrash/>,
-        ...commonProperties
+        processElement: <UserTrash/>
     };
 
     const settingsProps: Props.ProcessIconProps = {
         processIconStaticImage: SettingsIcon,
         processName: 'Settings',
-        processElement: <Settings/>,
-        ...commonProperties
+        processElement: <Settings/>
     };
+
+    const [ favoriteProcessesIconProps, setFavoriteProcessesIconProps ] = useState([
+        nautilusProps,
+        terminalProps,
+        settingsProps
+    ]);
+
+
 
 
     return (
@@ -75,9 +74,12 @@ export default function TaskBar({
             }
         >
             <div className={taskBarStyles.process__icons__first__wrapper}>
-                <ProcessIcon {...nautilusProps}/>
-                <ProcessIcon {...terminalProps}/>
-                <ProcessIcon {...settingsProps}/>
+                {favoriteProcessesIconProps.map(favoriteProcessIconProps => (
+                    <ProcessIcon 
+                        key={favoriteProcessIconProps.processName} 
+                        {...deepClone(favoriteProcessIconProps)}
+                    />
+                ))}
             </div>
             <hr className={taskBarStyles.process__trash__separator}/>
             <div className={taskBarStyles.process__icons__second__wrapper}>

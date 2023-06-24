@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import desktopStyles from '@/styles/workarea/Desktop.module.sass';
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { getCorrespondentDesktop } from '@/lib/utils';
+import { getBaseDesktopStyles } from '@/lib/style';
 
 
 export default function BaseDesktop({ 
@@ -20,47 +20,6 @@ export default function BaseDesktop({
     } = useContext(MainContext);
 
 
-    function getBaseDesktopResultantStyles(
-        applicationsAreBeingShowed: boolean, 
-        currentActiveDesktopUUID: string,
-        applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
-    ): any {
-
-        const anInvalidDesktopIsBeingShowed = !applicationsAreBeingShowed 
-                                            && !getCorrespondentDesktop(
-                                                    desktopActivitiesData, 
-                                                    currentActiveDesktopUUID
-                                                );
-
-        const baseDesktopIsBeingShowed = currentActiveDesktopUUID === baseDesktopUUID 
-                                         && !applicationsAreBeingShowed;
-
-        const baseDesktopAndCanBeShowed = anInvalidDesktopIsBeingShowed || baseDesktopIsBeingShowed;
-
-        const applicationsAreHiddenAndIsNotCurrentDesktop = !applicationsAreBeingShowed 
-                                                            && currentActiveDesktopUUID 
-                                                            !== baseDesktopUUID;
-
-        const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
-        const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
-
-        const stylesWithoutTransform = {
-            display: applicationsAreHiddenAndIsNotCurrentDesktop && !baseDesktopAndCanBeShowed? 'none' : 'block',
-            position: baseDesktopAndCanBeShowed? 'absolute' : 'relative',
-            width: baseDesktopAndCanBeShowed? applicationsWindowWidth : '220px',
-            height: baseDesktopAndCanBeShowed? applicationsWindowHeight : '90%',
-            top: baseDesktopAndCanBeShowed? 0 : 0,
-            left: baseDesktopAndCanBeShowed? 0 : 0,
-        };
-
-        return {
-            ...stylesWithoutTransform,
-            transform: `scale(${baseDesktopAndCanBeShowed? 1 : 0.9})`
-        };
-
-    }
-
-
     return (
         <div
             className={`
@@ -71,9 +30,11 @@ export default function BaseDesktop({
                 `
             }
             style={{
-                ...getBaseDesktopResultantStyles(
+                ...getBaseDesktopStyles(
                     applicationsAreBeingShowed, 
                     currentActiveDesktopUUID, 
+                    baseDesktopUUID,
+                    desktopActivitiesData,
                     applicationsWindowRef
                 )
             }}
