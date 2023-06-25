@@ -1,0 +1,34 @@
+.container
+    display: inline-block
+    margin: 10px
+    border-radius: 14px
+    background-color: transparent
+    align-self: flex-start
+    text-decoration: none
+    transition: background-color 0.1s
+    
+    .icon__wrapper
+        position: relative
+        display: flex
+        flex-direction: column
+        align-items: center
+        justify-content: center
+        width: 100%
+        height: 100%
+        padding: 14px
+        color: white
+        font-size: 0.95em
+
+        .icon
+            margin-bottom: 5px
+
+        .openned__indicator
+            position: absolute
+            bottom: 5px
+            width: 5px
+            height: 5px
+            border-radius: 50%
+            background-color: #e74b03
+    
+    &:hover
+        background-color: #ffffff2c

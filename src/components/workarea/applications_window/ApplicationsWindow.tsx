@@ -5,10 +5,13 @@ import SearchIcon from '../../../../public/assets/system-search-symbolic.symboli
 import A from '../../../../public/assets/terminal.png';
 import B from '../../../../public/assets/nautilus.png';
 import C from '../../../../public/assets/preferences-desktop.png';
+import ApplicationIcon from './ApplicationIcon';
 import Desktop from '../desktop/Desktop';
 import BaseDesktop from '../desktop/BaseDesktop';
 import { MainContext } from '../Main';
+import { Data } from '@/types/data';
 import { Props } from '@/types/props';
+import { generateJSXKey, getFilteredApplicationsByNameAndMetadata } from '@/lib/utils';
 
 
 export default function ApplicationsWindow({ 
@@ -26,15 +29,113 @@ export default function ApplicationsWindow({
 	useEffect(() => {
 		setApplicationsWindowRefLoaded(previous => true);
 	}, [applicationsWindowRef]);
-    
 
-	const [ applicationsProps, setApplicationsProps ] = useState([]);
 	
 	const baseDesktopProps: Props.BaseDesktopProps = {
 		baseDesktopUUID: baseDesktopUUID,
 		desktopActivitiesData,
 		applicationsWindowRef
 	};
+
+	const [ filterString, setFilterString ] = useState('');
+
+	const [
+		applicationsIconProps,
+		setApplicationsIconProps
+	] = useState<(Props.ApplicationIconProps & Data.ApplicationMetadata)[]>([
+		{
+			applicationIconStaticImage: A,
+			applicationName: 'Terminal',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: B,
+			applicationName: 'nautilus',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: C,
+			applicationName: 'settings',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: A,
+			applicationName: 'Terminal',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: B,
+			applicationName: 'nautilus',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: ['storage'],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: C,
+			applicationName: 'settings',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: A,
+			applicationName: 'Terminal',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: B,
+			applicationName: 'nautilus',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		},
+		{
+			applicationIconStaticImage: C,
+			applicationName: 'settings',
+			applicationElement: <></>,
+			metadata: {
+				description: '',
+				keyWords: [''],
+				category: ['']
+			}
+		}
+	])
+
+
 
 	
     return ( 
@@ -55,6 +156,8 @@ export default function ApplicationsWindow({
 					type='text' 
 					className={applicationsWindowStyles.search__input} 
 					placeholder='Type to search'
+					value={filterString}
+					onChange={(e) => setFilterString(e.target.value)}
 				/>
             </div>
             <div className={applicationsWindowStyles.activities__wrapper}>
@@ -70,24 +173,21 @@ export default function ApplicationsWindow({
 		  		{applicationsWindowRefLoaded && (<BaseDesktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
 			</div>
             <div className={applicationsWindowStyles.applications__wrapper}>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
-					<div/>
+
+				{
+					getFilteredApplicationsByNameAndMetadata(applicationsIconProps, filterString)
+					.map((applicationIconProps, index) => (
+						<ApplicationIcon 
+							key={generateJSXKey(
+								'application-icon', 
+								applicationIconProps.applicationName, 
+								index
+							)} 
+							{...applicationIconProps}
+						/>
+					))
+				}
+
 			</div>
         </div>
     );

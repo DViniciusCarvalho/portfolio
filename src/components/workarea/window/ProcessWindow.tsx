@@ -80,16 +80,17 @@ export default function ProcessWindow({
 
 
 
-	const handleMouseDown = (
-		event: React.MouseEvent<HTMLDivElement, MouseEvent>
+	const handleMouseDownAndTouchStart = (
+		clientX: number,
+		clientY: number
 	): void => {
 
-		const sideToResize = isResizeAction(event, dragRef);
+		const sideToResize = isResizeAction(clientX, clientY, dragRef);
 
 		if (sideToResize) {
 			setPreviousPressedCoordinates(previous => ({
-				x: event.clientX,
-				y: event.clientY
+				x: clientX,
+				y: clientY
 			}));
 
 			setResizeData(previous => ({
@@ -99,14 +100,14 @@ export default function ProcessWindow({
 		}
 
 		elevateProcessWindowZIndex(PID);
-		updateInitialCoordinates(event);
+		updateInitialCoordinates(clientX, clientY);
+
+		console.log("aq")
 
 	}
 
 
-	const handleMouseUpAndLeave = (
-		event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent
-	): void => {
+	const handleMouseUpLeaveAndTouchEnd = (): void => {
 
 		if (resizeData.isResizing) {
 			setResizeData(previous => ({
@@ -118,14 +119,16 @@ export default function ProcessWindow({
 	}
 
 
-	const handleMouseMove = (
-		event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent
+	const handleMouseMoveAndTouchMove = (
+		clientX: number,
+		clientY: number
 	): void => {
 
-		if (resizeData.isResizing && isResizeAction(event, dragRef)) {
+		if (resizeData.isResizing && isResizeAction(clientX, clientY, dragRef)) {
 			updateProcessWindowDimensions(
 				PID,
-				event, 
+				clientX, 
+				clientY,
 				previousPressedCoordinates.x,
 				previousPressedCoordinates.y,
 				dragRef, 
@@ -133,8 +136,8 @@ export default function ProcessWindow({
 			);
 
 			setPreviousPressedCoordinates(previous => ({
-				x: event.clientX,
-				y: event.clientY
+				x: clientX,
+				y: clientY
 			}));
 		}
 
@@ -142,18 +145,16 @@ export default function ProcessWindow({
 
 
 	const updateInitialCoordinates = (
-		event: React.MouseEvent<HTMLDivElement, MouseEvent>
+		clientX: number,
+		clientY: number
 	): void => {
 
-		const mouseXAxis = event.clientX;
 		const elementXAxis = dragRef.current!.getBoundingClientRect().x;
-
-		const mouseYAxis = event.clientY;
 		const elementYAxis = dragRef.current!.getBoundingClientRect().y;
 
 		setPressedCoordinates(previous => ({
-			x: mouseXAxis - elementXAxis,
-			y: mouseYAxis - elementYAxis
+			x: clientX - elementXAxis,
+			y: clientY - elementYAxis
 		}));
 
 	}
@@ -237,10 +238,33 @@ export default function ProcessWindow({
 				)
 			}}
 			
-			onMouseDown={(e) => handleMouseDown(e)}
-			onMouseUp={(e) =>  handleMouseUpAndLeave(e)}
-			onMouseLeave={(e) => handleMouseUpAndLeave(e)}
-			onMouseMove={(e) => handleMouseMove(e)}
+			// click-based
+			onMouseDown={(e) => handleMouseDownAndTouchStart(
+				e.clientX, 
+				e.clientY
+			)}
+
+			onMouseUp={handleMouseUpLeaveAndTouchEnd}
+			onMouseLeave={handleMouseUpLeaveAndTouchEnd}
+
+			onMouseMove={(e) => handleMouseMoveAndTouchMove(
+				e.clientX,
+				e.clientY
+			)}
+
+			// touch-based
+			onTouchStart={(e) => handleMouseDownAndTouchStart(
+				e.touches[0].clientX, 
+				e.touches[0].clientY
+			)}
+
+			onTouchMove={(e) => handleMouseMoveAndTouchMove(
+				e.touches[0].clientX,
+				e.touches[0].clientY
+			)}
+
+			onTouchEnd={handleMouseUpLeaveAndTouchEnd}
+
 
 			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
         >

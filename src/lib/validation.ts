@@ -4,7 +4,8 @@ import { TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS } from './constants';
 
 
 export const isResizeAction = (
-    event: React.MouseEvent<HTMLDivElement, MouseEvent> | MouseEvent, 
+    clientX: number,
+    clientY: number, 
     processWindowRef: React.MutableRefObject<HTMLDivElement | null>
 ): string | false => {
 
@@ -15,24 +16,24 @@ export const isResizeAction = (
     const processWindowElementBottom = processWindowElement.getBoundingClientRect().bottom;
     const processWindowElementLeft = processWindowElement.getBoundingClientRect().left;
 
-    const resizingTop = event.clientY 
+    const resizingTop = clientY
                         >= processWindowElementTop
-                        && event.clientY 
+                        && clientY
                         <= processWindowElementTop + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
-    const resizingRight = event.clientX
+    const resizingRight = clientX
                         <= processWindowElementRight
-                        && event.clientX 
+                        && clientX
                         >= processWindowElementRight - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
-    const resizingBottom = event.clientY
+    const resizingBottom = clientY
                         <= processWindowElementBottom
-                        && event.clientY
+                        && clientY
                         >= processWindowElementBottom - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
-    const resizingLeft = event.clientX
+    const resizingLeft = clientX
                         >= processWindowElementLeft
-                        && event.clientX
+                        && clientX
                         <= processWindowElementLeft + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
 
     const isResizing = resizingTop || resizingRight || resizingBottom || resizingLeft;

@@ -37,6 +37,8 @@ import {
     parentDesktopIsNowVoid 
 } from '@/lib/validation';
 
+import { StaticImageData } from 'next/image';
+
 
 export const MainContext = createContext<any>(null);
 
@@ -55,6 +57,10 @@ export default function Main() {
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
     const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
+    const [ 
+        applicationsPropsDataInTaskbar, 
+        setApplicationsPropsDataInTaskbar 
+    ] = useState<Props.ProcessIconProps[]>([]);
 
     const [ themeStyleClass, setThemeStyleClass ] = useState(INITIAL_SYSTEM_THEME_STYLE_CLASS);
     const [ layoutStyleClass, setLayoutStyleClass ] = useState(INITIAL_SYSTEM_LAYOUT_STYLE_CLASS);
@@ -82,7 +88,8 @@ export default function Main() {
         handleChangeCurrentDesktop,
         removeDesktopActivity,
         openProcess,
-        restorePreviousDimensions
+        restorePreviousDimensions,
+        transferApplicationIconToTaskbarOtherProcessesIcons
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -90,7 +97,8 @@ export default function Main() {
     };
 
     const taskbarProps: Props.TaskBarProps = {
-        taskBarRef
+        taskBarRef,
+        applicationsPropsDataInTaskbar
     };
 
     const applicationsWindowProps: Props.ApplicationsWindowProps = {
@@ -150,12 +158,20 @@ export default function Main() {
             };
 
             setDesktopActivitiesData(previous => [...previous, newCurrentDesktopData]);
-            setCurrentActiveDesktopUUID(previous => parentDesktopUUID);
+            
         }
 
+        setCurrentActiveDesktopUUID(previous => parentDesktopUUID);
+        setApplicationsAreBeingShowed(previous => false);
+
         setLastPID(previous => nextPID);
+
         setLastHighestZIndex(previous => nextLastHighestZIndex);
-        setOpennedProcessesData(previous => [...previous, newProcessData]);
+
+        setOpennedProcessesData(previous => [
+            ...previous, 
+            newProcessData
+        ]);
 
         return nextPID;
     }
@@ -166,12 +182,15 @@ export default function Main() {
             const nextHighestZIndex = previousHighestZIndex + 1;
 
             setOpennedProcessesData(previous => {
-                const previousDeepCopy = deepClone(previous);
-                const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+                const opennedProcessesDataDeepCopy = deepClone(previous);
+                const elementPIDOwner = getCorrespondentRunningProcess(
+                    opennedProcessesDataDeepCopy, 
+                    PID
+                );
     
                 elementPIDOwner!.zIndex = nextHighestZIndex;
 
-                return previousDeepCopy;
+                return opennedProcessesDataDeepCopy;
             });
 
             return nextHighestZIndex;
@@ -181,8 +200,7 @@ export default function Main() {
 
     function sendSIGKILLToProcess(PID: number): void { 
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const elementPIDOwner = getCorrespondentRunningProcess(previous, PID);
             const { parentDesktopUUID } = elementPIDOwner!;
 
             if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
@@ -191,8 +209,15 @@ export default function Main() {
                 changeApplicationsAreBeingShowed(false);
             }
 
-            const filteredPreviousDeepCopy = previousDeepCopy.filter(processData => processData.PID !== PID);
+            const opennedProcessesDataWithoutElementPIDOwner = previous.filter(
+                processData => processData.PID !== PID
+            );
 
+            return opennedProcessesDataWithoutElementPIDOwner;
+        });
+
+        setApplicationsPropsDataInTaskbar(previous => {
+            const filteredPreviousDeepCopy = previous.filter(processData => processData.initialPID !== PID);
             return filteredPreviousDeepCopy;
         });
 
@@ -209,39 +234,48 @@ export default function Main() {
         const currentYAxis = YAxisWithoutInterference - getYAxisInterference(globalMenuRef);
 
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             elementPIDOwner!.coordinates = {
                 x: currentXAxis,
                 y: currentYAxis
             };
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
 
     function minimizeProcessWindow(PID: number): void {
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             elementPIDOwner!.isMinimized = true;
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
 
     function restorePreviousDimensions(PID: number): void {
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             elementPIDOwner!.isMinimized = false;
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
@@ -255,8 +289,11 @@ export default function Main() {
     ): void {
 
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             elementPIDOwner!.isMaximized = false;
 
@@ -270,7 +307,7 @@ export default function Main() {
                 y: memoizedYAxis
             };
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
@@ -280,8 +317,11 @@ export default function Main() {
         const parentDesktopHeight = parentDesktopElement.getBoundingClientRect().height;
 
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             elementPIDOwner!.isMaximized = true;
 
@@ -295,14 +335,15 @@ export default function Main() {
                 y: 0
             };
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
 
     function updateProcessWindowDimensions(
         PID: number,
-        event: React.MouseEvent<HTMLDivElement, MouseEvent>, 
+        currentXAxis: number,
+        currentYAxis: number, 
         previousXAxis: number,
         previousYAxis: number,
         dragRef: React.MutableRefObject<HTMLDivElement | null>, 
@@ -310,11 +351,11 @@ export default function Main() {
     ): void {
 
         setOpennedProcessesData(previous => {
-            const previousDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(previousDeepCopy, PID);
-
-            const currentXAxis = event.clientX;
-            const currentYAxis = event.clientY;
+            const opennedProcessesDataDeepCopy = deepClone(previous);
+            const elementPIDOwner = getCorrespondentRunningProcess(
+                opennedProcessesDataDeepCopy, 
+                PID
+            );
 
             const movementIsInFavorOfXAxis = currentXAxis > previousXAxis;
             const movementIsInFavorOfYAxis = currentYAxis > previousYAxis;
@@ -385,11 +426,32 @@ export default function Main() {
                 };
             }
 
-            return previousDeepCopy;
+            return opennedProcessesDataDeepCopy;
         });
     }
 
 
+    function transferApplicationIconToTaskbarOtherProcessesIcons(                
+        applicationIconStaticImage: StaticImageData,
+        applicationName: string,
+        applicationElement: JSX.Element,
+        startedProcessPID: number
+    ): void {
+
+        const newProcessIconProps: Props.ProcessIconProps = {
+            processIconStaticImage: applicationIconStaticImage,
+            processName: applicationName,
+            processElement: applicationElement,
+            initialPID: startedProcessPID
+        };
+
+        setApplicationsPropsDataInTaskbar(previous => [
+            ...previous, 
+            newProcessIconProps
+        ]);
+    }
+
+    
     function changeApplicationsAreBeingShowed(value: boolean): void {
         setApplicationsAreBeingShowed(previous => value);
     }

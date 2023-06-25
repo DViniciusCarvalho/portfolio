@@ -1,5 +1,6 @@
 import { isValidElement } from 'react';
 import { Data } from '@/types/data';
+import { Props } from '@/types/props';
 
 
 export const deepClone = <T>(object: T): T => {
@@ -30,6 +31,12 @@ export const generateUUID = (): string => {
     const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, replaceFunction);
 
     return uuid;
+}
+
+export const generateJSXKey = (type: string, name: string, index: number): string => {
+    const key = `${type}-${name}:${index}`;
+
+    return key;
 }
 
 
@@ -116,6 +123,51 @@ export const getRelativeInitialDimension = (
 }
 
 
-export const getFavoriteProcessesIcons = (a: {[key: string]: string}[]) => {
-    
+export 	const getFilteredApplicationsByNameAndMetadata = (
+    applicationIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[],
+    filterString: string
+): Props.ApplicationIconProps[] => {
+
+    const filterApplicationsFunction = (
+        applicationIconProps: Props.ApplicationIconProps & Data.ApplicationMetadata
+    ) => {
+
+        const descriptionIncludesFilterString = applicationIconProps.metadata.description
+                                                .toLowerCase()
+                                                .includes(filterString.toLowerCase());
+
+        const someKeyWordIncludesFilterString = applicationIconProps.metadata.keyWords.some(keyword => {
+            return keyword.toLowerCase().includes(filterString.toLowerCase());
+        });
+
+        const someCategoryIncludesFilterString = applicationIconProps.metadata.category.some(category => {
+            return category.toLowerCase().includes(filterString.toLowerCase());
+        });
+
+        const applicationNameIncludesFilterString = applicationIconProps.applicationName
+                                                    .toLowerCase()
+                                                    .includes(filterString.toLowerCase());
+
+        return descriptionIncludesFilterString 
+                || someKeyWordIncludesFilterString 
+                || someCategoryIncludesFilterString
+                || applicationNameIncludesFilterString;
+    };
+
+    const removeMetadataFunction = (
+        applicationIconProps: Props.ApplicationIconProps & Data.ApplicationMetadata
+    ) => {
+
+        const { metadata, ...applicationIconPropsWithoutMetadata } = applicationIconProps;
+
+        return applicationIconPropsWithoutMetadata;
+    };
+
+    const filteredApplicationsIconProps = applicationIconProps
+                                            .filter(filterApplicationsFunction);
+
+    const filteredApplicationsIconPropsWithoutMetadata = filteredApplicationsIconProps
+                                                            .map(removeMetadataFunction);
+
+    return filteredApplicationsIconPropsWithoutMetadata;
 }

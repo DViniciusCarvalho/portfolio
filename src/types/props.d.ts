@@ -9,6 +9,7 @@ export namespace Props {
 
     interface TaskBarProps {
         taskBarRef: React.MutableRefObject<HTMLDivElement | null>; 
+        applicationsPropsDataInTaskbar: Props.ProcessIconProps[];
     }
 
     interface ApplicationsWindowProps {
@@ -23,6 +24,13 @@ export namespace Props {
         processIconStaticImage: StaticImageData;
         processName: string;
         processElement: JSX.Element;
+        initialPID: number;
+    }
+
+    interface ApplicationIconProps {
+        applicationIconStaticImage: StaticImageData;
+        applicationName: string;
+        applicationElement: JSX.Element;
     }
 
     interface DesktopProps {

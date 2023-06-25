@@ -64,21 +64,28 @@
         align-items: normal
 
         &::-webkit-scrollbar 
-            height: 3px
+            display: none
 
     .applications__wrapper
         padding: 2%
         width: 90%
         height: 400px
-        border: 1px solid black
         overflow-y: auto
+        border-radius: 20px
+        background-color: #252525
+        gap: 2%
+        
+        display: grid
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr))
+        justify-content: center
+        align-content: flex-start
 
-        & > div
-            display: inline-block
-            margin: 10px
-            width: 75px
-            height: 75px
-            background: white
+        &:last-child
+            justify-content: flex-start
+
+        &::-webkit-scrollbar-track
+            width: 8px !important
+
 
 @media only screen and (max-width: 500px)
     .container.row__style, .container.column__style

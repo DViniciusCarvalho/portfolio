@@ -1,42 +1,33 @@
-import React, { useContext, useState } from 'react';
-import processIconStyles from '@/styles/workarea/taskbar/ProcessIcon.module.sass';
+import React, { useState, useContext } from 'react';
+import applicationIconStyles from '@/styles/workarea/applications/ApplicationIcon.module.sass';
 import Image from 'next/image';
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { getCorrespondentDesktop, getCorrespondentRunningProcess } from '@/lib/utils';
-import { processIsRunning, processIsTheCurrentOpenned } from '@/lib/validation';
-import { Data } from '@/types/data';
+import { processIsRunning } from '@/lib/validation';
+import { getCorrespondentRunningProcess, getCorrespondentDesktop } from '@/lib/utils';
 
-
-export default function ProcessIcon({ 
-    processIconStaticImage, 
-    processName,
-    processElement,
-    initialPID
-}: Props.ProcessIconProps) {
+export default function ApplicationIcon({ 
+    applicationIconStaticImage, 
+    applicationName, 
+    applicationElement 
+}: Props.ApplicationIconProps) {
 
     const { 
-        layoutStyleClass, 
         opennedProcessesData, 
         desktopActivitiesData,
-        elevateProcessWindowZIndex, 
         currentActiveDesktopUUID,
-        handleChangeCurrentDesktop,
+        applicationsAreBeingShowed, 
         openProcess,
+        elevateProcessWindowZIndex,
         restorePreviousDimensions,
-        applicationsAreBeingShowed,
-        changeApplicationsAreBeingShowed
+        handleChangeCurrentDesktop,
+        changeApplicationsAreBeingShowed,
+        transferApplicationIconToTaskbarOtherProcessesIcons
     } = useContext(MainContext);
 
-    const [ processPID, setProcessPID ] = useState(initialPID);
+    const [ processPID, setProcessPID ] = useState(0);
 
-	
-    function startProcessMiddleware(
-        opennedProcessesData: Data.OpennedProcessData[], 
-        desktopActivitiesData: Data.DesktopActivityData[],
-        processPID: number,
-        currentActiveDesktopUUID: string
-    ): void {
+    const startProcessMiddleware = () => {
 
 		const processFound = getCorrespondentRunningProcess(
             opennedProcessesData, 
@@ -63,9 +54,16 @@ export default function ProcessIcon({
 
         if (processIsNotRunning) {
             const startedProcessPID = openProcess(
-                processName, 
-                processElement,
+                applicationName, 
+                applicationElement,
                 currentDesktopDoesNotExists
+            );
+                
+            transferApplicationIconToTaskbarOtherProcessesIcons(
+                applicationIconStaticImage,
+                applicationName,
+                applicationElement,
+                startedProcessPID
             );
 
             setProcessPID(previous => startedProcessPID);
@@ -93,33 +91,26 @@ export default function ProcessIcon({
 
     return (
         <abbr 
-			className={`
-				${processIconStyles.container} 
-				${processIconStyles[layoutStyleClass]} 
-				${processIconStyles[
-					processIsTheCurrentOpenned(opennedProcessesData, processPID)? 'active' : ''
-				]}
-				`
-			} 
-			title={processName} 
-			onClick={() => startProcessMiddleware(
-                opennedProcessesData, 
-                desktopActivitiesData, 
-                processPID, 
-                currentActiveDesktopUUID
-            )}
+            className={applicationIconStyles.container}
+            style={{
+                display: applicationsAreBeingShowed? 'inline-block' : 'none'
+            }}
+            onClick={startProcessMiddleware}
         >
-            <Image 
-                src={processIconStaticImage} 
-                alt={`${processName} icon`} 
-                className={processIconStyles.icon}
-            />
-            <div 
-				className={processIconStyles.openned__indicator}
-				style={{
-					display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
-				}}
-            />
+            <div className={applicationIconStyles.icon__wrapper}>
+                <Image 
+                    src={applicationIconStaticImage} 
+                    alt={`${applicationName} icon`} 
+                    className={applicationIconStyles.icon}
+                />
+                { applicationName }
+                <div 
+                    className={applicationIconStyles.openned__indicator}
+                    style={{
+                        display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
+                    }}
+                />
+            </div>
         </abbr>
     );
 }

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import ShowApplicationsIcon from '../../../../public/assets/view-app-grid-symbolic.svg';
 import { MainContext } from '../Main'; 
 
+
 export default function ShowApplications() {
 
     const { 
@@ -21,7 +22,7 @@ export default function ShowApplications() {
 				`
 			} 
 			title='Show Applications' 
-			onClick={() => changeApplicationsAreBeingShowed(true)}
+			onClick={() => changeApplicationsAreBeingShowed(!applicationsAreBeingShowed)}
         >
             <Image 
                 src={ShowApplicationsIcon} 

@@ -31,4 +31,13 @@ export namespace Data {
             y: number;
         };
     }
+
+    interface ApplicationMetadata {
+        metadata: {
+            description: string;
+            keyWords: string[];
+            category: string[];
+        }
+    }
+
 }

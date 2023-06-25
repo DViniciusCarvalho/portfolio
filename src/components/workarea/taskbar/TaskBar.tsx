@@ -15,11 +15,12 @@ import Settings from '@/components/processes/Settings';
 
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { deepClone, generateUUID } from '@/lib/utils';
+import { deepClone, generateJSXKey, generateUUID } from '@/lib/utils';
 
 
 export default function TaskBar({ 
-    taskBarRef 
+    taskBarRef,
+    applicationsPropsDataInTaskbar
 }: Props.TaskBarProps) {
 
     const { 
@@ -29,34 +30,40 @@ export default function TaskBar({
     } = useContext(MainContext);
 
 
-    const nautilusProps: Props.ProcessIconProps = {
-        processIconStaticImage: NautilusIcon,
-        processName: 'Files',
-        processElement: <Nautilus/>
-    };
+    const [ 
+        favoriteProcessesIconProps, 
+        setFavoriteProcessesIconProps 
+    ] = useState<Props.ProcessIconProps[]>([
+        {
+            processIconStaticImage: NautilusIcon,
+            processName: 'Files',
+            processElement: <Nautilus/>,
+            initialPID: 0
+        },
+        {
+            processIconStaticImage: TerminalIcon,
+            processName: 'Terminal',
+            processElement: <Terminal/>,
+            initialPID: 0
+        },
+        {
+            processIconStaticImage: SettingsIcon,
+            processName: 'Settings',
+            processElement: <Settings/>,
+            initialPID: 0
+        }
+    ]);
 
-    const terminalProps: Props.ProcessIconProps = {
-        processIconStaticImage: TerminalIcon,
-        processName: 'Terminal',
-        processElement: <Terminal/>
-    };
-
-    const userTrashProps: Props.ProcessIconProps = {
-        processIconStaticImage: UserTrashIcon,
-        processName: 'Trash',
-        processElement: <UserTrash/>
-    };
-
-    const settingsProps: Props.ProcessIconProps = {
-        processIconStaticImage: SettingsIcon,
-        processName: 'Settings',
-        processElement: <Settings/>
-    };
-
-    const [ favoriteProcessesIconProps, setFavoriteProcessesIconProps ] = useState([
-        nautilusProps,
-        terminalProps,
-        settingsProps
+    const [
+        otherProcessesIconProps,
+        setOtherProcessesIconProps
+    ] = useState<Props.ProcessIconProps[]>([
+        {
+            processIconStaticImage: UserTrashIcon,
+            processName: 'Trash',
+            processElement: <UserTrash/>,
+            initialPID: 0
+        }
     ]);
 
 
@@ -74,16 +81,36 @@ export default function TaskBar({
             }
         >
             <div className={taskBarStyles.process__icons__first__wrapper}>
-                {favoriteProcessesIconProps.map(favoriteProcessIconProps => (
+
+                {favoriteProcessesIconProps.map((favoriteProcessIconProps, index) => (
                     <ProcessIcon 
-                        key={favoriteProcessIconProps.processName} 
+                        key={generateJSXKey(
+                            'favorite-process-icon', 
+                            favoriteProcessIconProps.processName, 
+                            index
+                        )} 
                         {...deepClone(favoriteProcessIconProps)}
                     />
                 ))}
+
             </div>
             <hr className={taskBarStyles.process__trash__separator}/>
             <div className={taskBarStyles.process__icons__second__wrapper}>
-                <ProcessIcon {...userTrashProps}/>
+
+                {
+                    [...otherProcessesIconProps, ...applicationsPropsDataInTaskbar]
+                    .map((otherProcessIconProps, index) => (
+                        <ProcessIcon 
+                            key={generateJSXKey(
+                                'other-process-icon', 
+                                otherProcessIconProps.processName, 
+                                index
+                            )} 
+                            {...deepClone(otherProcessIconProps)}
+                        />
+                    ))
+                }
+
             </div>
             <div className={taskBarStyles.show__applications__wrapper}>
                 <ShowApplications/>
