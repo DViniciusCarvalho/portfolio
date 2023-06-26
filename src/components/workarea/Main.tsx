@@ -51,27 +51,44 @@ export default function Main() {
     const initialBaseDesktopUUID = generateUUID();
 
     const [ lastPID, setLastPID ] = useState(LAST_SYSTEM_ESSENTIAL_PID);
-    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
+
+    const [ 
+        lastHighestZIndex, 
+        setLastHighestZIndex 
+    ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
+
     const [ baseDesktopUUID ] = useState(initialBaseDesktopUUID);
-    const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
+
+    const [ 
+        currentActiveDesktopUUID, 
+        setCurrentActiveDesktopUUID 
+    ] = useState(initialBaseDesktopUUID);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
     const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
+
     const [ 
         applicationsPropsDataInTaskbar, 
         setApplicationsPropsDataInTaskbar 
     ] = useState<Props.ProcessIconProps[]>([]);
 
-    const [ themeStyleClass, setThemeStyleClass ] = useState(INITIAL_SYSTEM_THEME_STYLE_CLASS);
+    const [ backgroundColorPalette, setBackgroundColorPalette ] = useState(INITIAL_SYSTEM_THEME_STYLE_CLASS);
     const [ layoutStyleClass, setLayoutStyleClass ] = useState(INITIAL_SYSTEM_LAYOUT_STYLE_CLASS);
 
+    const [ backgroundIsImageBlob, setBackgroundIsImageBlob ] = useState(false);
+    const [ backgroundImageUrl, setBackgroundImageUrl ] = useState('');
+
     const [ applicationsAreBeingShowed, setApplicationsAreBeingShowed ] = useState(false);
+
 
     const contextValues = {
         opennedProcessesData,
         desktopActivitiesData,
 
-        themeStyleClass,
+        backgroundIsImageBlob,
+        backgroundImageUrl,
+
+        backgroundColorPalette,
         layoutStyleClass,
         applicationsAreBeingShowed,
         lastHighestZIndex,
@@ -89,7 +106,8 @@ export default function Main() {
         removeDesktopActivity,
         openProcess,
         restorePreviousDimensions,
-        transferApplicationIconToTaskbarOtherProcessesIcons
+        transferApplicationIconToTaskbarOtherProcessesIcons,
+        changeBackgroundStyle
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -471,6 +489,12 @@ export default function Main() {
         );
     }
 
+    function changeBackgroundStyle(isImageBlob: boolean, imageUrlBase64: string) {
+        if (isImageBlob) {
+            setBackgroundIsImageBlob(previous => true);
+            setBackgroundImageUrl(previous => imageUrlBase64);
+        }
+    }
 
     return (
         <div className={mainStyles.container}>

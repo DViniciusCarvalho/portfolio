@@ -17,7 +17,9 @@ export default function Desktop({
 }: Props.DesktopProps) {
 
     const { 
-        themeStyleClass, 
+        backgroundIsImageBlob,
+        backgroundImageUrl,
+        backgroundColorPalette, 
         layoutStyleClass, 
         applicationsAreBeingShowed, 
         currentActiveDesktopUUID,
@@ -45,12 +47,10 @@ export default function Desktop({
         },
     }));
 
-
     return (
         <div
             className={`
                 ${desktopStyles.container} 
-                ${desktopStyles[themeStyleClass]} 
                 ${desktopStyles[layoutStyleClass]}
                 ${desktopStyles[!applicationsAreBeingShowed? 'showed' : 'not__showed']}
                 `
@@ -60,8 +60,12 @@ export default function Desktop({
                     applicationsAreBeingShowed, 
                     currentActiveDesktopUUID, 
                     UUID, 
-                    applicationsWindowRef
-                )
+                    applicationsWindowRef,
+                    backgroundColorPalette,
+                    backgroundIsImageBlob, 
+                    backgroundImageUrl
+                ),
+
             }}
             id={UUID}
             ref={drop}

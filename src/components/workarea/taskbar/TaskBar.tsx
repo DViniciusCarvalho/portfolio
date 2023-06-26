@@ -17,6 +17,8 @@ import { Props } from '@/types/props';
 import { MainContext } from '../Main';
 import { deepClone, generateJSXKey, generateUUID } from '@/lib/utils';
 
+import { getTaskBarStyles } from '@/lib/style';
+
 
 export default function TaskBar({ 
     taskBarRef,
@@ -24,7 +26,8 @@ export default function TaskBar({
 }: Props.TaskBarProps) {
 
     const { 
-        themeStyleClass, 
+        backgroundIsImageBlob,
+        backgroundColorPalette, 
         layoutStyleClass, 
         applicationsAreBeingShowed
     } = useContext(MainContext);
@@ -74,11 +77,16 @@ export default function TaskBar({
             ref={taskBarRef}
             className={`
                 ${taskBarStyles.container} 
-                ${taskBarStyles[themeStyleClass]} 
                 ${taskBarStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
                 ${taskBarStyles[layoutStyleClass]}
                 `
             }
+            style={{
+                ...getTaskBarStyles(
+                    backgroundColorPalette,
+                    backgroundIsImageBlob
+                )
+            }}
         >
             <div className={taskBarStyles.process__icons__first__wrapper}>
 

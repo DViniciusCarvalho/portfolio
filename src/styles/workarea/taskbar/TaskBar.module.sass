@@ -4,17 +4,13 @@
     z-index: 999999
     display: flex
     gap: 0.2%
+    border-style: solid
+    border-width: 0px 2px 0px 0px
     transition: background-image 0.5s
 
-    &.default__theme
-        background-image: linear-gradient(to bottom left, #3b1424 60%, #2b151c)
-        border-style: solid
-        border-color: #350d1f94
-        border-width: 0px 2px 0px 0px
-
     &.applications__showed 
-        background-image: linear-gradient(to bottom left, #161616 60%, #161616)
-        border-color: #161616
+        background-image: linear-gradient(to bottom left, #161616 60%, #161616) !important
+        border-color: #161616 !important
 
     &.row__style
         width: variables.$taskbar-row-style-width

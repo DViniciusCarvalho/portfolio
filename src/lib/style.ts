@@ -1,6 +1,7 @@
 import { Data } from "@/types/data";
 import { getCorrespondentDesktop } from "./utils";
 import { desktopCanBeShowed } from "./validation";
+import { backgroundDefaultOptions } from "./defaultStyle";
 
 export const getProcessWindowDisplayStyle = (
     isDragging: boolean,
@@ -63,8 +64,13 @@ export const getDesktopStyles = (
     applicationsAreBeingShowed: boolean, 
     currentActiveDesktopUUID: string, 
     UUID: string,
-    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
+    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
+    backgroundColorPalette: string,
+    backgroundIsImageBlob: boolean,
+    backgroundImageUrl: string
 ): any => {
+
+    const backgroundColorPaletteStyles = backgroundDefaultOptions[backgroundColorPalette];
 
     const applicationsAreHiddenAndIsNotCurrentDesktop = !applicationsAreBeingShowed 
                                                         && (currentActiveDesktopUUID !== UUID);
@@ -85,7 +91,12 @@ export const getDesktopStyles = (
         height: currentDesktopCanBeShowed? applicationsWindowHeight : '90%',
         top: currentDesktopCanBeShowed? 0 : 0,
         left: currentDesktopCanBeShowed? 0 : 0,
-        transform: `scale(${currentDesktopCanBeShowed? 1 : 0.9})`
+        transform: `scale(${currentDesktopCanBeShowed? 1 : 0.9})`,
+        backgroundImage: backgroundIsImageBlob
+                        ? `url(${backgroundImageUrl})` 
+                        : backgroundColorPaletteStyles.desktop.backgroundImage,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat'
     };
 
 }
@@ -96,8 +107,13 @@ export const getBaseDesktopStyles = (
     currentActiveDesktopUUID: string,
     baseDesktopUUID: string,
     desktopActivitiesData: Data.DesktopActivityData[],
-    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
+    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
+    backgroundColorPalette: string,
+    backgroundIsImageBlob: boolean,
+    backgroundImageUrl: string
 ): any => {
+
+    const backgroundColorPaletteStyles = backgroundDefaultOptions[backgroundColorPalette];
 
     const anInvalidDesktopIsBeingShowed = !applicationsAreBeingShowed && !getCorrespondentDesktop(
                                                                             desktopActivitiesData, 
@@ -115,7 +131,7 @@ export const getBaseDesktopStyles = (
 
     const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
-
+    backgroundColorPalette
     const stylesWithoutTransform = {
         display: applicationsAreHiddenAndIsNotCurrentDesktop && !baseDesktopAndCanBeShowed? 'none' : 'block',
         position: baseDesktopAndCanBeShowed? 'absolute' : 'relative',
@@ -123,6 +139,11 @@ export const getBaseDesktopStyles = (
         height: baseDesktopAndCanBeShowed? applicationsWindowHeight : '90%',
         top: baseDesktopAndCanBeShowed? 0 : 0,
         left: baseDesktopAndCanBeShowed? 0 : 0,
+        backgroundImage: backgroundIsImageBlob
+                        ? `url(${backgroundImageUrl})` 
+                        : backgroundColorPaletteStyles.desktop.backgroundImage,
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat'
     };
 
 
@@ -131,4 +152,15 @@ export const getBaseDesktopStyles = (
         transform: `scale(${baseDesktopAndCanBeShowed? 1 : 0.9})`
     };
 
+}
+
+export const getTaskBarStyles = (
+    backgroundColorPalette: string,
+    backgroundIsImageBlob: boolean
+) => {
+
+    return {
+        backgroundImage: backgroundDefaultOptions[backgroundColorPalette].taskbar.backgroundImage,
+        borderColor: backgroundDefaultOptions[backgroundColorPalette].taskbar.borderColor
+    }
 }
