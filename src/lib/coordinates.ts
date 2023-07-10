@@ -7,7 +7,7 @@ export const getXAxisInterference = (
     const taskBarElement = taskBarRef.current! as HTMLDivElement;
     const taskBarWidth = taskBarElement.getBoundingClientRect().width;
 
-    const isCurrentLayoutRowStyle = currentLayoutStyleClass === 'row__style';
+    const isCurrentLayoutRowStyle = currentLayoutStyleClass === 'row';
     const isLessThanOrEqualMediaQuery = window.innerWidth <= 500;
 
     return isCurrentLayoutRowStyle && !isLessThanOrEqualMediaQuery? taskBarWidth : 0;

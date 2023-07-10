@@ -40,4 +40,19 @@ export namespace Data {
         }
     }
 
+    interface ColorPaletteOptions {
+        readonly [key: string]: {
+            settingsColor: string;
+            lightenedColor: string;
+            opennedIndicatorColor: string;
+            desktop: {
+                backgroundImage: string;
+            },
+            taskbar: {
+                backgroundImage: string;
+                borderColor: string;
+            }
+        }
+    }
+
 }

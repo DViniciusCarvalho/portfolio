@@ -8,11 +8,12 @@
     border-width: 0px 2px 0px 0px
     transition: background-image 0.5s
 
+
     &.applications__showed 
         background-image: linear-gradient(to bottom left, #161616 60%, #161616) !important
         border-color: #161616 !important
 
-    &.row__style
+    &.row
         width: variables.$taskbar-row-style-width
         height: variables.$taskbar-row-style-height
         flex-direction: column
@@ -41,7 +42,7 @@
             border: none
 
 
-    &.column__style
+    &.column
         width: variables.$taskbar-column-style-width
         height: variables.$taskbar-column-style-height
         flex-direction: row
@@ -72,7 +73,7 @@
 
 
 @media only screen and (max-width: 500px) 
-    .container.row__style, .container.column__style
+    .container.row, .container.column
         width: variables.$taskbar-column-style-width
         height: variables.$taskbar-column-style-height
         flex-direction: row

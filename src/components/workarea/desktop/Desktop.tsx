@@ -17,10 +17,10 @@ export default function Desktop({
 }: Props.DesktopProps) {
 
     const { 
+        systemColorPalette, 
+        systemLayout, 
         backgroundIsImageBlob,
         backgroundImageUrl,
-        backgroundColorPalette, 
-        layoutStyleClass, 
         applicationsAreBeingShowed, 
         currentActiveDesktopUUID,
         handleChangeCurrentDesktop
@@ -51,7 +51,7 @@ export default function Desktop({
         <div
             className={`
                 ${desktopStyles.container} 
-                ${desktopStyles[layoutStyleClass]}
+                ${desktopStyles[systemLayout]}
                 ${desktopStyles[!applicationsAreBeingShowed? 'showed' : 'not__showed']}
                 `
             }
@@ -61,7 +61,7 @@ export default function Desktop({
                     currentActiveDesktopUUID, 
                     UUID, 
                     applicationsWindowRef,
-                    backgroundColorPalette,
+                    systemColorPalette,
                     backgroundIsImageBlob, 
                     backgroundImageUrl
                 ),

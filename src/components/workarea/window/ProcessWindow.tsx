@@ -1,11 +1,18 @@
-import React, { useContext, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
-import Image from 'next/image';
-import WindowCloseIcon from '../../../../public/assets/window-close-symbolic.svg';
-import WindowRestoreIcon from '../../../../public/assets/window-restore-symbolic.svg';
-import WindowMaximizeIcon from '../../../../public/assets/window-maximize-symbolic.svg';
-import WindowMinimizeIcon from '../../../../public/assets/window-minimize-symbolic.svg';
+import Image, { StaticImageData } from 'next/image';
+
+import WindowCloseIconDark from '../../../../public/assets/dark/window-close-symbolic.svg';
+import WindowRestoreIconDark from '../../../../public/assets/dark/window-restore-symbolic.svg';
+import WindowMaximizeIconDark from '../../../../public/assets/dark/window-maximize-symbolic.svg';
+import WindowMinimizeIconDark from '../../../../public/assets/dark/window-minimize-symbolic.svg';
+
+import WindowCloseIconLight from '../../../../public/assets/light/window-close-symbolic.svg';
+import WindowRestoreIconLight from '../../../../public/assets/light/window-restore-symbolic.svg';
+import WindowMaximizeIconLight from '../../../../public/assets/light/window-maximize-symbolic.svg';
+import WindowMinimizeIconLight from '../../../../public/assets/light/window-minimize-symbolic.svg';
+
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
 import { isResizeAction } from '@/lib/validation';
@@ -29,6 +36,7 @@ export default function ProcessWindow({
 }: Props.ProcessWindowProps) {
 
 	const { 
+		systemTheme,
 		elevateProcessWindowZIndex, 
 		sendSIGKILLToProcess, 
 		minimizeProcessWindow, 
@@ -42,6 +50,10 @@ export default function ProcessWindow({
 
     const dragRef = useRef<HTMLDivElement | null>(null);
 
+	const [ windowCloseIcon, setWindowCloseIcon ] = useState<StaticImageData>(WindowCloseIconDark);
+	const [ windowRestoreIcon, setWindowRestoreIcon ] = useState<StaticImageData>(WindowRestoreIconDark);
+	const [ windowMaximizeIcon, setWindowMaximizeIcon ] = useState<StaticImageData>(WindowMaximizeIconDark);
+	const [ windowMinimizeIcon, setWindowMinimizeIcon ] = useState<StaticImageData>(WindowMinimizeIconDark);
 
 	const [ resizeData, setResizeData ] = useState({
 		isResizing: false,
@@ -78,6 +90,19 @@ export default function ProcessWindow({
         }),
     }));
 
+	useEffect(() => {
+		const isDarkTheme = systemTheme === 'dark';
+		const closeWindowIcon = isDarkTheme? WindowCloseIconDark : WindowCloseIconLight;
+		const restoreWindowIcon = isDarkTheme? WindowRestoreIconDark : WindowRestoreIconLight;
+		const maximizeWindowIcon = isDarkTheme? WindowMaximizeIconDark : WindowMaximizeIconLight;
+		const minimizeWindowIcon = isDarkTheme? WindowMinimizeIconDark : WindowMinimizeIconLight;
+
+		setWindowCloseIcon(previous => closeWindowIcon);
+		setWindowRestoreIcon(previous => restoreWindowIcon);
+		setWindowMaximizeIcon(previous => maximizeWindowIcon);
+		setWindowMinimizeIcon(previous => minimizeWindowIcon);
+	});
+
 
 
 	const handleMouseDownAndTouchStart = (
@@ -101,8 +126,6 @@ export default function ProcessWindow({
 
 		elevateProcessWindowZIndex(PID);
 		updateInitialCoordinates(clientX, clientY);
-
-		console.log("aq")
 
 	}
 
@@ -213,6 +236,7 @@ export default function ProcessWindow({
 			className={`
 				${processWindowStyles.container} 
 				${processWindowStyles[isMinimized? 'minimized' : 'normal']}
+				${processWindowStyles[systemTheme]}
 				`
 			}
 
@@ -281,19 +305,19 @@ export default function ProcessWindow({
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
-							src={WindowMinimizeIcon} 
+							src={windowMinimizeIcon} 
 							alt='window minimize icon'
 						/>
 					</button>
 					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, dragRef)}>
 						<Image 
-							src={isMaximized? WindowRestoreIcon : WindowMaximizeIcon} 
+							src={isMaximized? windowRestoreIcon : windowMaximizeIcon} 
 							alt='window restore size icon'
 						/>
 					</button>
 					<button onClick={() => sendSIGKILLToProcess(PID)}>
 						<Image 
-							src={WindowCloseIcon} 
+							src={windowCloseIcon} 
 							alt='window close icon'
 						/>
 					</button>

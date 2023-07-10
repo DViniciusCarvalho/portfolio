@@ -11,6 +11,44 @@
     overflow: hidden
     transition: transform variables.$process-window-animation-delay, width variables.$process-window-animation-delay, height variables.$process-window-animation-delay, left variables.$process-window-animation-delay, top variables.$process-window-animation-delay
 
+    &.light
+        .window__title__bar
+            background-color: #eeeeee
+            border-color: #000000ef #000000ef #5a5a5a62 #000000ef
+            color: black
+
+            .buttons__wrapper > button
+                background-color: #dbdbdb
+
+                &:hover
+                    background-color: #c9c8c8
+
+            &.applications__showed > button
+                background-color: #dbdbdb
+
+        .process__application__section
+            border-color: transparent #000000ef #000000ef #000000ef
+                
+    &.dark
+        .window__title__bar
+            background-color: #222224
+            border-color: #000000ef #000000ef #1b1b1bcb #000000ef
+            color: white
+            box-shadow: inset 0.2px 1px 0px #434346
+
+            .buttons__wrapper > button
+                background-color: #2f2f31
+
+                &:hover
+                    background-color: #39393b
+
+            &.applications__showed > button
+                background-color: #474747
+
+
+        .process__application__section
+            border-color: transparent #000000ef #000000ef #000000ef
+
     &.minimized
         transform: scale(0) 
     
@@ -21,16 +59,13 @@
         justify-content: center
         width: 100%
         height: variables.$process-window-title-bar-height
-        background-color: #222224
         border-radius: variables.$process-window-title-bar-border
         font-family: 'Ubuntu Mono', monospace
         font-weight: 700
         font-size: 100%
         color: white
         border-style: solid
-        border-color: variables.$process-window-border-color variables.$process-window-border-color #1b1b1bcb variables.$process-window-border-color
         border-width: 0.5px 0.5px 0.1px 0.5px
-        box-shadow: inset 0.2px 1px 0px #434346
 
         .buttons__wrapper
             display: flex
@@ -47,10 +82,7 @@
                 height: 100%
                 aspect-ratio: 1/1
                 border-radius: 50%
-                background-color: #2f2f31
 
-                &:hover
-                    background-color: #39393b
 
                 & > img
                     width: 100%
@@ -64,18 +96,14 @@
             .buttons__wrapper
                 right: 6%
 
-                & > button
-                    background-color: #474747
-
-                    & > img
-                        display: none
+                & > button > img
+                    display: none
     
     .process__application__section
         width: 100%
         height: calc(100% - variables.$process-window-title-bar-height)
-        background-color: #ffffff
+        background-color: transparent
         border-style: solid
-        border-color: variables.$process-window-border-color
         border-width: 0px 0.5px 0.5px 0.5px
 
         &.applications__showed

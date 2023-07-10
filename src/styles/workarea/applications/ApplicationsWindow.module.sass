@@ -12,11 +12,11 @@
     background-color: #292929
     overflow: hidden
 
-    &.row__style
+    &.row
         width: variables.$applications-window-row-style-width
         height: variables.$applications-window-row-style-height
 
-    &.column__style
+    &.column
         width: variables.$applications-window-column-style-width
         height: variables.$applications-window-column-style-height
 
@@ -33,7 +33,8 @@
         background-color: white
 
         &:focus-within
-            outline: 2px solid #ff7755
+            outline-width: 2px
+            outline-style: solid
 
         .search__icon__wrapper
             height: 50%
@@ -88,6 +89,6 @@
 
 
 @media only screen and (max-width: 500px)
-    .container.row__style, .container.column__style
+    .container.row, .container.column
         width: variables.$applications-window-column-style-width
         height: variables.$applications-window-column-style-height

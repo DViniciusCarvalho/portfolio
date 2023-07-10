@@ -11,7 +11,7 @@
     &.active
         background-color: #ffffff2c
     
-    &.row__style
+    &.row
         width: 100%
         aspect-ratio: 1/1
 
@@ -21,11 +21,18 @@
             width: 5px
             height: 5px
             border-radius: 50%
-            background-color: #e74b03
 
-    &.column__style
+    &.column
         height: 100%
         aspect-ratio: 1/1
+
+        .openned__indicator
+            position: absolute
+            bottom: 0px
+            left: auto
+            width: 5px
+            height: 5px
+            border-radius: 50%
 
     &:hover
         background-color: #ffffff2c
@@ -37,7 +44,7 @@
 
 
 @media only screen and (max-width: 500px) 
-    .container.row__style, .container.column__style
+    .container.row, .container.column
         width: auto
         height: 100%
         aspect-ratio: 1/1
@@ -49,5 +56,4 @@
             width: 5px
             height: 5px
             border-radius: 50%
-            background-color: #e74b03
 

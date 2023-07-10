@@ -6,6 +6,7 @@ import { MainContext } from '../Main';
 import { getCorrespondentDesktop, getCorrespondentRunningProcess } from '@/lib/utils';
 import { processIsRunning, processIsTheCurrentOpenned } from '@/lib/validation';
 import { Data } from '@/types/data';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 
 
 export default function ProcessIcon({ 
@@ -16,7 +17,8 @@ export default function ProcessIcon({
 }: Props.ProcessIconProps) {
 
     const { 
-        layoutStyleClass, 
+        systemColorPalette,
+        systemLayout, 
         opennedProcessesData, 
         desktopActivitiesData,
         elevateProcessWindowZIndex, 
@@ -95,7 +97,7 @@ export default function ProcessIcon({
         <abbr 
 			className={`
 				${processIconStyles.container} 
-				${processIconStyles[layoutStyleClass]} 
+				${processIconStyles[systemLayout]} 
 				${processIconStyles[
 					processIsTheCurrentOpenned(opennedProcessesData, processPID)? 'active' : ''
 				]}
@@ -117,6 +119,7 @@ export default function ProcessIcon({
             <div 
 				className={processIconStyles.openned__indicator}
 				style={{
+                    backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor,
 					display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
 				}}
             />

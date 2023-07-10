@@ -5,6 +5,7 @@ import { Props } from '@/types/props';
 import { MainContext } from '../Main';
 import { processIsRunning } from '@/lib/validation';
 import { getCorrespondentRunningProcess, getCorrespondentDesktop } from '@/lib/utils';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 
 export default function ApplicationIcon({ 
     applicationIconStaticImage, 
@@ -13,6 +14,7 @@ export default function ApplicationIcon({
 }: Props.ApplicationIconProps) {
 
     const { 
+        systemColorPalette,
         opennedProcessesData, 
         desktopActivitiesData,
         currentActiveDesktopUUID,
@@ -96,6 +98,7 @@ export default function ApplicationIcon({
                 display: applicationsAreBeingShowed? 'inline-block' : 'none'
             }}
             onClick={startProcessMiddleware}
+            title={applicationName}
         >
             <div className={applicationIconStyles.icon__wrapper}>
                 <Image 
@@ -107,6 +110,7 @@ export default function ApplicationIcon({
                 <div 
                     className={applicationIconStyles.openned__indicator}
                     style={{
+                        backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor,
                         display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
                     }}
                 />

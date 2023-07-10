@@ -14,8 +14,9 @@ import {
 import { 
     LAST_SYSTEM_ESSENTIAL_PID, 
     INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX,
-    INITIAL_SYSTEM_THEME_STYLE_CLASS,
-    INITIAL_SYSTEM_LAYOUT_STYLE_CLASS
+    INITIAL_SYSTEM_COLOR_PALETTE,
+    INITIAL_SYSTEM_THEME,
+    INITIAL_SYSTEM_LAYOUT
 } from '@/lib/constants';
 
 import { 
@@ -72,8 +73,9 @@ export default function Main() {
         setApplicationsPropsDataInTaskbar 
     ] = useState<Props.ProcessIconProps[]>([]);
 
-    const [ backgroundColorPalette, setBackgroundColorPalette ] = useState(INITIAL_SYSTEM_THEME_STYLE_CLASS);
-    const [ layoutStyleClass, setLayoutStyleClass ] = useState(INITIAL_SYSTEM_LAYOUT_STYLE_CLASS);
+    const [ systemColorPalette, setSystemColorPalette ] = useState(INITIAL_SYSTEM_COLOR_PALETTE);
+    const [ systemTheme, setSystemTheme ] =  useState(INITIAL_SYSTEM_THEME);
+    const [ systemLayout, setSystemLayout ] = useState(INITIAL_SYSTEM_LAYOUT);
 
     const [ backgroundIsImageBlob, setBackgroundIsImageBlob ] = useState(false);
     const [ backgroundImageUrl, setBackgroundImageUrl ] = useState('');
@@ -85,15 +87,16 @@ export default function Main() {
         opennedProcessesData,
         desktopActivitiesData,
 
-        backgroundIsImageBlob,
-        backgroundImageUrl,
+        systemColorPalette,
+        systemTheme,
+        systemLayout,
 
-        backgroundColorPalette,
-        layoutStyleClass,
         applicationsAreBeingShowed,
         lastHighestZIndex,
         currentActiveDesktopUUID,
         baseDesktopUUID,
+        backgroundIsImageBlob,
+        backgroundImageUrl,
 
         elevateProcessWindowZIndex,
         sendSIGKILLToProcess,
@@ -107,7 +110,8 @@ export default function Main() {
         openProcess,
         restorePreviousDimensions,
         transferApplicationIconToTaskbarOtherProcessesIcons,
-        changeBackgroundStyle
+        changeBackgroundStyle,
+        changeSystemTheme
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -248,7 +252,7 @@ export default function Main() {
         YAxisWithoutInterference: number
     ): void {
 
-        const currentXAxis = XAxisWithoutInterference - getXAxisInterference(taskBarRef, layoutStyleClass);
+        const currentXAxis = XAxisWithoutInterference - getXAxisInterference(taskBarRef, systemLayout);
         const currentYAxis = YAxisWithoutInterference - getYAxisInterference(globalMenuRef);
 
         setOpennedProcessesData(previous => {
@@ -489,18 +493,27 @@ export default function Main() {
         );
     }
 
-    function changeBackgroundStyle(isImageBlob: boolean, imageUrlBase64: string) {
+    function changeBackgroundStyle(isImageBlob: boolean, imageUrlBase64: string, systemColorPalette: string) {
         if (isImageBlob) {
             setBackgroundIsImageBlob(previous => true);
             setBackgroundImageUrl(previous => imageUrlBase64);
+
+            return;
         }
+
+        setBackgroundIsImageBlob(previous => false);
+        setSystemColorPalette(previous => systemColorPalette);
+    }
+
+    function changeSystemTheme(theme: string): void {
+        setSystemTheme(previous => theme);
     }
 
     return (
         <div className={mainStyles.container}>
             <MainContext.Provider value={{...contextValues}}>
                 <GlobalMenuBar {...globalMenuProps}/>
-                <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[layoutStyleClass]}`}>
+                <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[systemLayout]}`}>
                     <TaskBar {...taskbarProps}/>
                     <ApplicationsWindow {...applicationsWindowProps}/>
                 </div>

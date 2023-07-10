@@ -12,6 +12,7 @@ import { MainContext } from '../Main';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
 import { generateJSXKey, getFilteredApplicationsByNameAndMetadata } from '@/lib/utils';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 
 
 export default function ApplicationsWindow({ 
@@ -22,7 +23,11 @@ export default function ApplicationsWindow({
 	baseDesktopUUID 
 }: Props.ApplicationsWindowProps) {
 
-    const { layoutStyleClass, applicationsAreBeingShowed } = useContext(MainContext);
+    const { 
+		systemColorPalette, 
+		systemLayout, 
+		applicationsAreBeingShowed 
+	} = useContext(MainContext);
 
 	const [ applicationsWindowRefLoaded, setApplicationsWindowRefLoaded ] = useState(false);
 
@@ -142,13 +147,18 @@ export default function ApplicationsWindow({
         <div 
 			className={`
 				${applicationsWindowStyles.container} 
-				${applicationsWindowStyles[layoutStyleClass]}
+				${applicationsWindowStyles[systemLayout]}
 				${applicationsWindowStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
 				`
 			}
 			ref={applicationsWindowRef}
         >
-            <div className={applicationsWindowStyles.search__wrapper}>
+            <div 
+				className={applicationsWindowStyles.search__wrapper}
+				style={{
+					outlineColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor
+				}}
+			>
                 <div className={applicationsWindowStyles.search__icon__wrapper}>
 		  			<Image src={SearchIcon} alt='search icon' className={applicationsWindowStyles.icon}/>
                 </div>

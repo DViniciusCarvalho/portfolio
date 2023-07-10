@@ -6,7 +6,7 @@ import { Props } from '@/types/props';
 
 export default function GlobalMenuBar({ globalMenuRef }: Props.GlobalMenuProps) {
 
-    const { layoutStyleClass } = useContext(MainContext);
+    const { systemLayout } = useContext(MainContext);
 
     const [ date, setDate ] = useState(getDateString());
 
@@ -15,7 +15,7 @@ export default function GlobalMenuBar({ globalMenuRef }: Props.GlobalMenuProps) 
 
     return (
         <div 
-            className={`${globalMenuBarStyles.container} ${globalMenuBarStyles[layoutStyleClass]}`}
+            className={`${globalMenuBarStyles.container} ${globalMenuBarStyles[systemLayout]}`}
             ref={globalMenuRef}
         >
             <div className={globalMenuBarStyles.date}>

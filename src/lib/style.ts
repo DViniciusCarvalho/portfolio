@@ -1,7 +1,7 @@
 import { Data } from "@/types/data";
-import { getCorrespondentDesktop } from "./utils";
-import { desktopCanBeShowed } from "./validation";
-import { backgroundDefaultOptions } from "./defaultStyle";
+import { getCorrespondentDesktop } from "@/lib/utils";
+import { desktopCanBeShowed } from "@/lib/validation";
+import { COLOR_PALETTE_OPTIONS } from "@/lib/constants";
 
 export const getProcessWindowDisplayStyle = (
     isDragging: boolean,
@@ -15,7 +15,7 @@ export const getProcessWindowDisplayStyle = (
     const processWindowCanNotBeDisplayed = currentActiveDesktopIsNotTheParentDesktop 
                                             && !applicationsAreBeingShowed;
 
-    return isDragging || processWindowCanNotBeDisplayed ? 'none' : 'block';
+    return processWindowCanNotBeDisplayed ? 'none' : 'block';
 
 }
 
@@ -70,7 +70,7 @@ export const getDesktopStyles = (
     backgroundImageUrl: string
 ): any => {
 
-    const backgroundColorPaletteStyles = backgroundDefaultOptions[backgroundColorPalette];
+    const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];
 
     const applicationsAreHiddenAndIsNotCurrentDesktop = !applicationsAreBeingShowed 
                                                         && (currentActiveDesktopUUID !== UUID);
@@ -94,7 +94,7 @@ export const getDesktopStyles = (
         transform: `scale(${currentDesktopCanBeShowed? 1 : 0.9})`,
         backgroundImage: backgroundIsImageBlob
                         ? `url(${backgroundImageUrl})` 
-                        : backgroundColorPaletteStyles.desktop.backgroundImage,
+                        : colorPaletteStyles.desktop.backgroundImage,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat'
     };
@@ -113,7 +113,7 @@ export const getBaseDesktopStyles = (
     backgroundImageUrl: string
 ): any => {
 
-    const backgroundColorPaletteStyles = backgroundDefaultOptions[backgroundColorPalette];
+    const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];
 
     const anInvalidDesktopIsBeingShowed = !applicationsAreBeingShowed && !getCorrespondentDesktop(
                                                                             desktopActivitiesData, 
@@ -141,7 +141,7 @@ export const getBaseDesktopStyles = (
         left: baseDesktopAndCanBeShowed? 0 : 0,
         backgroundImage: backgroundIsImageBlob
                         ? `url(${backgroundImageUrl})` 
-                        : backgroundColorPaletteStyles.desktop.backgroundImage,
+                        : colorPaletteStyles.desktop.backgroundImage,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat'
     };
@@ -160,7 +160,7 @@ export const getTaskBarStyles = (
 ) => {
 
     return {
-        backgroundImage: backgroundDefaultOptions[backgroundColorPalette].taskbar.backgroundImage,
-        borderColor: backgroundDefaultOptions[backgroundColorPalette].taskbar.borderColor
-    }
+        backgroundImage: COLOR_PALETTE_OPTIONS[backgroundColorPalette].taskbar.backgroundImage,
+        borderColor: COLOR_PALETTE_OPTIONS[backgroundColorPalette].taskbar.borderColor
+    };
 }
