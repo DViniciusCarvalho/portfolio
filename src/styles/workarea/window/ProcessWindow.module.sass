@@ -28,6 +28,8 @@
 
         .process__application__section
             border-color: transparent #000000ef #000000ef #000000ef
+            background-color: #eeeeee
+            color: black
                 
     &.dark
         .window__title__bar
@@ -48,6 +50,8 @@
 
         .process__application__section
             border-color: transparent #000000ef #000000ef #000000ef
+            background-color: #222224
+            color: white
 
     &.minimized
         transform: scale(0) 
@@ -66,6 +70,9 @@
         color: white
         border-style: solid
         border-width: 0.5px 0.5px 0.1px 0.5px
+
+        &:active
+            cursor: move
 
         .buttons__wrapper
             display: flex
@@ -100,11 +107,30 @@
                     display: none
     
     .process__application__section
+        display: flex
+        align-items: center
+        justify-content: center
         width: 100%
         height: calc(100% - variables.$process-window-title-bar-height)
-        background-color: transparent
+        background-color: white
         border-style: solid
         border-width: 0px 0.5px 0.5px 0.5px
 
         &.applications__showed
             height: 70%
+
+        .minimized__process__data
+            display: flex
+            flex-direction: column
+            align-items: center
+            justify-content: center
+
+            .process__window__icon__wrapper
+                width: 40%
+                aspect-ratio: 1/1
+
+                & > img
+                    width: 100%
+                    height: 100%
+                    object-fit: cover
+

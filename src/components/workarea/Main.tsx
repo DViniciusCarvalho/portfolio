@@ -111,7 +111,9 @@ export default function Main() {
         restorePreviousDimensions,
         transferApplicationIconToTaskbarOtherProcessesIcons,
         changeBackgroundStyle,
-        changeSystemTheme
+        changeSystemTheme,
+        changeSystemLayout,
+        updateProcessCoordinates
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -143,6 +145,7 @@ export default function Main() {
 
     function openProcess(
         processTitle: string, 
+        processIcon: StaticImageData,
         processElement: JSX.Element, 
         currentActiveDesktopDoesNotExists: boolean
     ): number {
@@ -159,6 +162,7 @@ export default function Main() {
         const newProcessData = {
             PID: nextPID,
             processTitle: processTitle,
+            processIcon: processIcon,
             processElement: processElement,
             zIndex: nextLastHighestZIndex,
             isMinimized: false,
@@ -507,6 +511,11 @@ export default function Main() {
 
     function changeSystemTheme(theme: string): void {
         setSystemTheme(previous => theme);
+    }
+
+    function changeSystemLayout(layout: string): void {
+        setSystemLayout(previous => layout);
+        taskBarRef.current!.click();
     }
 
     return (

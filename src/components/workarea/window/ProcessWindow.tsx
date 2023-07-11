@@ -22,10 +22,13 @@ import {
 	getRelativeDimensionAndCoordinatesStyle 
 } from '@/lib/style';
 
+import ProcessWindowMinimalContentVersion from './ProcessWindowMinimalContentVersion';
+
 
 export default function ProcessWindow({ 
 	PID, 
 	processTitle, 
+	processIcon,
 	processElement, 
 	zIndex,
 	isMinimized,
@@ -44,7 +47,8 @@ export default function ProcessWindow({
 		maximizeProcessWindow,
 		updateProcessWindowDimensions,
 		currentActiveDesktopUUID,
-		applicationsAreBeingShowed
+		applicationsAreBeingShowed,
+		updateProcessCoordinates
 	} = useContext(MainContext);
 
 
@@ -54,6 +58,8 @@ export default function ProcessWindow({
 	const [ windowRestoreIcon, setWindowRestoreIcon ] = useState<StaticImageData>(WindowRestoreIconDark);
 	const [ windowMaximizeIcon, setWindowMaximizeIcon ] = useState<StaticImageData>(WindowMaximizeIconDark);
 	const [ windowMinimizeIcon, setWindowMinimizeIcon ] = useState<StaticImageData>(WindowMinimizeIconDark);
+
+	const [ windowTitleBarBeingPressed, setWindowTitleBarBeingPressed ] = useState(false);
 
 	const [ resizeData, setResizeData ] = useState({
 		isResizing: false,
@@ -81,7 +87,6 @@ export default function ProcessWindow({
 		}
 	});
 
-
     const [ { isDragging }, drag ] = useDrag(() => ({
         type: 'element',
         item: { dragRef, PID },
@@ -89,6 +94,11 @@ export default function ProcessWindow({
             isDragging: monitor.isDragging(),
         }),
     }));
+
+	const processWindowMinimizedVersionProps: Props.ProcessWindowMinimalContentVersionProps = {
+		processIcon: processIcon, 
+		processName: processTitle
+	};
 
 	useEffect(() => {
 		const isDarkTheme = systemTheme === 'dark';
@@ -162,6 +172,16 @@ export default function ProcessWindow({
 				x: clientX,
 				y: clientY
 			}));
+
+			return;
+		}
+
+		if (isDragging && windowTitleBarBeingPressed) {
+			const currentXAxis = clientX - pressedCoordinates.x;
+			const currentYAxis = clientY - pressedCoordinates.y;
+	
+			updateProcessCoordinates(PID, currentXAxis, currentYAxis);
+	
 		}
 
 	}
@@ -300,6 +320,15 @@ export default function ProcessWindow({
 					]}
 					`
 				}
+
+				// click-based
+				onMouseDown={() => setWindowTitleBarBeingPressed(previous => true)}
+				onMouseUp={() => setWindowTitleBarBeingPressed(previous => false)}
+				onMouseLeave={() => setWindowTitleBarBeingPressed(previous => false)}
+
+				// touch-based
+				onTouchStart={() => setWindowTitleBarBeingPressed(previous => true)}
+				onTouchEnd={() => setWindowTitleBarBeingPressed(previous => false)}
 			>
 				{processTitle}
 				<div className={processWindowStyles.buttons__wrapper}>
@@ -332,7 +361,10 @@ export default function ProcessWindow({
 					`
 				}
 			>
-				{processElement}
+				{applicationsAreBeingShowed
+					? <ProcessWindowMinimalContentVersion {...processWindowMinimizedVersionProps}/> 
+					: processElement
+				}
 			</div>
         </div>
     );

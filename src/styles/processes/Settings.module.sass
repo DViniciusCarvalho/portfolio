@@ -39,6 +39,13 @@
         .light__theme__previous, .dark__theme__previous
             border-color: #f3f2f2
 
+        .left__dock__previous, .bottom__dock__previous
+            &.selected-layout
+                border-color: #f3f2f2
+
+        .left__dock__label, .bottom__dock__label
+            color: black
+
     &.dark
         background-color:#2b2a2a
 
@@ -65,6 +72,13 @@
 
         .light__theme__previous, .dark__theme__previous
             border-color: #242323
+
+        .left__dock__previous, .bottom__dock__previous
+            &.selected-layout
+                border-color: #242323
+
+        .left__dock__label, .bottom__dock__label
+            color: white
 
 
 
@@ -98,7 +112,6 @@
             .background__previous__desktop
                 background-size: cover
 
-
             &.row
                 flex-direction: row
 
@@ -114,16 +127,16 @@
                 flex-direction: column-reverse
 
                 .background__previous__taskbar
-                    height: 10%
+                    height: 15%
                     width: 100%
 
                 .background__previous__desktop
-                    height: 90%
+                    height: 85%
                     width: 100%
 
         .background__color__palette__radios__wrapper
             display: flex
-            gap: 2%
+            gap: 3%
             width: 60%
             height: 9%
 
@@ -143,9 +156,11 @@
 
         .select__background__file__wrapper
             display: flex
+            flex-wrap: wrap
             gap: 2%
             height: 10%
             width: 100%
+            padding-bottom: 5px
 
             .select__background__file__input
                 display: none
@@ -172,7 +187,6 @@
         display: flex
         padding: 20px
         align-items: center
-        height: 300px
         min-height: 300px
         width: 100%
         max-width: 800px
@@ -256,36 +270,34 @@
                         background-color: #2c2b2b
 
 
-    .dock__config__wrapper
-        display: flex
-        padding: 20px
+@media only screen and (max-width: 800px) and (min-width: 601px)
+    .background__wrapper
+        padding: 0px 8% !important
+
+        .background__previous
+            width: 90% !important
+
+    .theme__wrapper
+        justify-content: center
         align-items: center
-        height: 300px
-        min-height: 300px
-        width: 100%
-        max-width: 800px
-        border-radius: 20px
-        margin-bottom: 20px
 
-        .left__dock__wrapper, .bottom__dock__wrapper
-            display: flex
-            flex-direction: column
-            align-items: center
-            gap: 4%
-            height: 100%
-            width: 40%
-            max-width: 303px
-            padding: 20px
-            border: 1px solid white
+        .light__theme__wrapper, .dark__theme__wrapper
+            width: 50% !important
+            min-width: 237px
 
-            .left__dock__previous, .bottom__dock__previous
-                width: 100%
-                height: 80%
-                box-shadow: 0px 0px 2px #000000b9
-                border-radius: 10px
+@media only screen and (max-width: 600px)
+    .background__wrapper
+        padding: 0px 8% !important
 
-                &.selected-layout
-                    border-width: 3px 
-                    border-style: solid 
-                    outline-width: 5px
-                    outline-style: solid
+        .background__previous
+            width: 90% !important
+
+    .theme__wrapper
+        flex-direction: column
+        justify-content: center
+        align-items: center
+        min-height: 550px !important
+
+        .light__theme__wrapper, .dark__theme__wrapper
+            width: 80% !important
+            min-width: 237px

@@ -15,8 +15,9 @@ export default function Settings() {
         backgroundIsImageBlob,
         backgroundImageUrl,
         changeBackgroundStyle,
-        changeSystemTheme
-     } = useContext(MainContext);
+        changeSystemTheme,
+        changeSystemLayout
+    } = useContext(MainContext);
 
     
     function changeBackgroundStyleMiddleware(
@@ -195,47 +196,6 @@ export default function Settings() {
                         </div>
                     </div>
                     <p className={settingsStyles.dark__theme__label}>Dark</p>
-                </div>
-            </div>
-            <p className={settingsStyles.dock__config__label}>Dock</p>
-            <div className={settingsStyles.dock__config__wrapper}>
-                <div className={settingsStyles.left__dock__wrapper}>
-                    <div className={settingsStyles.left__dock__previous}>
-                        <div 
-                            className={settingsStyles.left__dock__taskbar__previous}
-                            style={{
-                                backgroundImage: COLOR_PALETTE_OPTIONS[systemColorPalette]
-                                                    .taskbar.backgroundImage,
-                            }}
-                        />
-                        <div 
-                            className={settingsStyles.left__dock__desktop__previous}
-                            style={{
-                                backgroundImage: COLOR_PALETTE_OPTIONS[systemColorPalette]
-                                                    .desktop.backgroundImage
-                            }}
-                        />
-                    </div>
-                    <p className={settingsStyles.left__dock__label}>Left</p>
-                </div>
-                <div className={settingsStyles.bottom__dock__wrapper}>
-                    <div className={settingsStyles.bottom__dock__previous}>
-                        <div 
-                            className={settingsStyles.bottom__dock__taskbar__previous}
-                            style={{
-                                backgroundImage: COLOR_PALETTE_OPTIONS[systemColorPalette]
-                                                    .taskbar.backgroundImage,
-                            }}
-                        />
-                        <div 
-                            className={settingsStyles.bottom__dock__desktop__previous}
-                            style={{
-                                backgroundImage: COLOR_PALETTE_OPTIONS[systemColorPalette]
-                                                    .desktop.backgroundImage
-                            }}
-                        />
-                    </div>
-                    <p className={settingsStyles.bottom__dock__label}>Bottom</p>
                 </div>
             </div>
         </div>

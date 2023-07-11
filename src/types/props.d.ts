@@ -49,6 +49,7 @@ export namespace Props {
     interface ProcessWindowProps {
         PID: number;
         processTitle: string;
+        processIcon: StaticImageData;
         processElement: JSX.Element;
         zIndex: number;
         isMinimized: boolean;
@@ -63,4 +64,10 @@ export namespace Props {
             height: number
         }; 
     }
+
+    interface ProcessWindowMinimalContentVersionProps {
+        processIcon: StaticImageData;
+        processName: string;
+    }
+
 }

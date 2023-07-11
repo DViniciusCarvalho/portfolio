@@ -1,8 +1,11 @@
+import { StaticImageData } from "next/image";
+
 export namespace Data {
 
     interface OpennedProcessData {
         PID: number;
         processTitle: string;
+        processIcon: StaticImageData;
         processElement: JSX.Element;
         zIndex: number;
         isMinimized: boolean;

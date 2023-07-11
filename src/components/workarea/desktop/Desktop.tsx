@@ -27,25 +27,25 @@ export default function Desktop({
     } = useContext(MainContext);
 
 
-    const [ , drop ] = useDrop(() => ({
-        accept: 'element',
-        drop: (item: Data.DraggableProcessWindow, monitor) => {
+    // const [ , drop ] = useDrop(() => ({
+    //     accept: 'element',
+    //     drop: (item: Data.DraggableProcessWindow, monitor) => {
 
-            const element = item.dragRef.current!;
-            const elementPID = item.PID;
+    //         const element = item.dragRef.current!;
+    //         const elementPID = item.PID;
 
-            const offset = monitor.getClientOffset()!;
+    //         const offset = monitor.getClientOffset()!;
 
-            const elementPressedX = Number(element.id.split(':')[0]);
-            const elementPressedY = Number(element.id.split(':')[2]);
+    //         const elementPressedX = Number(element.id.split(':')[0]);
+    //         const elementPressedY = Number(element.id.split(':')[2]);
 
-            const currentXAxis = offset.x - elementPressedX;
-            const currentYAxis = offset.y - elementPressedY;
+    //         const currentXAxis = offset.x - elementPressedX;
+    //         const currentYAxis = offset.y - elementPressedY;
 
-            updateProcessCoordinates(elementPID, currentXAxis, currentYAxis);
+    //         updateProcessCoordinates(elementPID, currentXAxis, currentYAxis);
 
-        },
-    }));
+    //     },
+    // }));
 
     return (
         <div
@@ -63,12 +63,13 @@ export default function Desktop({
                     applicationsWindowRef,
                     systemColorPalette,
                     backgroundIsImageBlob, 
-                    backgroundImageUrl
+                    backgroundImageUrl,
+                    systemLayout
                 ),
 
             }}
             id={UUID}
-            ref={drop}
+            // ref={drop}
             onClick={() => handleChangeCurrentDesktop(UUID)}
         >
             {getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map(opennedProcessData => (

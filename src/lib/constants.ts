@@ -6,7 +6,7 @@ export const LAST_SYSTEM_ESSENTIAL_PID = 1; // systemd
 
 export const INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX = 0;
 
-export const INITIAL_SYSTEM_LAYOUT = 'column';
+export const INITIAL_SYSTEM_LAYOUT = 'row';
 
 export const INITIAL_SYSTEM_COLOR_PALETTE = 'orange';
 

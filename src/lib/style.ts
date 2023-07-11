@@ -67,7 +67,8 @@ export const getDesktopStyles = (
     applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
     backgroundColorPalette: string,
     backgroundIsImageBlob: boolean,
-    backgroundImageUrl: string
+    backgroundImageUrl: string,
+    systemLayout: string
 ): any => {
 
     const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];

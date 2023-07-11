@@ -66,6 +66,7 @@ export default function ProcessIcon({
         if (processIsNotRunning) {
             const startedProcessPID = openProcess(
                 processName, 
+                processIconStaticImage,
                 processElement,
                 currentDesktopDoesNotExists
             );

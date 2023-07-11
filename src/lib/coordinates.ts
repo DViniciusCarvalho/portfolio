@@ -1,13 +1,13 @@
 
 export const getXAxisInterference = (
     taskBarRef: React.MutableRefObject<HTMLDivElement | null>,
-    currentLayoutStyleClass: string
+    currentSystemLayout: string
 ): number => {
 
     const taskBarElement = taskBarRef.current! as HTMLDivElement;
     const taskBarWidth = taskBarElement.getBoundingClientRect().width;
 
-    const isCurrentLayoutRowStyle = currentLayoutStyleClass === 'row';
+    const isCurrentLayoutRowStyle = currentSystemLayout === 'row';
     const isLessThanOrEqualMediaQuery = window.innerWidth <= 500;
 
     return isCurrentLayoutRowStyle && !isLessThanOrEqualMediaQuery? taskBarWidth : 0;

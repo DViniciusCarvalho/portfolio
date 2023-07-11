@@ -57,8 +57,9 @@ export default function ApplicationIcon({
         if (processIsNotRunning) {
             const startedProcessPID = openProcess(
                 applicationName, 
+                applicationIconStaticImage,
                 applicationElement,
-                currentDesktopDoesNotExists
+                currentDesktopDoesNotExists,
             );
                 
             transferApplicationIconToTaskbarOtherProcessesIcons(
