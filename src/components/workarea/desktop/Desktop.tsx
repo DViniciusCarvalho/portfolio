@@ -12,7 +12,6 @@ import { getCurrentDesktopProcessesWindow } from '@/lib/utils';
 export default function Desktop({ 
     UUID,
     opennedProcessesData, 
-    updateProcessCoordinates,
     applicationsWindowRef
 }: Props.DesktopProps) {
 
@@ -23,36 +22,15 @@ export default function Desktop({
         backgroundImageUrl,
         applicationsAreBeingShowed, 
         currentActiveDesktopUUID,
-        handleChangeCurrentDesktop
+        changeCurrentDesktop
     } = useContext(MainContext);
-
-
-    // const [ , drop ] = useDrop(() => ({
-    //     accept: 'element',
-    //     drop: (item: Data.DraggableProcessWindow, monitor) => {
-
-    //         const element = item.dragRef.current!;
-    //         const elementPID = item.PID;
-
-    //         const offset = monitor.getClientOffset()!;
-
-    //         const elementPressedX = Number(element.id.split(':')[0]);
-    //         const elementPressedY = Number(element.id.split(':')[2]);
-
-    //         const currentXAxis = offset.x - elementPressedX;
-    //         const currentYAxis = offset.y - elementPressedY;
-
-    //         updateProcessCoordinates(elementPID, currentXAxis, currentYAxis);
-
-    //     },
-    // }));
 
     return (
         <div
             className={`
                 ${desktopStyles.container} 
                 ${desktopStyles[systemLayout]}
-                ${desktopStyles[!applicationsAreBeingShowed? 'showed' : 'not__showed']}
+                ${desktopStyles[!applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 `
             }
             style={{
@@ -63,21 +41,21 @@ export default function Desktop({
                     applicationsWindowRef,
                     systemColorPalette,
                     backgroundIsImageBlob, 
-                    backgroundImageUrl,
-                    systemLayout
+                    backgroundImageUrl
                 ),
 
             }}
             id={UUID}
-            // ref={drop}
-            onClick={() => handleChangeCurrentDesktop(UUID)}
+            onClick={() => changeCurrentDesktop(UUID)}
         >
-            {getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map(opennedProcessData => (
-                <ProcessWindow 
-                    {...opennedProcessData} 
-                    key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
-                />
-			))}   
+            {
+                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map(opennedProcessData => (
+                    <ProcessWindow  
+                        key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
+                        {...opennedProcessData}
+                    />
+			    ))
+            }   
         </div>
     );
 }

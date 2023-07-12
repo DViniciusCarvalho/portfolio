@@ -1,7 +1,7 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
-import Image, { StaticImageData } from 'next/image';
+import Image from 'next/image';
 
 import WindowCloseIconDark from '../../../../public/assets/dark/window-close-symbolic.svg';
 import WindowRestoreIconDark from '../../../../public/assets/dark/window-restore-symbolic.svg';
@@ -54,11 +54,6 @@ export default function ProcessWindow({
 
     const dragRef = useRef<HTMLDivElement | null>(null);
 
-	const [ windowCloseIcon, setWindowCloseIcon ] = useState<StaticImageData>(WindowCloseIconDark);
-	const [ windowRestoreIcon, setWindowRestoreIcon ] = useState<StaticImageData>(WindowRestoreIconDark);
-	const [ windowMaximizeIcon, setWindowMaximizeIcon ] = useState<StaticImageData>(WindowMaximizeIconDark);
-	const [ windowMinimizeIcon, setWindowMinimizeIcon ] = useState<StaticImageData>(WindowMinimizeIconDark);
-
 	const [ windowTitleBarBeingPressed, setWindowTitleBarBeingPressed ] = useState(false);
 
 	const [ resizeData, setResizeData ] = useState({
@@ -100,20 +95,6 @@ export default function ProcessWindow({
 		processName: processTitle
 	};
 
-	useEffect(() => {
-		const isDarkTheme = systemTheme === 'dark';
-		const closeWindowIcon = isDarkTheme? WindowCloseIconDark : WindowCloseIconLight;
-		const restoreWindowIcon = isDarkTheme? WindowRestoreIconDark : WindowRestoreIconLight;
-		const maximizeWindowIcon = isDarkTheme? WindowMaximizeIconDark : WindowMaximizeIconLight;
-		const minimizeWindowIcon = isDarkTheme? WindowMinimizeIconDark : WindowMinimizeIconLight;
-
-		setWindowCloseIcon(previous => closeWindowIcon);
-		setWindowRestoreIcon(previous => restoreWindowIcon);
-		setWindowMaximizeIcon(previous => maximizeWindowIcon);
-		setWindowMinimizeIcon(previous => minimizeWindowIcon);
-	});
-
-
 
 	const handleMouseDownAndTouchStart = (
 		clientX: number,
@@ -141,14 +122,12 @@ export default function ProcessWindow({
 
 
 	const handleMouseUpLeaveAndTouchEnd = (): void => {
+		if (!resizeData.isResizing) return;
 
-		if (resizeData.isResizing) {
-			setResizeData(previous => ({
+		setResizeData(previous => ({
 				isResizing: false,
 				resizeSide: ''
-			}));
-		}
-
+		}));
 	}
 
 
@@ -172,16 +151,12 @@ export default function ProcessWindow({
 				x: clientX,
 				y: clientY
 			}));
-
-			return;
 		}
-
-		if (isDragging && windowTitleBarBeingPressed) {
+		else if (isDragging && windowTitleBarBeingPressed) {
 			const currentXAxis = clientX - pressedCoordinates.x;
 			const currentYAxis = clientY - pressedCoordinates.y;
 	
 			updateProcessCoordinates(PID, currentXAxis, currentYAxis);
-	
 		}
 
 	}
@@ -255,20 +230,19 @@ export default function ProcessWindow({
         <div 
 			className={`
 				${processWindowStyles.container} 
-				${processWindowStyles[isMinimized? 'minimized' : 'normal']}
+				${processWindowStyles[isMinimized? 'minimized' : 'non-minimized']}
 				${processWindowStyles[systemTheme]}
 				`
 			}
 
 			ref={(node) => {
 				dragRef.current = node;
-				resizeData.isResizing? '' : drag(node);
+				resizeData.isResizing? null : drag(node);
 			}}
 
 			style={{
 				zIndex: zIndex,
 				display: getProcessWindowDisplayStyle(
-					isDragging,
 					currentActiveDesktopUUID,
 					parentDesktopUUID,
 					applicationsAreBeingShowed
@@ -287,28 +261,23 @@ export default function ProcessWindow({
 				e.clientX, 
 				e.clientY
 			)}
-
-			onMouseUp={handleMouseUpLeaveAndTouchEnd}
-			onMouseLeave={handleMouseUpLeaveAndTouchEnd}
-
 			onMouseMove={(e) => handleMouseMoveAndTouchMove(
 				e.clientX,
 				e.clientY
 			)}
+			onMouseUp={handleMouseUpLeaveAndTouchEnd}
+			onMouseLeave={handleMouseUpLeaveAndTouchEnd}
 
 			// touch-based
 			onTouchStart={(e) => handleMouseDownAndTouchStart(
 				e.touches[0].clientX, 
 				e.touches[0].clientY
 			)}
-
 			onTouchMove={(e) => handleMouseMoveAndTouchMove(
 				e.touches[0].clientX,
 				e.touches[0].clientY
 			)}
-
 			onTouchEnd={handleMouseUpLeaveAndTouchEnd}
-
 
 			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
         >
@@ -316,7 +285,7 @@ export default function ProcessWindow({
 				className={`
 					${processWindowStyles.window__title__bar}
 					${processWindowStyles[
-						applicationsAreBeingShowed? 'applications__showed' : ''
+						applicationsAreBeingShowed? 'app-showed' : 'app-not-showed'
 					]}
 					`
 				}
@@ -334,19 +303,22 @@ export default function ProcessWindow({
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
-							src={windowMinimizeIcon} 
+							src={systemTheme === 'dark'? WindowMinimizeIconDark : WindowMinimizeIconLight} 
 							alt='window minimize icon'
 						/>
 					</button>
 					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, dragRef)}>
 						<Image 
-							src={isMaximized? windowRestoreIcon : windowMaximizeIcon} 
+							src={isMaximized
+								? systemTheme === 'dark'? WindowRestoreIconDark : WindowRestoreIconLight 
+								: systemTheme === 'dark'? WindowMaximizeIconDark : WindowMaximizeIconLight
+							} 
 							alt='window restore size icon'
 						/>
 					</button>
 					<button onClick={() => sendSIGKILLToProcess(PID)}>
 						<Image 
-							src={windowCloseIcon} 
+							src={systemTheme === 'dark'? WindowCloseIconDark : WindowCloseIconLight} 
 							alt='window close icon'
 						/>
 					</button>
@@ -356,15 +328,17 @@ export default function ProcessWindow({
 				className={`
 					${processWindowStyles.process__application__section} 
 					${processWindowStyles[
-						applicationsAreBeingShowed? 'applications__showed' : ''
+						applicationsAreBeingShowed? 'app-showed' : 'app-not-showed'
 					]}
 					`
 				}
 			>
+
 				{applicationsAreBeingShowed
 					? <ProcessWindowMinimalContentVersion {...processWindowMinimizedVersionProps}/> 
 					: processElement
 				}
+
 			</div>
         </div>
     );

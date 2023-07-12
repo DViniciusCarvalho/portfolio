@@ -30,8 +30,8 @@ import {
     deepClone, 
     getCorrespondentRunningProcess,
     generateUUID,
-    getParentDesktopUUID,
-    getRelativeInitialDimension
+    getProcessWindowParentDesktopUUID,
+    getInitialProcessWindowDimensions
 } from '@/lib/utils';
 
 import { 
@@ -52,21 +52,14 @@ export default function Main() {
     const initialBaseDesktopUUID = generateUUID();
 
     const [ lastPID, setLastPID ] = useState(LAST_SYSTEM_ESSENTIAL_PID);
-
-    const [ 
-        lastHighestZIndex, 
-        setLastHighestZIndex 
-    ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
-
+    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
     const [ baseDesktopUUID ] = useState(initialBaseDesktopUUID);
+    const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
 
-    const [ 
-        currentActiveDesktopUUID, 
-        setCurrentActiveDesktopUUID 
-    ] = useState(initialBaseDesktopUUID);
 
     const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
     const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
+
 
     const [ 
         applicationsPropsDataInTaskbar, 
@@ -105,7 +98,7 @@ export default function Main() {
 		maximizeProcessWindow,
         updateProcessWindowDimensions,
         changeApplicationsAreBeingShowed,
-        handleChangeCurrentDesktop,
+        changeCurrentDesktop,
         removeDesktopActivity,
         openProcess,
         restorePreviousDimensions,
@@ -128,14 +121,13 @@ export default function Main() {
     const applicationsWindowProps: Props.ApplicationsWindowProps = {
         applicationsWindowRef,
         opennedProcessesData,
-        updateProcessCoordinates,
         desktopActivitiesData,
         baseDesktopUUID
     };
 
 
     useEffect(() => {
-        window!.addEventListener("resize", () => {
+        window!.addEventListener('resize', () => {
             if (!applicationsAreBeingShowed) {
                 changeApplicationsAreBeingShowed(true);
             }
@@ -153,10 +145,20 @@ export default function Main() {
         const nextPID = lastPID + 1;
         const nextLastHighestZIndex = lastHighestZIndex + 1;
 
-        const parentDesktopUUID = getParentDesktopUUID(
+        const processWindowParentDesktopUUID = getProcessWindowParentDesktopUUID(
             currentActiveDesktopUUID,
             currentActiveDesktopDoesNotExists,
             baseDesktopUUID
+        );
+
+        const initialProcessWindowCoordinates = {
+            x: 0,
+            y: 0
+        };
+
+        const initalProcessWindowDimensions = getInitialProcessWindowDimensions(
+            window, 
+            applicationsWindowRef
         );
 
         const newProcessData = {
@@ -167,27 +169,25 @@ export default function Main() {
             zIndex: nextLastHighestZIndex,
             isMinimized: false,
             isMaximized: false,
-            parentDesktopUUID: parentDesktopUUID,
-            coordinates: {
-                x: 0,
-                y: 0
-            },
-            dimensions: {
-                width: getRelativeInitialDimension('x', 60, applicationsWindowRef),
-                height: getRelativeInitialDimension('y', 60, applicationsWindowRef)
-            }
+            parentDesktopUUID: processWindowParentDesktopUUID,
+            coordinates: initialProcessWindowCoordinates,
+            dimensions: initalProcessWindowDimensions
         };
 
-        if (currentActiveDesktopUUID === baseDesktopUUID || currentActiveDesktopDoesNotExists) {
+        const currentDesktopIsTheBaseDesktopOrDoesNotExists = currentActiveDesktopUUID === baseDesktopUUID
+                                                            || currentActiveDesktopDoesNotExists;
+
+
+        if (currentDesktopIsTheBaseDesktopOrDoesNotExists) {
             const newCurrentDesktopData = {
-                UUID: parentDesktopUUID
+                UUID: processWindowParentDesktopUUID
             };
 
             setDesktopActivitiesData(previous => [...previous, newCurrentDesktopData]);
             
         }
 
-        setCurrentActiveDesktopUUID(previous => parentDesktopUUID);
+        setCurrentActiveDesktopUUID(previous => processWindowParentDesktopUUID);
         setApplicationsAreBeingShowed(previous => false);
 
         setLastPID(previous => nextPID);
@@ -209,12 +209,12 @@ export default function Main() {
 
             setOpennedProcessesData(previous => {
                 const opennedProcessesDataDeepCopy = deepClone(previous);
-                const elementPIDOwner = getCorrespondentRunningProcess(
+                const process = getCorrespondentRunningProcess(
                     opennedProcessesDataDeepCopy, 
                     PID
                 );
     
-                elementPIDOwner!.zIndex = nextHighestZIndex;
+                process!.zIndex = nextHighestZIndex;
 
                 return opennedProcessesDataDeepCopy;
             });
@@ -226,8 +226,8 @@ export default function Main() {
 
     function sendSIGKILLToProcess(PID: number): void { 
         setOpennedProcessesData(previous => {
-            const elementPIDOwner = getCorrespondentRunningProcess(previous, PID);
-            const { parentDesktopUUID } = elementPIDOwner!;
+            const process = getCorrespondentRunningProcess(previous, PID);
+            const { parentDesktopUUID } = process!;
 
             if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
                 setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
@@ -261,12 +261,12 @@ export default function Main() {
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
 
-            elementPIDOwner!.coordinates = {
+            process!.coordinates = {
                 x: currentXAxis,
                 y: currentYAxis
             };
@@ -279,12 +279,12 @@ export default function Main() {
     function minimizeProcessWindow(PID: number): void {
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
 
-            elementPIDOwner!.isMinimized = true;
+            process!.isMinimized = true;
 
             return opennedProcessesDataDeepCopy;
         });
@@ -294,12 +294,12 @@ export default function Main() {
     function restorePreviousDimensions(PID: number): void {
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
 
-            elementPIDOwner!.isMinimized = false;
+            process!.isMinimized = false;
 
             return opennedProcessesDataDeepCopy;
         });
@@ -316,19 +316,19 @@ export default function Main() {
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
 
-            elementPIDOwner!.isMaximized = false;
+            process!.isMaximized = false;
 
-            elementPIDOwner!.dimensions = {
+            process!.dimensions = {
                 width: memoizedWidth,
                 height: memoizedHeight
             };
 
-            elementPIDOwner!.coordinates = {
+            process!.coordinates = {
                 x: memoizedXAxis,
                 y: memoizedYAxis
             };
@@ -344,19 +344,19 @@ export default function Main() {
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
 
-            elementPIDOwner!.isMaximized = true;
+            process!.isMaximized = true;
 
-            elementPIDOwner!.dimensions = {
+            process!.dimensions = {
                 width: parentDesktopWidth,
                 height: parentDesktopHeight
             };
 
-            elementPIDOwner!.coordinates = {
+            process!.coordinates = {
                 x: 0,
                 y: 0
             };
@@ -378,7 +378,7 @@ export default function Main() {
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
-            const elementPIDOwner = getCorrespondentRunningProcess(
+            const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID
             );
@@ -389,18 +389,18 @@ export default function Main() {
             if (resizeSide === 'top') {
                 const { newHeight, newCoordinates } = getNewHeightAndYAxisOnTop(
                     movementIsInFavorOfYAxis,
-                    elementPIDOwner!,
+                    process!,
                     previousYAxis,
                     currentYAxis
                 );
 
-                elementPIDOwner!.dimensions = {
-                    width: elementPIDOwner!.dimensions.width,
+                process!.dimensions = {
+                    width: process!.dimensions.width,
                     height: newHeight
                 };
 
-                elementPIDOwner!.coordinates = {
-                    x: elementPIDOwner!.coordinates.x,
+                process!.coordinates = {
+                    x: process!.coordinates.x,
                     y: newCoordinates
                 };
             }
@@ -408,27 +408,27 @@ export default function Main() {
             else if (resizeSide === 'right') {
                 const newWidth = getNewWidthOnRight(
                     movementIsInFavorOfXAxis, 
-                    elementPIDOwner!, 
+                    process!, 
                     previousXAxis, 
                     currentXAxis
                 );
 
-                elementPIDOwner!.dimensions = {
+                process!.dimensions = {
                     width: newWidth,
-                    height: elementPIDOwner!.dimensions.height
+                    height: process!.dimensions.height
                 };
             }
 
             else if (resizeSide === 'bottom') {
                 const newHeight = getNewHeightAndYAxisOnBottom(
                     movementIsInFavorOfYAxis,
-                    elementPIDOwner!,
+                    process!,
                     previousYAxis,
                     currentYAxis
                 );
 
-                elementPIDOwner!.dimensions = {
-                    width: elementPIDOwner!.dimensions.width,
+                process!.dimensions = {
+                    width: process!.dimensions.width,
                     height: newHeight
                 };
             }
@@ -436,19 +436,19 @@ export default function Main() {
             else if (resizeSide === 'left') {
                 const { newWidth, newCoordinates } = getNewWidthAndXAxisOnLeft(
                     movementIsInFavorOfXAxis, 
-                    elementPIDOwner!, 
+                    process!, 
                     previousXAxis, 
                     currentXAxis
                 );
 
-                elementPIDOwner!.dimensions = {
+                process!.dimensions = {
                     width: newWidth,
-                    height: elementPIDOwner!.dimensions.height
+                    height: process!.dimensions.height
                 };
 
-                elementPIDOwner!.coordinates = {
+                process!.coordinates = {
                     x: newCoordinates,
-                    y: elementPIDOwner!.coordinates.y
+                    y: process!.coordinates.y
                 };
             }
 
@@ -483,8 +483,8 @@ export default function Main() {
     }
 
 
-    function handleChangeCurrentDesktop(UUID: string): void {
-        setCurrentActiveDesktopUUID(previous => UUID);
+    function changeCurrentDesktop(desktopUUID: string): void {
+        setCurrentActiveDesktopUUID(previous => desktopUUID);
         changeApplicationsAreBeingShowed(false);
     }
 
@@ -497,26 +497,34 @@ export default function Main() {
         );
     }
 
-    function changeBackgroundStyle(isImageBlob: boolean, imageUrlBase64: string, systemColorPalette: string) {
-        if (isImageBlob) {
-            setBackgroundIsImageBlob(previous => true);
-            setBackgroundImageUrl(previous => imageUrlBase64);
 
-            return;
+    function changeBackgroundStyle(
+        isImageBlob: boolean, 
+        imageUrlBase64: string, 
+        systemColorPalette: string
+    ): void {
+
+        setBackgroundIsImageBlob(previous => isImageBlob);
+
+        if (isImageBlob) {
+            setBackgroundImageUrl(previous => imageUrlBase64);
+        }
+        else {
+            setSystemColorPalette(previous => systemColorPalette);
         }
 
-        setBackgroundIsImageBlob(previous => false);
-        setSystemColorPalette(previous => systemColorPalette);
     }
+
 
     function changeSystemTheme(theme: string): void {
         setSystemTheme(previous => theme);
     }
 
+
     function changeSystemLayout(layout: string): void {
         setSystemLayout(previous => layout);
-        taskBarRef.current!.click();
     }
+
 
     return (
         <div className={mainStyles.container}>

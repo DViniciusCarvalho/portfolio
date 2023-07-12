@@ -23,14 +23,14 @@ export default function ProcessIcon({
         desktopActivitiesData,
         elevateProcessWindowZIndex, 
         currentActiveDesktopUUID,
-        handleChangeCurrentDesktop,
+        changeCurrentDesktop,
         openProcess,
         restorePreviousDimensions,
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed
     } = useContext(MainContext);
 
-    const [ processPID, setProcessPID ] = useState(initialPID);
+    const [ processPID, setProcessPID ] = useState(initialPID!);
 
 	
     function startProcessMiddleware(
@@ -40,16 +40,12 @@ export default function ProcessIcon({
         currentActiveDesktopUUID: string
     ): void {
 
-		const processFound = getCorrespondentRunningProcess(
+		const process = getCorrespondentRunningProcess(
             opennedProcessesData, 
             processPID
         );
 
-        const processIsAlreadyRunning = processIsRunning(
-            opennedProcessesData, 
-            processPID
-        );
-
+        const processIsAlreadyRunning = !!process;
         const processIsNotRunning = !processIsAlreadyRunning;
 
         const currentDesktopDoesNotExists = !getCorrespondentDesktop(
@@ -57,10 +53,10 @@ export default function ProcessIcon({
             currentActiveDesktopUUID
         );
 
-        const processIsMinimized = processFound?.isMinimized;
+        const processIsMinimized = process?.isMinimized;
 
-        const processIsRunningAndNotInTheCurrentDesktop = processIsRunning(opennedProcessesData, processPID) 
-                                                        && processFound?.parentDesktopUUID 
+        const processIsRunningAndNotInTheCurrentDesktop = processIsAlreadyRunning 
+                                                        && process?.parentDesktopUUID 
                                                         !== currentActiveDesktopUUID;
 
         if (processIsNotRunning) {
@@ -84,7 +80,7 @@ export default function ProcessIcon({
         }
 
         if (processIsRunningAndNotInTheCurrentDesktop) {
-            handleChangeCurrentDesktop(processFound!.parentDesktopUUID);
+            changeCurrentDesktop(process!.parentDesktopUUID);
         }
 
         if (processIsAlreadyRunning && applicationsAreBeingShowed) {
@@ -100,17 +96,19 @@ export default function ProcessIcon({
 				${processIconStyles.container} 
 				${processIconStyles[systemLayout]} 
 				${processIconStyles[
-					processIsTheCurrentOpenned(opennedProcessesData, processPID)? 'active' : ''
+					processIsTheCurrentOpenned(opennedProcessesData, processPID)
+                    ? 'current-active-process' 
+                    : 'not-the-current-active-process'
 				]}
 				`
-			} 
-			title={processName} 
+			}  
 			onClick={() => startProcessMiddleware(
                 opennedProcessesData, 
                 desktopActivitiesData, 
                 processPID, 
                 currentActiveDesktopUUID
             )}
+            title={processName}
         >
             <Image 
                 src={processIconStaticImage} 

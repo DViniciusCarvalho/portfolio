@@ -18,7 +18,6 @@ import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 export default function ApplicationsWindow({ 
 	applicationsWindowRef,
 	opennedProcessesData, 
-	updateProcessCoordinates,
 	desktopActivitiesData,
 	baseDesktopUUID 
 }: Props.ApplicationsWindowProps) {
@@ -44,10 +43,7 @@ export default function ApplicationsWindow({
 
 	const [ filterString, setFilterString ] = useState('');
 
-	const [
-		applicationsIconProps,
-		setApplicationsIconProps
-	] = useState<(Props.ApplicationIconProps & Data.ApplicationMetadata)[]>([
+	const applicationsIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[] = [
 		{
 			applicationIconStaticImage: A,
 			applicationName: 'Terminal',
@@ -138,17 +134,15 @@ export default function ApplicationsWindow({
 				category: ['']
 			}
 		}
-	])
+	];
 
 
-
-	
     return ( 
         <div 
 			className={`
 				${applicationsWindowStyles.container} 
 				${applicationsWindowStyles[systemLayout]}
-				${applicationsWindowStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
+				${applicationsWindowStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
 				`
 			}
 			ref={applicationsWindowRef}
@@ -171,16 +165,20 @@ export default function ApplicationsWindow({
 				/>
             </div>
             <div className={applicationsWindowStyles.activities__wrapper}>
-				{desktopActivitiesData.map((desktopActivityData, index) => (
-					<Desktop 
-						key={desktopActivityData.UUID}
-						UUID={desktopActivityData.UUID} 
-						opennedProcessesData={opennedProcessesData}
-						updateProcessCoordinates={updateProcessCoordinates}
-						applicationsWindowRef={applicationsWindowRef}
-					/>
-				))}
+
+				{
+					desktopActivitiesData.map((desktopActivityData, index) => (
+						<Desktop 
+							key={desktopActivityData.UUID}
+							UUID={desktopActivityData.UUID} 
+							opennedProcessesData={opennedProcessesData}
+							applicationsWindowRef={applicationsWindowRef}
+						/>
+					))
+				}
+
 		  		{applicationsWindowRefLoaded && (<BaseDesktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
+
 			</div>
             <div className={applicationsWindowStyles.applications__wrapper}>
 

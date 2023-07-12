@@ -33,51 +33,38 @@ export default function TaskBar({
     } = useContext(MainContext);
 
 
-    const [ 
-        favoriteProcessesIconProps, 
-        setFavoriteProcessesIconProps 
-    ] = useState<Props.ProcessIconProps[]>([
+    const favoriteProcessesIconProps: Props.ProcessIconProps[] = [
         {
             processIconStaticImage: NautilusIcon,
             processName: 'Files',
-            processElement: <Nautilus/>,
-            initialPID: 0
+            processElement: <Nautilus/>
         },
         {
             processIconStaticImage: TerminalIcon,
             processName: 'Terminal',
-            processElement: <Terminal/>,
-            initialPID: 0
+            processElement: <Terminal/>
         },
         {
             processIconStaticImage: SettingsIcon,
             processName: 'Settings',
-            processElement: <Settings/>,
-            initialPID: 0
+            processElement: <Settings/>
         }
-    ]);
+    ];
 
-    const [
-        otherProcessesIconProps,
-        setOtherProcessesIconProps
-    ] = useState<Props.ProcessIconProps[]>([
+    const otherProcessesIconProps: Props.ProcessIconProps[] = [
         {
             processIconStaticImage: UserTrashIcon,
             processName: 'Trash',
-            processElement: <UserTrash/>,
-            initialPID: 0
+            processElement: <UserTrash/>
         }
-    ]);
-
-
+    ];
 
 
     return (
         <div 
-            ref={taskBarRef}
             className={`
                 ${taskBarStyles.container} 
-                ${taskBarStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
+                ${taskBarStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 ${taskBarStyles[systemLayout]}
                 `
             }
@@ -87,19 +74,23 @@ export default function TaskBar({
                     backgroundIsImageBlob
                 )
             }}
+            ref={taskBarRef}
         >
             <div className={taskBarStyles.process__icons__first__wrapper}>
 
-                {favoriteProcessesIconProps.map((favoriteProcessIconProps, index) => (
-                    <ProcessIcon 
-                        key={generateJSXKey(
-                            'favorite-process-icon', 
-                            favoriteProcessIconProps.processName, 
-                            index
-                        )} 
-                        {...deepClone(favoriteProcessIconProps)}
-                    />
-                ))}
+                {
+                    favoriteProcessesIconProps.map((favoriteProcessIconProps, index) => (
+                        <ProcessIcon 
+                            key={generateJSXKey(
+                                'favorite-process-icon', 
+                                favoriteProcessIconProps.processName, 
+                                index
+                            )} 
+                            {...deepClone(favoriteProcessIconProps)}
+                            initialPID={0}
+                        />
+                    ))
+                }
 
             </div>
             <hr className={taskBarStyles.process__trash__separator}/>
@@ -115,6 +106,7 @@ export default function TaskBar({
                                 index
                             )} 
                             {...deepClone(otherProcessIconProps)}
+                            initialPID={0}
                         />
                     ))
                 }

@@ -18,7 +18,7 @@ export default function BaseDesktop({
         backgroundImageUrl,
         applicationsAreBeingShowed, 
         currentActiveDesktopUUID,
-        handleChangeCurrentDesktop
+        changeCurrentDesktop
     } = useContext(MainContext);
 
 
@@ -27,7 +27,7 @@ export default function BaseDesktop({
             className={`
                 ${desktopStyles.container} 
                 ${desktopStyles[systemLayout]}
-                ${desktopStyles[!applicationsAreBeingShowed? 'showed' : 'not__showed']}
+                ${desktopStyles[!applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 `
             }
             style={{
@@ -43,7 +43,7 @@ export default function BaseDesktop({
                 )
             }}
             id={baseDesktopUUID}
-            onClick={() => handleChangeCurrentDesktop(baseDesktopUUID)}
+            onClick={() => changeCurrentDesktop(baseDesktopUUID)}
         />   
     );
 }

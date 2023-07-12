@@ -7,6 +7,7 @@ import { processIsRunning } from '@/lib/validation';
 import { getCorrespondentRunningProcess, getCorrespondentDesktop } from '@/lib/utils';
 import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 
+
 export default function ApplicationIcon({ 
     applicationIconStaticImage, 
     applicationName, 
@@ -22,14 +23,14 @@ export default function ApplicationIcon({
         openProcess,
         elevateProcessWindowZIndex,
         restorePreviousDimensions,
-        handleChangeCurrentDesktop,
+        changeCurrentDesktop,
         changeApplicationsAreBeingShowed,
         transferApplicationIconToTaskbarOtherProcessesIcons
     } = useContext(MainContext);
 
     const [ processPID, setProcessPID ] = useState(0);
 
-    const startProcessMiddleware = () => {
+    const startProcessMiddleware = (): void => {
 
 		const processFound = getCorrespondentRunningProcess(
             opennedProcessesData, 
@@ -82,14 +83,12 @@ export default function ApplicationIcon({
         }
 
         if (processIsRunningAndNotInTheCurrentDesktop) {
-            handleChangeCurrentDesktop(processFound!.parentDesktopUUID);
+            changeCurrentDesktop(processFound!.parentDesktopUUID);
         }
 
         if (processIsAlreadyRunning && applicationsAreBeingShowed) {
             changeApplicationsAreBeingShowed(false);
         }
-
-        
     }
 
     return (
@@ -107,7 +106,9 @@ export default function ApplicationIcon({
                     alt={`${applicationName} icon`} 
                     className={applicationIconStyles.icon}
                 />
-                { applicationName }
+
+                {applicationName}
+
                 <div 
                     className={applicationIconStyles.openned__indicator}
                     style={{

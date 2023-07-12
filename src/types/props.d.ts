@@ -15,7 +15,6 @@ export namespace Props {
     interface ApplicationsWindowProps {
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
         opennedProcessesData: Data.OpennedProcessData[];
-        updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
         desktopActivitiesData: Data.DesktopActivityData[];
         baseDesktopUUID: string;
     }
@@ -24,7 +23,7 @@ export namespace Props {
         processIconStaticImage: StaticImageData;
         processName: string;
         processElement: JSX.Element;
-        initialPID: number;
+        initialPID?: number;
     }
 
     interface ApplicationIconProps {
@@ -36,7 +35,6 @@ export namespace Props {
     interface DesktopProps {
         UUID: string;
         opennedProcessesData: Data.OpennedProcessData[];
-        updateProcessCoordinates: (PID: number, XAxis: number, YAxis: number) => void;
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
     }
 

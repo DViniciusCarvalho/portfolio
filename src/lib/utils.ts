@@ -1,6 +1,7 @@
 import { isValidElement } from 'react';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
+import { INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS } from './constants';
 
 
 export const deepClone = <T>(object: T): T => {
@@ -97,7 +98,7 @@ export const getCorrespondentDesktop = (
 }
 
 
-export const getParentDesktopUUID = (
+export const getProcessWindowParentDesktopUUID = (
     currentActiveDesktopUUID: string, 
     currentActiveDesktopDoesNotExists: boolean,
     baseDesktopUUID: string
@@ -107,19 +108,6 @@ export const getParentDesktopUUID = (
     const invalidUUID = currentActiveDesktopDoesNotExists || currentUUIDEqualsToBaseDesktopUUID;
 
     return invalidUUID? generateUUID() : currentActiveDesktopUUID;
-}
-
-
-export const getCurrentDesktopProcessesWindow = (
-    opennedProcessesData: Data.OpennedProcessData[],
-    UUID: string
-): Data.OpennedProcessData[] => {
-
-    const currentDesktopProcessesWindow = opennedProcessesData.filter(opennedProcessData => {
-        return opennedProcessData.parentDesktopUUID === UUID;
-    });
-
-    return currentDesktopProcessesWindow;
 }
 
 
@@ -139,6 +127,47 @@ export const getRelativeInitialDimension = (
             : applicationsWindowHeight * percentage / 100;
 }
 
+
+export const getInitialProcessWindowDimensions = (
+    window: Window, 
+    applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>
+) => {
+
+    const windowLELimit = window.innerWidth 
+                        <= LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS;
+
+    
+    const initialWidthPercentage = windowLELimit
+                                    ? INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT
+                                    : INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE;
+
+    return {
+        width: getRelativeInitialDimension(
+            'x', 
+            initialWidthPercentage, 
+            applicationsWindowRef
+        ),
+        height: getRelativeInitialDimension(
+            'y', 
+            INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, 
+            applicationsWindowRef
+        )
+    }
+
+}
+
+
+export const getCurrentDesktopProcessesWindow = (
+    opennedProcessesData: Data.OpennedProcessData[],
+    UUID: string
+): Data.OpennedProcessData[] => {
+
+    const currentDesktopProcessesWindow = opennedProcessesData.filter(opennedProcessData => {
+        return opennedProcessData.parentDesktopUUID === UUID;
+    });
+
+    return currentDesktopProcessesWindow;
+}
 
 export 	const getFilteredApplicationsByNameAndMetadata = (
     applicationIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[],

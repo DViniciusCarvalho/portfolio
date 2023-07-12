@@ -1,10 +1,9 @@
 import { Data } from "@/types/data";
 import { getCorrespondentDesktop } from "@/lib/utils";
 import { desktopCanBeShowed } from "@/lib/validation";
-import { COLOR_PALETTE_OPTIONS } from "@/lib/constants";
+import { COLOR_PALETTE_OPTIONS, INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS } from "@/lib/constants";
 
 export const getProcessWindowDisplayStyle = (
-    isDragging: boolean,
     currentActiveDesktopUUID: string,
     parentDesktopUUID: string,
     applicationsAreBeingShowed: boolean
@@ -29,6 +28,8 @@ export const getRelativeDimensionAndCoordinatesStyle = (
 ) => {
 
     const processWindowElement = processWindowRef.current! as HTMLDivElement;
+    const windowLELimit = window.innerWidth
+                        <= LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS;
 
     if (processWindowElement) {
         const parentDesktopElement = processWindowElement.parentElement as HTMLDivElement;
@@ -52,8 +53,10 @@ export const getRelativeDimensionAndCoordinatesStyle = (
     }
 
     return {
-        width: '60%',
-        height: '60%',
+        width: windowLELimit
+                ? `${INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT}%` 
+                : `${INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE}%`,
+        height: `${INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE}%`,
         left: '0%',
         top: '0%'
     }
@@ -67,8 +70,7 @@ export const getDesktopStyles = (
     applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
     backgroundColorPalette: string,
     backgroundIsImageBlob: boolean,
-    backgroundImageUrl: string,
-    systemLayout: string
+    backgroundImageUrl: string
 ): any => {
 
     const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];
@@ -132,7 +134,7 @@ export const getBaseDesktopStyles = (
 
     const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
-    backgroundColorPalette
+
     const stylesWithoutTransform = {
         display: applicationsAreHiddenAndIsNotCurrentDesktop && !baseDesktopAndCanBeShowed? 'none' : 'block',
         position: baseDesktopAndCanBeShowed? 'absolute' : 'relative',

@@ -18,11 +18,11 @@ export default function ShowApplications() {
 			className={`
 				${showApplicationsStyles.container} 
 				${showApplicationsStyles[systemLayout]} 
-				${showApplicationsStyles[applicationsAreBeingShowed? 'applications__showed' : '']}
+				${showApplicationsStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
 				`
 			} 
-			title='Show Applications' 
 			onClick={() => changeApplicationsAreBeingShowed(!applicationsAreBeingShowed)}
+            title='Show Applications' 
         >
             <Image 
                 src={ShowApplicationsIcon} 
