@@ -1,7 +1,9 @@
 import React, { useContext, useRef } from 'react';
 import settingsStyles from '@/styles/processes/Settings.module.sass';
-import { MainContext } from '../workarea/Main';
+import { MainContext } from '@/components/workarea/Main';
 import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
+import { generateJSXKey } from '@/lib/utils';
+
 
 
 export default function Settings() {
@@ -15,42 +17,38 @@ export default function Settings() {
         backgroundIsImageBlob,
         backgroundImageUrl,
         changeBackgroundStyle,
-        changeSystemTheme,
-        changeSystemLayout
+        changeSystemTheme
     } = useContext(MainContext);
 
-    
-    function changeBackgroundStyleMiddleware(
+
+    const changeBackgroundStyleMiddleware = (
         colorPalette?: string
-    ): void {
+    ): void => {
 
         const files = fileInputRef.current!.files!;
   
-        if (files.length) {
-            const base64ImageBlob = files[0x0];
-            changeBackgroundStyleToBase64EncodedImageBlob(base64ImageBlob);
+        if (!files.length) {
+            changeBackgroundStyle(
+                false, 
+                '', 
+                colorPalette
+            );
 
             return;
         }
 
-        changeBackgroundStyle(
-            false, 
-            '', 
-            colorPalette
-        );
-
-    }
-
-
-    function changeBackgroundStyleToBase64EncodedImageBlob(backgroundImageFile: File): void {
         const reader = new FileReader();
         
         reader.addEventListener('load', () => {
             const imageUrl = reader.result;
-            changeBackgroundStyle(true, imageUrl);
+            const isImageFile = String(imageUrl).startsWith('data:image/');
+
+            if (isImageFile) changeBackgroundStyle(true, imageUrl);
+            
         });
         
-        reader.readAsDataURL(backgroundImageFile);
+        reader.readAsDataURL(files[0x0]);
+
     }
 
 
@@ -88,21 +86,29 @@ export default function Settings() {
                 </div>
                 
                 <div className={settingsStyles.background__color__palette__radios__wrapper}>
-                    {Object.keys(COLOR_PALETTE_OPTIONS).map(colorPaletteOptionName => (
-                        <input
-                            key={`radio-color-palette-${colorPaletteOptionName}`}
-                            type='radio'
-                            name='backgroundColorPalette'
-                            value={colorPaletteOptionName}
-                            checked={systemColorPalette === colorPaletteOptionName? true : false}
-                            className={settingsStyles.background__color__palette__radio}
-                            style={{
-                                backgroundColor: COLOR_PALETTE_OPTIONS[colorPaletteOptionName].settingsColor,
-                                outlineColor: COLOR_PALETTE_OPTIONS[colorPaletteOptionName].settingsColor
-                            }}
-                            onChange={() => changeBackgroundStyleMiddleware(colorPaletteOptionName)}
-                        />
-                    ))}
+
+                    {
+                        Object.keys(COLOR_PALETTE_OPTIONS).map((colorPaletteOptionName, index) => (
+                            <input
+                                key={generateJSXKey(
+                                    'radio-color-pallete',
+                                    colorPaletteOptionName,
+                                    index
+                                )}
+                                type='radio'
+                                name='backgroundColorPalette'
+                                value={colorPaletteOptionName}
+                                checked={systemColorPalette === colorPaletteOptionName? true : false}
+                                className={settingsStyles.background__color__palette__radio}
+                                style={{
+                                    backgroundColor: COLOR_PALETTE_OPTIONS[colorPaletteOptionName].settingsColor,
+                                    outlineColor: COLOR_PALETTE_OPTIONS[colorPaletteOptionName].settingsColor
+                                }}
+                                onChange={() => changeBackgroundStyleMiddleware(colorPaletteOptionName)}
+                            />
+                        ))
+                    }
+
                 </div>
 
                 <div className={settingsStyles.select__background__file__wrapper}>

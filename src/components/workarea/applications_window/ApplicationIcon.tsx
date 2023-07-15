@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import applicationIconStyles from '@/styles/workarea/applications/ApplicationIcon.module.sass';
 import Image from 'next/image';
 import { Props } from '@/types/props';
-import { MainContext } from '../Main';
+import { MainContext } from '@/components/workarea/Main';
 import { processIsRunning } from '@/lib/validation';
 import { getCorrespondentRunningProcess, getCorrespondentDesktop } from '@/lib/utils';
 import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
@@ -113,7 +113,7 @@ export default function ApplicationIcon({
                     className={applicationIconStyles.openned__indicator}
                     style={{
                         backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor,
-                        display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
+                        display: processIsRunning(opennedProcessesData, processPID)? 'block' : 'none'
                     }}
                 />
             </div>

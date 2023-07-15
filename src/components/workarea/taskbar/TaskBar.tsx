@@ -9,7 +9,7 @@ import SettingsIcon from '../../../../public/assets/preferences-desktop.png';
 import UserTrashIcon from '../../../../public/assets/user-trash.png';
 
 import Nautilus from '@/components/processes/Nautilus';
-import Terminal from '@/components/processes/Terminal';
+import Terminal from '@/components/processes/terminal/Terminal';
 import UserTrash from '@/components/processes/UserTrash';
 import Settings from '@/components/processes/Settings';
 
@@ -86,7 +86,7 @@ export default function TaskBar({
                                 favoriteProcessIconProps.processName, 
                                 index
                             )} 
-                            {...deepClone(favoriteProcessIconProps)}
+                            {...favoriteProcessIconProps}
                             initialPID={0}
                         />
                     ))
@@ -105,7 +105,7 @@ export default function TaskBar({
                                 otherProcessIconProps.processName, 
                                 index
                             )} 
-                            {...deepClone(otherProcessIconProps)}
+                            {...otherProcessIconProps}
                             initialPID={0}
                         />
                     ))

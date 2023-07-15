@@ -3,11 +3,11 @@ import { getCorrespondentRunningProcess } from './utils';
 import { TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS } from './constants';
 
 
-export const isResizeAction = (
+export const getResizeSide = (
     clientX: number,
     clientY: number, 
     processWindowRef: React.MutableRefObject<HTMLDivElement | null>
-): string | false => {
+): string | undefined => {
 
     const processWindowElement = processWindowRef.current! as HTMLDivElement;
 
@@ -45,7 +45,7 @@ export const isResizeAction = (
         if (resizingLeft) return 'left';
     }
  
-    return false;
+    return undefined;
 }
 
 

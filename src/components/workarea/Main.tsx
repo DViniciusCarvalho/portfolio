@@ -106,7 +106,7 @@ export default function Main() {
         changeBackgroundStyle,
         changeSystemTheme,
         changeSystemLayout,
-        updateProcessCoordinates
+        updateProcessWindowCoordinates
     };
 
     const globalMenuProps: Props.GlobalMenuProps = {
@@ -250,7 +250,7 @@ export default function Main() {
     }
 
 
-    function updateProcessCoordinates(
+    function updateProcessWindowCoordinates(
         PID: number, 
         XAxisWithoutInterference: number, 
         YAxisWithoutInterference: number

@@ -41,7 +41,7 @@ export default function ApplicationsWindow({
 		applicationsWindowRef
 	};
 
-	const [ filterString, setFilterString ] = useState('');
+	const [ searchFilterString, setSearchFilterString ] = useState('');
 
 	const applicationsIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[] = [
 		{
@@ -160,8 +160,8 @@ export default function ApplicationsWindow({
 					type='text' 
 					className={applicationsWindowStyles.search__input} 
 					placeholder='Type to search'
-					value={filterString}
-					onChange={(e) => setFilterString(e.target.value)}
+					value={searchFilterString}
+					onChange={(e) => setSearchFilterString(e.target.value)}
 				/>
             </div>
             <div className={applicationsWindowStyles.activities__wrapper}>
@@ -183,7 +183,7 @@ export default function ApplicationsWindow({
             <div className={applicationsWindowStyles.applications__wrapper}>
 
 				{
-					getFilteredApplicationsByNameAndMetadata(applicationsIconProps, filterString)
+					getFilteredApplicationsByNameAndMetadata(applicationsIconProps, searchFilterString)
 					.map((applicationIconProps, index) => (
 						<ApplicationIcon 
 							key={generateJSXKey(

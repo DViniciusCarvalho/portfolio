@@ -1,18 +1,14 @@
-import "@/styles/globals.sass";
+import '@/styles/globals.sass';
 
 export const metadata = {
-  title: 'Portfolio',
-  description: 'Portfolio do Douglas',
+	title: 'Portfolio',
+	description: 'Douglas\' Portfolio'
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="pt-br">
-      <body>{children}</body>
-    </html>
-  )
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+	return (
+		<html lang='en-us'>
+			<body>{children}</body>
+		</html>
+	);
 }

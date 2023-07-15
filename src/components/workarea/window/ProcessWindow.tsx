@@ -1,5 +1,4 @@
 import React, { useContext, useRef, useState } from 'react';
-import { useDrag } from 'react-dnd';
 import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import Image from 'next/image';
 
@@ -15,7 +14,7 @@ import WindowMinimizeIconLight from '../../../../public/assets/light/window-mini
 
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { isResizeAction } from '@/lib/validation';
+import { getResizeSide } from '@/lib/validation';
 
 import { 
 	getProcessWindowDisplayStyle, 
@@ -48,15 +47,15 @@ export default function ProcessWindow({
 		updateProcessWindowDimensions,
 		currentActiveDesktopUUID,
 		applicationsAreBeingShowed,
-		updateProcessCoordinates
+		updateProcessWindowCoordinates
 	} = useContext(MainContext);
 
 
-    const dragRef = useRef<HTMLDivElement | null>(null);
+    const processWindowRef = useRef<HTMLDivElement | null>(null);
+	const processWindowTitleBarRef = useRef<HTMLDivElement | null>(null);
 
-	const [ windowTitleBarBeingPressed, setWindowTitleBarBeingPressed ] = useState(false);
-
-	const [ resizeData, setResizeData ] = useState({
+	const [ isDragging, setIsDragging ] = useState(false);
+	const [ processWindowResizeData, setProcessWindowResizeData ] = useState({
 		isResizing: false,
 		resizeSide: ''
 	});
@@ -82,98 +81,114 @@ export default function ProcessWindow({
 		}
 	});
 
-    const [ { isDragging }, drag ] = useDrag(() => ({
-        type: 'element',
-        item: { dragRef, PID },
-        collect: (monitor) => ({
-            isDragging: monitor.isDragging(),
-        }),
-    }));
-
 	const processWindowMinimizedVersionProps: Props.ProcessWindowMinimalContentVersionProps = {
 		processIcon: processIcon, 
 		processName: processTitle
 	};
 
 
-	const handleMouseDownAndTouchStart = (
+	const memoizeProcessWindowPressedCoordinates = (
 		clientX: number,
 		clientY: number
 	): void => {
 
-		const sideToResize = isResizeAction(clientX, clientY, dragRef);
+		const elementXAxis = processWindowRef.current!.getBoundingClientRect().x;
+		const elementYAxis = processWindowRef.current!.getBoundingClientRect().y;
+
+		setPressedCoordinates(previous => ({
+			x: clientX - elementXAxis,
+			y: clientY - elementYAxis
+		}));
+
+	}
+
+
+	const handleProcessWindowStartPressing = (
+		clientX: number,
+		clientY: number,
+		pressedTarget: EventTarget
+	): void => {
+
+		const isProcessWindowTitleBarBeingPressed = pressedTarget === processWindowTitleBarRef.current!;
+
+		const sideToResize = getResizeSide(clientX, clientY, processWindowRef);
+		const isDragAction = isProcessWindowTitleBarBeingPressed && !sideToResize;
 
 		if (sideToResize) {
+
 			setPreviousPressedCoordinates(previous => ({
 				x: clientX,
 				y: clientY
 			}));
 
-			setResizeData(previous => ({
+			setProcessWindowResizeData(previous => ({
 				isResizing: true,
 				resizeSide: sideToResize
 			}));
+
 		}
+		else if (isDragAction) {
 
+			setIsDragging(previous => true);
+			memoizeProcessWindowPressedCoordinates(clientX, clientY);
+
+		}
+		
 		elevateProcessWindowZIndex(PID);
-		updateInitialCoordinates(clientX, clientY);
-
+		
 	}
 
 
-	const handleMouseUpLeaveAndTouchEnd = (): void => {
-		if (!resizeData.isResizing) return;
-
-		setResizeData(previous => ({
-				isResizing: false,
-				resizeSide: ''
-		}));
-	}
-
-
-	const handleMouseMoveAndTouchMove = (
+	const handleProcessWindowMovement = (
 		clientX: number,
 		clientY: number
 	): void => {
 
-		if (resizeData.isResizing && isResizeAction(clientX, clientY, dragRef)) {
+		if (processWindowResizeData.isResizing && getResizeSide(clientX, clientY, processWindowRef)) {
+
 			updateProcessWindowDimensions(
 				PID,
 				clientX, 
 				clientY,
 				previousPressedCoordinates.x,
 				previousPressedCoordinates.y,
-				dragRef, 
-				resizeData.resizeSide
+				processWindowRef, 
+				processWindowResizeData.resizeSide
 			);
 
 			setPreviousPressedCoordinates(previous => ({
 				x: clientX,
 				y: clientY
 			}));
+
 		}
-		else if (isDragging && windowTitleBarBeingPressed) {
+		else if (isDragging) {
+
 			const currentXAxis = clientX - pressedCoordinates.x;
 			const currentYAxis = clientY - pressedCoordinates.y;
 	
-			updateProcessCoordinates(PID, currentXAxis, currentYAxis);
+			updateProcessWindowCoordinates(
+				PID, 
+				currentXAxis, 
+				currentYAxis
+			);
+
 		}
 
 	}
 
 
-	const updateInitialCoordinates = (
-		clientX: number,
-		clientY: number
-	): void => {
-
-		const elementXAxis = dragRef.current!.getBoundingClientRect().x;
-		const elementYAxis = dragRef.current!.getBoundingClientRect().y;
-
-		setPressedCoordinates(previous => ({
-			x: clientX - elementXAxis,
-			y: clientY - elementYAxis
-		}));
+	const handleProcessWindowEndPressing = (): void => {
+		
+		if (processWindowResizeData.isResizing) {
+			setProcessWindowResizeData(previous => ({
+				isResizing: false,
+				resizeSide: ''
+			}));
+		}
+		else if (isDragging) {
+			setIsDragging(previous => false);
+		}
 
 	}
 
@@ -234,12 +249,6 @@ export default function ProcessWindow({
 				${processWindowStyles[systemTheme]}
 				`
 			}
-
-			ref={(node) => {
-				dragRef.current = node;
-				resizeData.isResizing? null : drag(node);
-			}}
-
 			style={{
 				zIndex: zIndex,
 				display: getProcessWindowDisplayStyle(
@@ -248,38 +257,41 @@ export default function ProcessWindow({
 					applicationsAreBeingShowed
 				),
 				...getRelativeDimensionAndCoordinatesStyle(
-					dragRef,
+					processWindowRef,
 					dimensions.width,
 					dimensions.height,
 					coordinates.x,
 					coordinates.y
-				)
+				),
+				transition: isDragging? '0s' : '0.3s'
 			}}
+			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
+			ref={processWindowRef}
 			
 			// click-based
-			onMouseDown={(e) => handleMouseDownAndTouchStart(
+			onMouseDown={(e) => handleProcessWindowStartPressing(
 				e.clientX, 
-				e.clientY
+				e.clientY,
+				e.target
 			)}
-			onMouseMove={(e) => handleMouseMoveAndTouchMove(
+			onMouseMove={(e) => handleProcessWindowMovement(
 				e.clientX,
 				e.clientY
 			)}
-			onMouseUp={handleMouseUpLeaveAndTouchEnd}
-			onMouseLeave={handleMouseUpLeaveAndTouchEnd}
+			onMouseUp={handleProcessWindowEndPressing}
+			onMouseLeave={handleProcessWindowEndPressing}
 
 			// touch-based
-			onTouchStart={(e) => handleMouseDownAndTouchStart(
+			onTouchStart={(e) => handleProcessWindowStartPressing(
 				e.touches[0].clientX, 
-				e.touches[0].clientY
+				e.touches[0].clientY,
+				e.target
 			)}
-			onTouchMove={(e) => handleMouseMoveAndTouchMove(
+			onTouchMove={(e) => handleProcessWindowMovement(
 				e.touches[0].clientX,
 				e.touches[0].clientY
 			)}
-			onTouchEnd={handleMouseUpLeaveAndTouchEnd}
-
-			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
+			onTouchEnd={handleProcessWindowEndPressing}
         >
             <div 
 				className={`
@@ -289,15 +301,7 @@ export default function ProcessWindow({
 					]}
 					`
 				}
-
-				// click-based
-				onMouseDown={() => setWindowTitleBarBeingPressed(previous => true)}
-				onMouseUp={() => setWindowTitleBarBeingPressed(previous => false)}
-				onMouseLeave={() => setWindowTitleBarBeingPressed(previous => false)}
-
-				// touch-based
-				onTouchStart={() => setWindowTitleBarBeingPressed(previous => true)}
-				onTouchEnd={() => setWindowTitleBarBeingPressed(previous => false)}
+				ref={processWindowTitleBarRef}
 			>
 				{processTitle}
 				<div className={processWindowStyles.buttons__wrapper}>
@@ -307,7 +311,7 @@ export default function ProcessWindow({
 							alt='window minimize icon'
 						/>
 					</button>
-					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, dragRef)}>
+					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, processWindowRef)}>
 						<Image 
 							src={isMaximized
 								? systemTheme === 'dark'? WindowRestoreIconDark : WindowRestoreIconLight 

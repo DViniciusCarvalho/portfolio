@@ -1,7 +1,12 @@
 import { isValidElement } from 'react';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
-import { INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS } from './constants';
+
+import { 
+    INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, 
+    INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE,
+    INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS 
+} from './constants';
 
 
 export const deepClone = <T>(object: T): T => {
@@ -139,7 +144,7 @@ export const getInitialProcessWindowDimensions = (
     
     const initialWidthPercentage = windowLELimit
                                     ? INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT
-                                    : INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE;
+                                    : INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE;
 
     return {
         width: getRelativeInitialDimension(

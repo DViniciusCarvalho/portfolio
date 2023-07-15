@@ -1,10 +1,8 @@
 import React, { useContext } from 'react';
-import { useDrop } from 'react-dnd';
 import desktopStyles from '@/styles/workarea/Desktop.module.sass';
 import ProcessWindow from '../window/ProcessWindow';
-import { Data } from '@/types/data';
 import { Props } from '@/types/props';
-import { MainContext } from '../Main';
+import { MainContext } from '@/components/workarea/Main';
 import { getDesktopStyles } from '@/lib/style';
 import { getCurrentDesktopProcessesWindow } from '@/lib/utils';
 
@@ -49,7 +47,7 @@ export default function Desktop({
             onClick={() => changeCurrentDesktop(UUID)}
         >
             {
-                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map(opennedProcessData => (
+                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map((opennedProcessData, index) => (
                     <ProcessWindow  
                         key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
                         {...opennedProcessData}

@@ -1,14 +1,14 @@
 import { Data } from "@/types/data";
 
-export const TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS = 4;
+export const TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS = 5;
 
 export const LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS = 800;
 
-export const INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE = 60;
+export const INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE = 80;
 
 export const INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT = 90;
 
-export const INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE = 60;
+export const INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE = 80;
 
 export const LAST_SYSTEM_ESSENTIAL_PID = 1; // systemd
 
@@ -105,4 +105,14 @@ export const COLOR_PALETTE_OPTIONS: Data.ColorPaletteOptions = {
             borderColor: '#f869a5'
         }
     },
+};
+
+export const INITIAL_SHELL_ENVIRONMENT_VARIABLES = {
+    PATH: '/usr/sbin:/usr/bin:/sbin:/bin',
+    SHELL: '/usr/bin/bash',
+    USERNAME: 'douglas',
+    PWD: '/home/douglas',
+    USER: '',
+    '?': 0,
+    HOME: '/home/douglas'
 };
