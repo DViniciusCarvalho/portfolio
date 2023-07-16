@@ -1,71 +1,193 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import terminalStyles from '@/styles/processes/Terminal.module.sass';
+import CommandLine from './lines/CommandLine';
+import ResultLine from './lines/ResultLine';
+import { Data } from '@/types/data';
+import { MainContext } from '@/components/workarea/Main';
+import { 
+    INITIAL_SHELL_USER,
+    SHELL_HOSTNAME,
+    INITIAL_CURRENT_DIRECTORY,
+    INITIAL_SHELL_ENVIRONMENT_VARIABLES 
+} from '@/lib/constants';
 
 export default function Terminal() {
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
 
-    const [ currentShellUser, setCurrentShellUser ] = useState('douglas');
-    const [ hostName, setHostName ] = useState('yakshamessorem');
-    const [ currentDirectory, setCurrentDirectory ] = useState('~');
+    
+    const {
+        terminalFontSizeInPixels,
+        terminalBackgroundColor
+    } = useContext(MainContext);
 
-    const [ terminalLines, setTerminalLines ] = useState<JSX.Element[]>([BaseLine()]);
+    const [ 
+        currentShellUser, 
+        setCurrentShellUser 
+    ] = useState(INITIAL_SHELL_USER);
 
-    const [ environmentVariables, setEnvironmentVariables ] = useState([]);
- 
+    const [ 
+        hostName, 
+        setHostName 
+    ] = useState(SHELL_HOSTNAME);
 
-    useEffect(() => terminalRef.current!.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            executeShellCommand();
-        }
-    }), [terminalRef]);
+    const [ 
+        currentDirectory, 
+        setCurrentDirectory 
+    ] = useState(INITIAL_CURRENT_DIRECTORY);
 
+    const [ 
+        environmentVariables, 
+        setEnvironmentVariables 
+    ] = useState(INITIAL_SHELL_ENVIRONMENT_VARIABLES);
 
-    function BaseLine() {
-        const ref = useRef<HTMLDivElement | null>(null);
-
-        const ROOT_PROMPT = '#';
-        const NORMAL_USER_PROMPT = '$';
-
-        const userAndHost = `${currentShellUser}@${hostName}`;
-        const commandPrompt = currentShellUser === 'root'? ROOT_PROMPT : NORMAL_USER_PROMPT;
-
-        return (
-            <p className={terminalStyles.base__line}>
-                <span className={terminalStyles.terminal__prompt} contentEditable={false}>
-                    {userAndHost}:{currentDirectory}{commandPrompt}
-                </span>
-                <span className={terminalStyles.command__section} contentEditable={true} ref={ref}/>
-            </p>
-        );
-    }
-
-    const executeShellCommand = (): void => {
-        const lastTerminalLine = terminalLines[terminalLines.length - 1];
-        const lastTerminalLineChildren = lastTerminalLine.props.children;
-        const lastTerminalLineCommandElementRef = lastTerminalLineChildren[1].ref;
-        const commandContentElement = lastTerminalLineCommandElementRef.current! as HTMLSpanElement;
-
-        const command = commandContentElement.innerText;
-        
-    }
-
-
+    const [ terminalLines, setTerminalLines ] = useState<Data.TerminalLine[]>([{
+        element: (
+            <CommandLine
+                currentShellUser={currentShellUser}
+                hostName={hostName}
+                currentDirectory={currentDirectory}
+            />
+        ),
+        key: Date.now()
+    }]);
 
     
+    useEffect(() => {
+        terminalRef.current!.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                executeShellCommand();
+            }
+        });
+    }, [terminalRef]);
+
+    useEffect(() => {
+        selectLastTerminalLineToType();
+    }, [terminalLines]);
+
+
+    const selectLastTerminalLineToType = (): void => {
+        const terminalElement = terminalRef.current!;
+        const lastTerminalLineContentElement = terminalElement.lastChild!.lastChild!;
+        const lastTerminalLineSpan = lastTerminalLineContentElement as HTMLSpanElement;
+        lastTerminalLineSpan.focus();
+    }
+
+
+    const clearTerminal = (): void => {
+        const newCommandLine = (
+            <CommandLine
+                currentShellUser={currentShellUser}
+                hostName={hostName}
+                currentDirectory={currentDirectory}
+            />
+        );
+
+        setTerminalLines(previous => [{
+            element: newCommandLine,
+            key: Date.now()
+        }]);
+    }
+
+
+    const getResultLineToAppend = (
+        result: string
+    ): Data.TerminalLine => {
+
+        return {
+            element: <ResultLine commandResult={result}/>,
+            key: Date.now()
+        };
+
+    }
+
+
+    const getCommandLineToAppend = (
+        currentShellUser: string,
+        hostName: string,
+        currentDirectory: string
+    ): Data.TerminalLine => {
+
+        return {
+            element: (
+                <CommandLine
+                    currentShellUser={currentShellUser}
+                    hostName={hostName}
+                    currentDirectory={currentDirectory}
+                />
+            ),
+            key: Date.now() + 1
+        };
+
+    }
+
+
+    const executeShellCommand = (): void => {
+
+        const lastTerminalLine = terminalRef.current!.lastChild;
+        const lastTerminalLineContentElement = lastTerminalLine!.lastChild as HTMLSpanElement;
+        
+        const command = lastTerminalLineContentElement.innerText;
+        const trimmedCommand = command.replace(/^\s+/, '');
+
+        const linesToAppendToTerminal: Data.TerminalLine[] = [];
+
+
+        if (trimmedCommand === 'clear') {
+            clearTerminal();
+        } 
+        else if (trimmedCommand === '') {
+            const newCommandLine = getCommandLineToAppend(
+                currentShellUser,
+                hostName,
+                currentDirectory
+            );
+
+            linesToAppendToTerminal.push(newCommandLine);
+
+            lastTerminalLineContentElement.contentEditable = 'false';
+        }
+        else {
+            const result = 'resultado do comando';
+            const newResultLine = getResultLineToAppend(result);
+            const newCommandLine = getCommandLineToAppend(
+                currentShellUser,
+                hostName,
+                currentDirectory
+            );
+
+            linesToAppendToTerminal.push(newResultLine);
+            linesToAppendToTerminal.push(newCommandLine);
+
+            lastTerminalLineContentElement.contentEditable = 'false';
+        }
+
+        setTerminalLines(previous => [
+            ...previous, 
+            ...linesToAppendToTerminal
+        ]);
+    }
+
 
     return (
         <div 
             className={terminalStyles.container}
+            style={{
+                backgroundColor: terminalBackgroundColor,
+                fontSize: terminalFontSizeInPixels
+            }}
             ref={terminalRef}
+            onClick={selectLastTerminalLineToType}
         >
             {
-                terminalLines.map((terminalLine, index) => (
-                    <React.Fragment key={index}>
-                        {terminalLine}
+                terminalLines.map(terminalLine => (
+                    <React.Fragment key={terminalLine.key}>
+                        {terminalLine.element}
                     </React.Fragment>
                 ))
             }
         </div>
     );
 }
+
+

@@ -16,7 +16,13 @@ import {
     INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX,
     INITIAL_SYSTEM_COLOR_PALETTE,
     INITIAL_SYSTEM_THEME,
-    INITIAL_SYSTEM_LAYOUT
+    INITIAL_SYSTEM_LAYOUT,
+    INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS,
+    INITIAL_TERMINAL_USER_HOST_COLOR,
+    INITIAL_TERMINAL_ROOT_HOST_COLOR,
+    INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR,
+    INITIAL_TERMINAL_DEFAULT_COLOR,
+    INITIAL_TERMINAL_BACKGROUND_COLOR
 } from '@/lib/constants';
 
 import { 
@@ -45,70 +51,164 @@ export const MainContext = createContext<any>(null);
 
 export default function Main() {
     
+    // Refs
     const globalMenuRef = useRef<HTMLDivElement | null>(null);
     const taskBarRef = useRef<HTMLDivElement | null>(null);
     const applicationsWindowRef = useRef<HTMLDivElement | null>(null);
 
-    const initialBaseDesktopUUID = generateUUID();
+    // Initial desktop identificator
+    const baseDesktopUUID = generateUUID();
 
-    const [ lastPID, setLastPID ] = useState(LAST_SYSTEM_ESSENTIAL_PID);
-    const [ lastHighestZIndex, setLastHighestZIndex ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
-    const [ baseDesktopUUID ] = useState(initialBaseDesktopUUID);
-    const [ currentActiveDesktopUUID, setCurrentActiveDesktopUUID ] = useState(initialBaseDesktopUUID);
+    // States
+    const [ 
+        opennedProcessesData, 
+        setOpennedProcessesData 
+    ] = useState<Data.OpennedProcessData[]>([]);
 
-
-    const [ opennedProcessesData, setOpennedProcessesData ] = useState<Data.OpennedProcessData[]>([]);
-    const [ desktopActivitiesData, setDesktopActivitiesData ] = useState<Data.DesktopActivityData[]>([]);
-
+    const [ 
+        desktopActivitiesData, 
+        setDesktopActivitiesData 
+    ] = useState<Data.DesktopActivityData[]>([]);
 
     const [ 
         applicationsPropsDataInTaskbar, 
         setApplicationsPropsDataInTaskbar 
     ] = useState<Props.ProcessIconProps[]>([]);
 
-    const [ systemColorPalette, setSystemColorPalette ] = useState(INITIAL_SYSTEM_COLOR_PALETTE);
-    const [ systemTheme, setSystemTheme ] =  useState(INITIAL_SYSTEM_THEME);
-    const [ systemLayout, setSystemLayout ] = useState(INITIAL_SYSTEM_LAYOUT);
+    const [ 
+        lastPID, 
+        setLastPID 
+    ] = useState(LAST_SYSTEM_ESSENTIAL_PID);
 
-    const [ backgroundIsImageBlob, setBackgroundIsImageBlob ] = useState(false);
-    const [ backgroundImageUrl, setBackgroundImageUrl ] = useState('');
+    const [ 
+        lastHighestZIndex, 
+        setLastHighestZIndex 
+    ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
 
-    const [ applicationsAreBeingShowed, setApplicationsAreBeingShowed ] = useState(false);
+    const [ 
+        currentActiveDesktopUUID, 
+        setCurrentActiveDesktopUUID 
+    ] = useState(baseDesktopUUID);
+
+    const [ 
+        applicationsAreBeingShowed, 
+        setApplicationsAreBeingShowed 
+    ] = useState(false);
+
+    const [ 
+        systemColorPalette, 
+        setSystemColorPalette 
+    ] = useState(INITIAL_SYSTEM_COLOR_PALETTE);
+
+    const [ 
+        systemTheme, 
+        setSystemTheme 
+    ] =  useState(INITIAL_SYSTEM_THEME);
+
+    const [ 
+        systemLayout, 
+        setSystemLayout 
+    ] = useState(INITIAL_SYSTEM_LAYOUT);
+
+    const [ 
+        backgroundIsImageBlob, 
+        setBackgroundIsImageBlob 
+    ] = useState(false);
+
+    const [ 
+        backgroundImageUrl, 
+        setBackgroundImageUrl 
+    ] = useState('');
+
+    const [ 
+        terminalFontSizeInPixels, 
+        setTerminalFontSizeInPixels 
+    ] = useState(INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS);
+
+    const [ 
+        terminalUserHostColor, 
+        setTerminalUserHostColor 
+    ] = useState(INITIAL_TERMINAL_USER_HOST_COLOR);
+
+    const [ 
+        terminalRootHostColor, 
+        setTerminalRootHostColor 
+    ] = useState(INITIAL_TERMINAL_ROOT_HOST_COLOR);
+
+    const [ 
+        terminalCurrentDirectoryColor, 
+        setTerminalCurrentDirectoryColor 
+    ] = useState(INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR);
+
+    const [
+        terminalDefaultColor,
+        setTerminalDefaultColor
+    ] = useState(INITIAL_TERMINAL_DEFAULT_COLOR);
+
+    const [ 
+        terminalBackgroundColor, 
+        setTerminalBackgroundColor 
+    ] = useState(INITIAL_TERMINAL_BACKGROUND_COLOR);
 
 
-    const contextValues = {
+    // Context
+    const processesDesktopDataAndManipulators = {
         opennedProcessesData,
         desktopActivitiesData,
+        openProcess,
+        sendSIGKILLToProcess,
+        removeDesktopActivity,
+    };
 
+    const settingsStatesAndManipulators = {
         systemColorPalette,
         systemTheme,
         systemLayout,
-
-        applicationsAreBeingShowed,
-        lastHighestZIndex,
-        currentActiveDesktopUUID,
-        baseDesktopUUID,
         backgroundIsImageBlob,
         backgroundImageUrl,
-
-        elevateProcessWindowZIndex,
-        sendSIGKILLToProcess,
-        minimizeProcessWindow,
-        restoreProcessWindowLastDimensions,
-		maximizeProcessWindow,
-        updateProcessWindowDimensions,
-        changeApplicationsAreBeingShowed,
-        changeCurrentDesktop,
-        removeDesktopActivity,
-        openProcess,
-        restorePreviousDimensions,
-        transferApplicationIconToTaskbarOtherProcessesIcons,
+        terminalFontSizeInPixels,
+        terminalUserHostColor,
+        terminalRootHostColor,
+        terminalCurrentDirectoryColor,
+        terminalDefaultColor,
+        terminalBackgroundColor,
         changeBackgroundStyle,
         changeSystemTheme,
         changeSystemLayout,
+    };
+
+    const desktopsStatesAndManipulators = {
+        baseDesktopUUID,
+        currentActiveDesktopUUID,
+        changeCurrentDesktop,
+    };
+
+    const processesWindowStatesAndManipulators = {
+        lastHighestZIndex,
+        elevateProcessWindowZIndex,
+        minimizeProcessWindow,
+        restoreProcessWindowPreviousDimensions,
+        restoreProcessWindowLastDimensions,
+		maximizeProcessWindow,
+        updateProcessWindowDimensions,
         updateProcessWindowCoordinates
     };
 
+    const applicationsSectionStatesAndManipulators = {
+        applicationsAreBeingShowed,
+        changeApplicationsAreBeingShowed,
+        transferApplicationIconToTaskbarOtherProcessesIcons,
+    };
+
+    const contextValues = {
+        ...processesDesktopDataAndManipulators,
+        ...settingsStatesAndManipulators,
+        ...desktopsStatesAndManipulators,
+        ...processesWindowStatesAndManipulators,
+        ...applicationsSectionStatesAndManipulators
+    };
+
+    // Props
     const globalMenuProps: Props.GlobalMenuProps = {
         globalMenuRef
     };
@@ -246,7 +346,6 @@ export default function Main() {
             const filteredPreviousDeepCopy = previous.filter(processData => processData.initialPID !== PID);
             return filteredPreviousDeepCopy;
         });
-
     }
 
 
@@ -291,7 +390,7 @@ export default function Main() {
     }
 
 
-    function restorePreviousDimensions(PID: number): void {
+    function restoreProcessWindowPreviousDimensions(PID: number): void {
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
             const process = getCorrespondentRunningProcess(
@@ -378,6 +477,7 @@ export default function Main() {
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
+            
             const process = getCorrespondentRunningProcess(
                 opennedProcessesDataDeepCopy, 
                 PID

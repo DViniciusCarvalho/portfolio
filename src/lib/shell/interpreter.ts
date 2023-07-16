@@ -1,46 +1,17 @@
-const SHELL_OPERATORS = {
-    '&': 'Ampersand',
-    '&&': 'Double ampersand',
-    '|': 'Pipe',
-    '||': 'Double Pipe',
-    '>': 'Greater-than sign',
-    '>>': 'Double greather-than sign',
-    '<': 'Less-than sign',
-    '<<': 'Doube less-than sign',
-    ';': 'Semicolon',
-};
+import { LexerTokensResponse } from '@/types/shell_interpreter';
+import { 
+    SHELL_OPERATORS, 
+    RESERVED_WORDS, 
+    SHELL_COMMENT_SIGN, 
+    SHELL_STRING_DOUBLE_QUOTE, 
+    SHELL_STRING_QUOTE, 
+    SHELL_VARIABLE_SIGN 
+} from './grammar';
 
-const SHELL_COMMENT_SIGN = '#';
-const SHELL_VARIABLE_SIGN = '$';
-
-const SHELL_STRING_QUOTE = '\'';
-const SHELL_STRING_DOUBLE_QUOTE = '\"';
-
-const RESERVED_WORDS = {
-    if: 'IF Conditional Statement',
-    then: 'THEN Conditional Statement',
-    else: 'ELSE Conditional Statement',
-    elif: 'ELIF Conditional Statement',
-    fi: 'FI Conditional Statement',
-    case: 'CASE Statement',
-    esac: 'ESAC Statement',
-    for: 'FOR Loop',
-    while: 'WHILE Loop',
-    until: 'UNTIL Loop',
-    do: 'DO Loop',
-    done: 'DONE Loop',
-    function: 'FUNCTION Declaration',
-    select: 'SELECT Loop',
-    in: 'IN Keyword',
-    return: 'RETURN Statement',
-    break: 'BREAK Statement',
-    continue: 'CONTINUE Statement',
-    exit: 'EXIT Statement',
-};
 
 const startsWithSingleOrDoubleQuote = (
-    array,
-    index
+    array: string[],
+    index: number
 ) => {
 
     const startsWithSingleQuote = array[index].startsWith(SHELL_STRING_QUOTE);
@@ -55,8 +26,8 @@ const startsWithSingleOrDoubleQuote = (
 }
 
 const endsWithSingleOrDoubleQuote = (
-    array,
-    index
+    array: string[],
+    index: number
 ) => {
 
     const endsWithSingleQuote = array[index].endsWith(SHELL_STRING_QUOTE);
@@ -72,25 +43,28 @@ const endsWithSingleOrDoubleQuote = (
 }
 
 const splitCommand = (
-    command
-) => {
+    command: string
+): string[] => {
 
     const pieces = command.split(' ');
 
     const piecesWithMergedStringParts = pieces.reduce((
-        acc, 
-        current, 
-        index,
-        piecesArray
+        acc: string[], 
+        current: string, 
+        index: number,
+        piecesArray: string[]
     ) => {
 
         const beforeSlice = piecesArray.slice(0, index);
         const afterSlice = piecesArray.slice(index, piecesArray.length);
 
-        const someBeforeStartsWithQuote = beforeSlice.some(piece => {
-            return 
-        })
-        
+        const someBeforeStartsWithQuote = beforeSlice.some((piece, index, arr) => {
+            return startsWithSingleOrDoubleQuote(arr, index).starts;
+        });
+
+        const someAfterEndsWithQuote = afterSlice.some((piece, index, arr) => {
+            return endsWithSingleOrDoubleQuote(arr, index).ends;
+        });
 
         return acc;
     }, []);
@@ -101,11 +75,15 @@ const splitCommand = (
 
 }
 
-const lexer = (command) => {
-    const commandWithoutSpaces = command.split(' ');
+export const lexer = (command: string): LexerTokensResponse[] => {
+    const commandWithoutSpaces = splitCommand(command);
 
-    const tokens = commandWithoutSpaces.reduce((acc, current, index) => {
-        const token = {};
+    const tokens = commandWithoutSpaces.reduce((
+        acc: {[key: string]: any}[], 
+        current: string
+    ) => {
+
+        const token: {[key: string]: any} = {};
 
         if (current in SHELL_OPERATORS) {
             token['type'] = SHELL_OPERATORS[current];
@@ -141,9 +119,6 @@ const lexer = (command) => {
 
     }, []);
 
-    return tokens;
-
+    return tokens as LexerTokensResponse[];
 
 }
-
-console.log(lexer('cd /home/slaoq && mkdir pasta2'))

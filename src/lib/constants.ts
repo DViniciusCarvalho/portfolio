@@ -1,5 +1,6 @@
 import { Data } from "@/types/data";
 
+
 export const TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS = 5;
 
 export const LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS = 800;
@@ -10,10 +11,12 @@ export const INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT = 90;
 
 export const INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE = 80;
 
+// Process and process window
 export const LAST_SYSTEM_ESSENTIAL_PID = 1; // systemd
 
 export const INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX = 0;
 
+// Settings
 export const INITIAL_SYSTEM_LAYOUT = 'row';
 
 export const INITIAL_SYSTEM_COLOR_PALETTE = 'orange';
@@ -107,12 +110,35 @@ export const COLOR_PALETTE_OPTIONS: Data.ColorPaletteOptions = {
     },
 };
 
+// Terminal
+export const ROOT_PROMPT = '#';
+
+export const NORMAL_USER_PROMPT = '$';
+
+export const INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS = 16;
+
+export const INITIAL_TERMINAL_USER_HOST_COLOR = '#0aad77';
+
+export const INITIAL_TERMINAL_ROOT_HOST_COLOR = '#db2727';
+
+export const INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR = '#1c3569';
+
+export const INITIAL_TERMINAL_DEFAULT_COLOR = 'white';
+
+export const INITIAL_TERMINAL_BACKGROUND_COLOR = '#310823';
+
+export const INITIAL_SHELL_USER = 'visitor';
+
+export const SHELL_HOSTNAME = 'douglasportfolio';
+
+export const INITIAL_CURRENT_DIRECTORY = '/home/visitor';
+
 export const INITIAL_SHELL_ENVIRONMENT_VARIABLES = {
     PATH: '/usr/sbin:/usr/bin:/sbin:/bin',
     SHELL: '/usr/bin/bash',
-    USERNAME: 'douglas',
-    PWD: '/home/douglas',
-    USER: '',
+    USERNAME: INITIAL_SHELL_USER,
+    PWD: INITIAL_CURRENT_DIRECTORY,
+    USER: INITIAL_SHELL_USER,
     '?': 0,
-    HOME: '/home/douglas'
+    HOME: `/home/${INITIAL_SHELL_USER}`
 };

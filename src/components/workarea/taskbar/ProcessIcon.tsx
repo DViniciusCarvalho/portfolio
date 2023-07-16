@@ -25,7 +25,7 @@ export default function ProcessIcon({
         currentActiveDesktopUUID,
         changeCurrentDesktop,
         openProcess,
-        restorePreviousDimensions,
+        restoreProcessWindowPreviousDimensions,
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed
     } = useContext(MainContext);
@@ -76,7 +76,7 @@ export default function ProcessIcon({
         }
 
         if (processIsMinimized) {
-            restorePreviousDimensions(processPID);
+            restoreProcessWindowPreviousDimensions(processPID);
         }
 
         if (processIsRunningAndNotInTheCurrentDesktop) {

@@ -58,4 +58,9 @@ export namespace Data {
         }
     }
 
+    interface TerminalLine {
+        element: JSX.Element;
+        key: number;
+    }
+
 }

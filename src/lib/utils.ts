@@ -9,6 +9,10 @@ import {
 } from './constants';
 
 
+export const delay = (ms: number): Promise<null> => {
+    return new Promise(res => setTimeout(() => res(null), ms));
+}
+
 export const deepClone = <T>(object: T): T => {
 
     if (typeof object !== 'object' || object === null) return object;

@@ -22,6 +22,7 @@ import {
 } from '@/lib/style';
 
 import ProcessWindowMinimalContentVersion from './ProcessWindowMinimalContentVersion';
+import { delay } from '@/lib/utils';
 
 
 export default function ProcessWindow({ 
@@ -55,6 +56,8 @@ export default function ProcessWindow({
 	const processWindowTitleBarRef = useRef<HTMLDivElement | null>(null);
 
 	const [ isDragging, setIsDragging ] = useState(false);
+	const [ alreadyRestoredDimension, setAlreadyRestoredDimension ] = useState(true);
+
 	const [ processWindowResizeData, setProcessWindowResizeData ] = useState({
 		isResizing: false,
 		resizeSide: ''
@@ -164,6 +167,14 @@ export default function ProcessWindow({
 		}
 		else if (isDragging) {
 
+			if (isMaximized) {
+				handleRestoreMaximizeWindow(
+					PID,
+					isMaximized,
+					processWindowRef
+				);
+			}
+
 			const currentXAxis = clientX - pressedCoordinates.x;
 			const currentYAxis = clientY - pressedCoordinates.y;
 	
@@ -193,11 +204,11 @@ export default function ProcessWindow({
 	}
 
 
-	const handleRestoreMaximizeWindow = (
+	const handleRestoreMaximizeWindow = async (
 		PID: number, 
 		isMaximized: boolean, 
 		processWindowRef: React.MutableRefObject<HTMLDivElement | null>
-	): void => {
+	): Promise<void> => {
 
 		const widthMemoization = dimensions.width;
 		const heightMemoization = dimensions.height;
@@ -221,11 +232,16 @@ export default function ProcessWindow({
 				memoizedXAxis,
 				memoizedYAxis
 			);
+			
+			await delay(2);
+			
+			setAlreadyRestoredDimension(previous => true);
 
 			return;
 		}
 			
 		maximizeProcessWindow(PID, processWindowParentDesktop);
+		setAlreadyRestoredDimension(previous => false);
 
 		setLastDimensionsCoordBeforeMaximize(previous => ({
 			dimensions: {
@@ -263,7 +279,9 @@ export default function ProcessWindow({
 					coordinates.x,
 					coordinates.y
 				),
-				transition: isDragging? '0s' : '0.3s'
+				transition: isDragging && !isMaximized && alreadyRestoredDimension
+							? 'transform 0s, width 0s, height 0s, left 0s, top 0s' 
+							: 'transform 0.3s, width 0.3s, height 0.3s, left 0.3s, top 0.3s'
 			}}
 			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
 			ref={processWindowRef}

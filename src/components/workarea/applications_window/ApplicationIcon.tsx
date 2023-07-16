@@ -22,7 +22,7 @@ export default function ApplicationIcon({
         applicationsAreBeingShowed, 
         openProcess,
         elevateProcessWindowZIndex,
-        restorePreviousDimensions,
+        restoreProcessWindowPreviousDimensions,
         changeCurrentDesktop,
         changeApplicationsAreBeingShowed,
         transferApplicationIconToTaskbarOtherProcessesIcons
@@ -79,7 +79,7 @@ export default function ApplicationIcon({
         }
 
         if (processIsMinimized) {
-            restorePreviousDimensions(processPID);
+            restoreProcessWindowPreviousDimensions(processPID);
         }
 
         if (processIsRunningAndNotInTheCurrentDesktop) {
