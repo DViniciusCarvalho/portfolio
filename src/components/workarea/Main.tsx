@@ -172,9 +172,16 @@ export default function Main() {
         terminalCurrentDirectoryColor,
         terminalDefaultColor,
         terminalBackgroundColor,
-        changeBackgroundStyle,
+        changeBackgroundToImage,
+        changeBackgroundDefaultColorPalette,
         changeSystemTheme,
         changeSystemLayout,
+        changeTerminalFontSizeInPixels,
+        changeTerminalUserHostColor,
+        changeTerminalRootHostColor,
+        changeTerminalCurrentDirectoryColor,
+        changeTerminalDefaultColor,
+        changeTerminalBackgroundColor
     };
 
     const desktopsStatesAndManipulators = {
@@ -598,21 +605,16 @@ export default function Main() {
     }
 
 
-    function changeBackgroundStyle(
-        isImageBlob: boolean, 
-        imageUrlBase64: string, 
-        systemColorPalette: string
-    ): void {
+    function changeBackgroundToImage(imageUrlBase64: string): void {
+        setBackgroundIsImageBlob(previous => true);
+        setBackgroundImageUrl(previous => imageUrlBase64);
+    }
 
-        setBackgroundIsImageBlob(previous => isImageBlob);
 
-        if (isImageBlob) {
-            setBackgroundImageUrl(previous => imageUrlBase64);
-        }
-        else {
-            setSystemColorPalette(previous => systemColorPalette);
-        }
-
+    function changeBackgroundDefaultColorPalette(systemColorPalette: string): void {
+        setBackgroundIsImageBlob(previous => false);
+        setBackgroundImageUrl(previous => '');
+        setSystemColorPalette(previous => systemColorPalette);
     }
 
 
@@ -623,6 +625,36 @@ export default function Main() {
 
     function changeSystemLayout(layout: string): void {
         setSystemLayout(previous => layout);
+    }
+
+
+    function changeTerminalFontSizeInPixels(size: number): void {
+        if (size > 0) setTerminalFontSizeInPixels(previous => size);
+    }
+
+
+    function changeTerminalUserHostColor(color: string): void {
+        setTerminalUserHostColor(previous => color);
+    }
+
+
+    function changeTerminalRootHostColor(color: string): void {
+        setTerminalRootHostColor(previous => color);
+    }
+
+    
+    function changeTerminalCurrentDirectoryColor(color: string): void {
+        setTerminalCurrentDirectoryColor(previous => color);
+    }
+
+
+    function changeTerminalDefaultColor(color: string): void {
+        setTerminalDefaultColor(previous => color);
+    }
+
+
+    function changeTerminalBackgroundColor(color: string): void {
+        setTerminalBackgroundColor(previous => color);
     }
 
 

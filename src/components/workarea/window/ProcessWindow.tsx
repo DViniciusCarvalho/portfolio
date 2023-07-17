@@ -147,7 +147,11 @@ export default function ProcessWindow({
 		clientY: number
 	): void => {
 
-		if (processWindowResizeData.isResizing && getResizeSide(clientX, clientY, processWindowRef)) {
+		if (
+			processWindowResizeData.isResizing 
+			&& getResizeSide(clientX, clientY, processWindowRef) 
+			&& !isMaximized
+		) {
 
 			updateProcessWindowDimensions(
 				PID,

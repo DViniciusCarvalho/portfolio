@@ -10,12 +10,12 @@ import UserTrashIcon from '../../../../public/assets/user-trash.png';
 
 import Nautilus from '@/components/processes/Nautilus';
 import Terminal from '@/components/processes/terminal/Terminal';
+import Settings from '@/components/processes/settings/Settings';
 import UserTrash from '@/components/processes/UserTrash';
-import Settings from '@/components/processes/Settings';
 
 import { Props } from '@/types/props';
-import { MainContext } from '../Main';
-import { deepClone, generateJSXKey } from '@/lib/utils';
+import { MainContext } from '@/components/workarea/Main';
+import { generateJSXKey } from '@/lib/utils';
 
 import { getTaskBarStyles } from '@/lib/style';
 

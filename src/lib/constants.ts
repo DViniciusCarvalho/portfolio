@@ -117,15 +117,15 @@ export const NORMAL_USER_PROMPT = '$';
 
 export const INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS = 16;
 
-export const INITIAL_TERMINAL_USER_HOST_COLOR = '#0aad77';
+export const INITIAL_TERMINAL_USER_HOST_COLOR = '#26a269';
 
-export const INITIAL_TERMINAL_ROOT_HOST_COLOR = '#db2727';
+export const INITIAL_TERMINAL_ROOT_HOST_COLOR = '#c01c28';
 
-export const INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR = '#1c3569';
+export const INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR = '#12488b';
 
-export const INITIAL_TERMINAL_DEFAULT_COLOR = 'white';
+export const INITIAL_TERMINAL_DEFAULT_COLOR = '#ffffff';
 
-export const INITIAL_TERMINAL_BACKGROUND_COLOR = '#310823';
+export const INITIAL_TERMINAL_BACKGROUND_COLOR = '#380c2a';
 
 export const INITIAL_SHELL_USER = 'visitor';
 
@@ -139,6 +139,34 @@ export const INITIAL_SHELL_ENVIRONMENT_VARIABLES = {
     USERNAME: INITIAL_SHELL_USER,
     PWD: INITIAL_CURRENT_DIRECTORY,
     USER: INITIAL_SHELL_USER,
+    HOME: `/home/${INITIAL_SHELL_USER}`,
     '?': 0,
-    HOME: `/home/${INITIAL_SHELL_USER}`
 };
+
+// Filesystem
+export const INITIAL_FILESYSTEM = {
+    bin: {},
+    boot: {},
+    cdrom: {},
+    dev: {},
+    etc: {},
+    home: {},
+    lib: {},
+    lib32: {},
+    lib64: {},
+    libx32: {},
+    'lost+found': {},
+    media: {},
+    mnt: {},
+    opt: {},
+    proc: {},
+    root: {},
+    run: {},
+    sbin: {},
+    srv: {},
+    swapfile: {},
+    sys: {},
+    tmp: {},
+    usr: {},
+    var: {},
+}

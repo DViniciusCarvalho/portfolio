@@ -74,7 +74,7 @@ export default function CommandLine({
                         color: terminalCurrentDirectoryColor
                     }}
                 >
-                    {currentDirectory}
+                    {currentDirectory === `/home/${currentShellUser}`? '~' : currentDirectory}
                 </span>
                 {currentShellUser === 'root'? ROOT_PROMPT : NORMAL_USER_PROMPT}
             </span>

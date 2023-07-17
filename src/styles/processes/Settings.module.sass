@@ -12,81 +12,133 @@
     overflow-y: auto
     overflow-x: hidden
 
+
+    /* THEME DEFINITIONS */
     &.light
         background-color:#ffffff
 
-        .background__label, .theme__label, .dock__config__label
+        .label
             color: black
 
-        .background__wrapper, .theme__wrapper, .dock__config__wrapper
+        .wrapper
             background-color: #f3f2f2
             border: 0.5px solid #cfcfcfd3
-            
-        .background__color__palette__radio:checked
-            border-color: #f3f2f2
 
-        .select__background__file__label
-            background-color: #f3f3f3
-            color: black
+            &.background__wrapper
+                .background__color__palette__radio:checked
+                    border-color: #f3f2f2
 
-            &:hover
-                background-color: #e0e0e0
+                .select__background__file__label
+                    background-color: #eeeeee
+                    border-color: #b8b8b8e5
+                    color: black
 
-        .theme__wrapper
-            .light__theme__label, .dark__theme__label
-                color: black
+                    &:hover
+                        background-color: #ffffff
 
-        .light__theme__previous, .dark__theme__previous
-            border-color: #f3f2f2
+            &.theme__wrapper
+                .light__theme__previous, .dark__theme__previous
+                    border-color: #f3f2f2
 
-        .left__dock__previous, .bottom__dock__previous
-            &.selected-layout
-                border-color: #f3f2f2
+            &.terminal__wrapper
+                .terminal__title__bar
+                    background-color: #eeeeee
+                    border-color: #000000af #000000af #5a5a5a62 #000000af
 
-        .left__dock__label, .bottom__dock__label
-            color: black
+                    .terminal__title__bar__buttons > button
+                        background-color: #bebebe
+                        
+                .previous__terminal__background
+                    border-color: transparent #000000af #000000af #000000af
+
+                .terminal__appearance__selector
+                    background-color: #eeeeee
+                    border-color: #b8b8b8e5
+
+                    &:hover
+                        background-color: #ffffff
+
+                    .label__description
+                        color: #5c5c5ce5
+
+                    .color__input__label
+                        background-color: #eeeeee
+                        border: 0.1px solid #cacaca8a
+
+                        &:hover
+                            background-color: #d6d6d6
 
     &.dark
         background-color:#2b2a2a
 
-        .background__label, .theme__label, .dock__config__label
+        .label
             color: white
 
-        .background__wrapper, .theme__wrapper, .dock__config__wrapper
-            background-color: #242323
-            border: 0.5px solid #00000062
+        .wrapper
+            background-color: #272727
+            border: 0.5px solid #13131391
 
-        .background__color__palette__radio:checked
-            border-color:#242323
+            &.background__wrapper
+                .background__color__palette__radio:checked
+                    border-color:#242323
 
-        .select__background__file__label
-            background-color: #3f3e3e
-            color: white
+                .select__background__file__label
+                    background-color: #252525
+                    border-color: #181818
+                    color: white
 
-            &:hover
-                background-color: #4d4b4b
+                    &:hover
+                        background-color: #363636
 
-        .theme__wrapper
-            .light__theme__label, .dark__theme__label
-                color: white
+            &.theme__wrapper
+                .light__theme__previous, .dark__theme__previous
+                    border-color: #242323
 
-        .light__theme__previous, .dark__theme__previous
-            border-color: #242323
+            &.terminal__wrapper
+                .terminal__title__bar
+                    background-color: #222224
+                    border-color: #000000af #000000af #1b1b1bcb #000000af
 
-        .left__dock__previous, .bottom__dock__previous
-            &.selected-layout
-                border-color: #242323
+                    .terminal__title__bar__buttons > button
+                        background-color: #3f3f42
+                        
+                .previous__terminal__background
+                    border-color: transparent #000000af #000000af #000000af
 
-        .left__dock__label, .bottom__dock__label
-            color: white
+                .terminal__appearance__selector
+                    background-color: #252525
+                    border-color: #181818
 
+                    &:hover
+                        background-color: #363636
 
+                    .label__description
+                        color: #8a8a8ae5
 
-    .background__label, .theme__label, .dock__config__label
+                    .color__input__label
+                        background-color: #313131
+                        border: 0.1px solid #6d6d6d8a
+
+                        &:hover
+                            background-color: #1d1d1d
+
+    /* ANY SECTION LABEL */
+    .label
         width:  100%
         margin-bottom: -8px
         max-width: 800px
+
+    
+    /* ANY SECTION WRAPPER */
+    .wrapper
+        min-height: 300px
+        width: 100%
+        max-width: 800px
+        margin-bottom: 20px
+        border-radius: 10px
+
         
+    /* BACKGROUND SECTION */
     .background__wrapper
         display: flex
         flex-direction: column
@@ -94,11 +146,6 @@
         justify-content: center
         padding: 0px 3%
         height: 300px
-        min-height: 300px
-        width: 100%
-        max-width: 800px
-        margin-bottom: 20px
-        border-radius: 20px
 
         .background__previous
             display: flex
@@ -172,7 +219,8 @@
                 height: 100%
                 padding: 15px
                 border-radius: 8px
-                box-shadow: 0px 0px 2px #1a1a1af8
+                border-width: 0.1px
+                border-style: solid
                 transition: background-color 0.3s
 
             .select__background__file__name
@@ -183,16 +231,13 @@
                 color: white
                 font-size: 0.9em
 
+
+    /* THEME SECTION DEFINITION */
     .theme__wrapper
         display: flex
         padding: 20px
         justify-content: center
         align-items: center
-        min-height: 300px
-        width: 100%
-        max-width: 800px
-        border-radius: 20px
-        margin-bottom: 20px
 
         .title__bar__previous
             width: 100%
@@ -271,6 +316,145 @@
                         background-color: #2c2b2b
 
 
+    /* TERMINAL SECTION DEFINITION */
+    .terminal__wrapper
+        display: flex
+        flex-direction: column
+        min-height: fit-content
+
+        .terminal__previous__section
+            display: flex
+            flex-direction: row
+            height: 300px
+            width: 100%
+            padding: 20px
+            justify-content: center
+            align-items: center
+
+            .terminal__previous__wrapper
+                display: flex
+                flex-direction: column
+                align-items: center
+                gap: 4%
+                height: 100%
+                width: 40%
+                max-width: 303px
+                padding: 20px
+
+                .terminal__previous
+                    position: relative
+                    width: 100%
+                    height: 80%
+                    box-shadow: 0px 0px 2px #000000b9
+                    border-radius: 10px
+
+                    .previous__terminal__container
+                        position: absolute
+                        left: 50%
+                        top: 50%
+                        transform: translate(-50%, -50%)
+                        width: 80%
+                        height: 80%
+                        border-radius: 8px 8px 0px 0px
+                        overflow: hidden
+
+                        .terminal__title__bar
+                            display: flex
+                            justify-content: flex-end
+                            align-items: center
+                            padding-right: 10%
+                            width: 100%
+                            height: 20%
+                            border-radius: 8px 8px 0px 0px
+                            border-style: solid
+                            border-width: 0.5px 0.5px 0.5px 0.5px
+
+                            .terminal__title__bar__buttons
+                                display: flex
+                                align-items: center
+                                height: 100%
+                                width: 20%
+                                gap: 4%
+
+                                & > button
+                                    height: 60%
+                                    aspect-ratio: 1/1
+                                    border-radius: 50%
+
+                        .previous__terminal__background 
+                            height: 80%
+                            width: 100%
+                            border-style: solid
+                            border-width: 0px 0.5px 0.5px 0.5px
+                            font-size: 14px
+
+                            .previous__terminal__prompt
+                                margin-right: 2.6px
+
+        .terminal__appearance__selectors__wrapper
+            display: flex
+            flex-direction: column
+            height: fit-content
+            border-radius: 0px 0px 10px 10px
+            overflow: hidden
+            width: 100%
+
+            .terminal__appearance__selector
+                display: flex
+                flex-direction: row
+                justify-content: space-between
+                padding: 0px 20px
+                align-items: center
+                height: 55px
+                width: 100%
+                border-width: 1.6px 0px 0px 0px
+                border-style: solid
+                transition: background-color 0.2s
+
+                .label__description
+                    font-size: 13.7px
+
+                .fontsize__input__wrapper
+                    height: 55%
+                    width: 13%
+                    display: flex
+                    border-radius: 10px 
+                    overflow: hidden
+
+                    .fontsize__input
+                        display: flex
+                        height: 100%
+                        width: 70%
+                        appearance: none
+                    
+                    & > button
+                        height: 100%
+                        aspect-ratio: 1/1
+
+                .color__input
+                    transform: scale(0)
+
+                .color__input__label
+                    display: flex
+                    flex-direction: row
+                    align-items: center
+                    height: 55%
+                    width: 13%
+                    padding: 8px
+                    gap: 4%
+                    border: 1px solid white
+                    border-radius: 10px 
+                    overflow: hidden
+                    transition: background-color 0.2s
+
+                    .color__demonstration
+                        height: 80%
+                        aspect-ratio: 1/1
+                        border-radius: 50%
+
+
+
+
 @media only screen and (max-width: 800px) and (min-width: 651px)
     .background__wrapper
         padding: 0px 8% !important
@@ -286,6 +470,16 @@
             width: 50% !important
             min-width: 237px
 
+    .terminal__wrapper
+        justify-content: center
+        align-items: center
+        
+        .terminal__previous__section
+            .terminal__previous__wrapper
+                width: 50% !important
+                min-width: 237px
+
+
 @media only screen and (max-width: 650px)
     .background__wrapper
         padding: 0px 8% !important
@@ -300,5 +494,27 @@
         min-height: 550px !important
 
         .light__theme__wrapper, .dark__theme__wrapper
-            width: 80% !important
+            width: 100% !important
             min-width: 237px
+            padding: 10px !important
+
+    .terminal__wrapper
+        .terminal__previous__section
+            flex-direction: column !important
+            justify-content: center
+            align-items: center
+            min-height: 550px !important
+
+            .terminal__previous__wrapper
+                width: 100% !important
+                min-width: 237px
+                padding: 10px !important
+
+                .previous__terminal__background 
+                    font-size: 12.4px !important
+
+        .terminal__appearance__selector
+            font-size: 15px
+
+        .label__description
+            font-size: 13px !important
