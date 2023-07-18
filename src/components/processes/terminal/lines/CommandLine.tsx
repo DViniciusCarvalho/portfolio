@@ -17,7 +17,8 @@ export default function CommandLine({
         terminalUserHostColor,
         terminalRootHostColor,
         terminalCurrentDirectoryColor,
-        terminalDefaultColor
+        terminalDefaultColor,
+        changeCanChangeApplicationsState
     } = useContext(MainContext);
 
 
@@ -85,6 +86,8 @@ export default function CommandLine({
                 }}
                 onPaste={handlePaste}
                 onInput={handleInput}
+                onFocus={() => changeCanChangeApplicationsState(false)}
+                onBlur={() => changeCanChangeApplicationsState(true)}
                 ref={contentEditableRef}
                 contentEditable={true}
             />

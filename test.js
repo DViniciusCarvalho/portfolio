@@ -1,149 +1,68 @@
-const SHELL_OPERATORS = {
-    '&': 'Ampersand',
-    '&&': 'Double ampersand',
-    '|': 'Pipe',
-    '||': 'Double Pipe',
-    '>': 'Greater-than sign',
-    '>>': 'Double greather-than sign',
-    '<': 'Less-than sign',
-    '<<': 'Doube less-than sign',
-    ';': 'Semicolon',
-};
-
-const SHELL_COMMENT_SIGN = '#';
-const SHELL_VARIABLE_SIGN = '$';
-
-const SHELL_STRING_QUOTE = '\'';
-const SHELL_STRING_DOUBLE_QUOTE = '\"';
-
-const RESERVED_WORDS = {
-    if: 'IF Conditional Statement',
-    then: 'THEN Conditional Statement',
-    else: 'ELSE Conditional Statement',
-    elif: 'ELIF Conditional Statement',
-    fi: 'FI Conditional Statement',
-    case: 'CASE Statement',
-    esac: 'ESAC Statement',
-    for: 'FOR Loop',
-    while: 'WHILE Loop',
-    until: 'UNTIL Loop',
-    do: 'DO Loop',
-    done: 'DONE Loop',
-    function: 'FUNCTION Declaration',
-    select: 'SELECT Loop',
-    in: 'IN Keyword',
-    return: 'RETURN Statement',
-    break: 'BREAK Statement',
-    continue: 'CONTINUE Statement',
-    exit: 'EXIT Statement',
-};
-
-const startsWithSingleOrDoubleQuote = (
-    array,
-    index
-) => {
-
-    const startsWithSingleQuote = array[index].startsWith(SHELL_STRING_QUOTE);
-    const startsWithDoubleQuote = array[index].startsWith(SHELL_STRING_DOUBLE_QUOTE);
-
-    const startsWithSomeone = startsWithSingleQuote || startsWithDoubleQuote;
-
-    return {
-        starts: startsWithSomeone,
-        quote: startsWithSomeone? (startsWithSingleQuote? 'single' : 'double') : ''
-    }
-}
-
-const endsWithSingleOrDoubleQuote = (
-    array,
-    index
-) => {
-
-    const endsWithSingleQuote = array[index].endsWith(SHELL_STRING_QUOTE);
-    const endsWithDoubleQuote = array[index].endsWith(SHELL_STRING_DOUBLE_QUOTE);
-
-    const endsWithSomeone = endsWithSingleQuote || endsWithDoubleQuote;
-
-    return {
-        ends: endsWithSomeone,
-        quote: endsWithSomeone? (endsWithSingleQuote? 'single' : 'double') : ''
-    }
-
-}
-
 const splitCommand = (
     command
 ) => {
 
-    const pieces = command.split(' ');
+    const parts = [];
+  
+    let currentWord = '';
+    let insideString = false;
 
-    const piecesWithMergedStringParts = pieces.reduce((
-        acc, 
-        current, 
-        index,
-        piecesArray
-    ) => {
+    let isSingleQuote = false;
+    let isDoubleQuote = false;
 
-        const beforeSlice = piecesArray.slice(0, index);
-        const afterSlice = piecesArray.slice(index, piecesArray.length);
+    for (let i = 0; i < command.length; i++) {
+        const char = command[i];
 
-        const someBeforeStartsWithQuote = beforeSlice.some(piece => {
-            return 
-        })
-        
+        const isSingleQuoteStringStart = char === '\'' && !insideString;
+        const isSingleQuoteStringEnd = char === '\'' && insideString && isSingleQuote;
 
-        return acc;
-    }, []);
+        const isDoubleQuoteStringStart = char === '"' && !insideString;
+        const isDoubleQuoteStringEnd = char === '"' && insideString && isDoubleQuote;
 
-    console.log(pieces);
+        const isSpace = char === ' ';
 
-    return pieces;
-
-}
-
-const lexer = (command) => {
-    const commandWithoutSpaces = command.split(' ');
-
-    const tokens = commandWithoutSpaces.reduce((acc, current, index) => {
-        const token = {};
-
-        if (current in SHELL_OPERATORS) {
-            token['type'] = SHELL_OPERATORS[current];
+        if (isSingleQuoteStringStart) {
+            insideString = true;
+            isSingleQuote = true;
+            currentWord += char;
+            continue;
         }
-        else if (current.startsWith(SHELL_COMMENT_SIGN)) {
-            token['type'] = 'Comment';
+        else if (isDoubleQuoteStringStart) {
+            insideString = true;
+            isDoubleQuote = true;
+            currentWord += char;
+            continue;
         }
-        else if (current in RESERVED_WORDS) {
-            token['type'] = RESERVED_WORDS[current];
+        else if (isSingleQuoteStringEnd) {
+            insideString = false;
+            isSingleQuote = false;
+            currentWord += char;
         }
-        else if (current.startsWith(SHELL_VARIABLE_SIGN)) {
-            token['type'] = 'Variable';
-            token['value'] = current;
+        else if (isDoubleQuoteStringEnd) {
+            insideString = false;
+            isDoubleQuote = false;
+            currentWord += char;
         }
-        else if (
-            current.startsWith(SHELL_STRING_QUOTE) || current.startsWith(SHELL_STRING_DOUBLE_QUOTE)
-        ) {
-            token['type'] = 'String';
-            token['value'] = current;
-        }
-        else if (!isNaN(Number(current))) {
-            token['type'] = 'Number';
-            token['value'] = current;
+        else if (isSpace) {
+            if (insideString) {
+                currentWord += char;
+                continue;
+            }
+            else {
+
+            }
         }
         else {
-            token['type'] = 'String';
-            token['value'] = current;
+            currentWord += char;
+            continue;
         }
 
-        acc.push(token);
-
-        return acc;
-
-    }, []);
-
-    return tokens;
-
+        parts.push(currentWord);
+        currentWord = '';
+    }
+  
+    return parts.filter(part => part !== '');
 
 }
 
-console.log(lexer('cd /home/slaoq && mkdir pasta2'))
+console.log(splitCommand('cd /home/slaoq "porra menor se fode krl" && mkdir "pasta2 aaaaaaaaaa"'))

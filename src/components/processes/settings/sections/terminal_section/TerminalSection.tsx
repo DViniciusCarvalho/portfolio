@@ -1,14 +1,12 @@
 import React, { useContext } from 'react';
 import settingsStyles from '@/styles/processes/Settings.module.sass';
 import { MainContext } from '@/components/workarea/Main';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
-import PreviousTerminal from './terminal_section/PreviousTerminal';
+import PreviousTerminal from './PreviousTerminal';
 
 
 export default function TerminalSection() {
 
 	const {
-		systemColorPalette,
 		terminalFontSizeInPixels,
 		terminalUserHostColor,
 		terminalRootHostColor,
@@ -48,7 +46,13 @@ export default function TerminalSection() {
 					<div className={settingsStyles.terminal__appearance__selector}>
 						Font-size
 						<div className={settingsStyles.fontsize__input__wrapper}>
-							<button>-</button>
+							<button
+								onClick={() => changeTerminalFontSizeInPixels(
+									terminalFontSizeInPixels - 1
+								)}
+							>
+								-
+							</button>
 							<input 
 								type='text'
 								className={settingsStyles.fontsize__input}
@@ -56,9 +60,14 @@ export default function TerminalSection() {
 								onInput={(e) => handleFontSizeChanging(
 									(e.target as HTMLInputElement).value
 								)}
-								onChange={() => console.log('mudou')}
 							/>
-							<button>+</button>
+							<button
+								onClick={() => changeTerminalFontSizeInPixels(
+									terminalFontSizeInPixels + 1
+								)}
+							>
+								+
+							</button>
 						</div>
 					</div>
 					<div className={settingsStyles.terminal__appearance__selector}>

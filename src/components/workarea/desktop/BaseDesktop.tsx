@@ -27,7 +27,7 @@ export default function BaseDesktop({
             className={`
                 ${desktopStyles.container} 
                 ${desktopStyles[systemLayout]}
-                ${desktopStyles[!applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+                ${desktopStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 `
             }
             style={{

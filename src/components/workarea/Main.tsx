@@ -22,7 +22,10 @@ import {
     INITIAL_TERMINAL_ROOT_HOST_COLOR,
     INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR,
     INITIAL_TERMINAL_DEFAULT_COLOR,
-    INITIAL_TERMINAL_BACKGROUND_COLOR
+    INITIAL_TERMINAL_BACKGROUND_COLOR,
+    INITIAL_SHELL_USER,
+    SHELL_HOSTNAME,
+    INITIAL_CURRENT_DIRECTORY
 } from '@/lib/constants';
 
 import { 
@@ -150,6 +153,26 @@ export default function Main() {
         setTerminalBackgroundColor 
     ] = useState(INITIAL_TERMINAL_BACKGROUND_COLOR);
 
+    const [ 
+        currentShellUser, 
+        setCurrentShellUser 
+    ] = useState(INITIAL_SHELL_USER);
+
+    const [ 
+        hostName, 
+        setHostName 
+    ] = useState(SHELL_HOSTNAME);
+
+    const [ 
+        currentDirectory, 
+        setCurrentDirectory 
+    ] = useState(INITIAL_CURRENT_DIRECTORY);
+
+    const [ 
+        canChangeApplicationsState,
+        setCanChangeApplicationsState
+    ] = useState(true);
+
 
     // Context
     const processesDesktopDataAndManipulators = {
@@ -184,6 +207,12 @@ export default function Main() {
         changeTerminalBackgroundColor
     };
 
+    const terminalStatesAndManipulators = {
+        currentShellUser,
+        hostName,
+        currentDirectory
+    };
+
     const desktopsStatesAndManipulators = {
         baseDesktopUUID,
         currentActiveDesktopUUID,
@@ -205,11 +234,13 @@ export default function Main() {
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed,
         transferApplicationIconToTaskbarOtherProcessesIcons,
+        changeCanChangeApplicationsState
     };
 
     const contextValues = {
         ...processesDesktopDataAndManipulators,
         ...settingsStatesAndManipulators,
+        ...terminalStatesAndManipulators,
         ...desktopsStatesAndManipulators,
         ...processesWindowStatesAndManipulators,
         ...applicationsSectionStatesAndManipulators
@@ -234,12 +265,12 @@ export default function Main() {
 
 
     useEffect(() => {
-        window!.addEventListener('resize', () => {
-            if (!applicationsAreBeingShowed) {
+        window!.addEventListener('resize', () => setTimeout(() => {
+            if (!applicationsAreBeingShowed && canChangeApplicationsState) {
                 changeApplicationsAreBeingShowed(true);
             }
-        });
-    }, []);
+        }, 2));
+    }, [canChangeApplicationsState]);
 
 
     function openProcess(
@@ -655,6 +686,11 @@ export default function Main() {
 
     function changeTerminalBackgroundColor(color: string): void {
         setTerminalBackgroundColor(previous => color);
+    }
+
+
+    function changeCanChangeApplicationsState(canChange: boolean): void {
+        setCanChangeApplicationsState(previous => canChange);
     }
 
 

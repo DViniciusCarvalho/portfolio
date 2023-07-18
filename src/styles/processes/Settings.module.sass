@@ -68,6 +68,23 @@
                         &:hover
                             background-color: #d6d6d6
 
+                    .fontsize__input__wrapper
+                        & > *
+                            color: black
+
+                        button
+                            background-color: #eeeeee
+                            border: 0.1px solid #cacaca8a
+
+                            &:hover
+                                background-color: #d6d6d6
+
+                        .fontsize__input
+                            background-color: #eeeeee
+                            box-shadow: inset 0px 0px 2px #c4c4c4
+                            border-color: #cacaca8a
+                     
+
     &.dark
         background-color:#2b2a2a
 
@@ -121,6 +138,23 @@
 
                         &:hover
                             background-color: #1d1d1d
+
+                    .fontsize__input__wrapper
+                        & > *
+                            color: white
+
+                        button
+                            background-color: #313131
+                            border: 0.1px solid #6d6d6d8a
+
+                            &:hover
+                                background-color: #1d1d1d
+
+                        .fontsize__input
+                            background-color: #333333
+                            box-shadow: inset 0px 0px 3px #303030
+                            border-color: #6d6d6d8a
+
 
     /* ANY SECTION LABEL */
     .label
@@ -417,19 +451,31 @@
                 .fontsize__input__wrapper
                     height: 55%
                     width: 13%
+                    max-width: 83px
                     display: flex
                     border-radius: 10px 
                     overflow: hidden
 
                     .fontsize__input
-                        display: flex
                         height: 100%
                         width: 70%
                         appearance: none
+                        text-align: center
+                        outline: none
+                        border-width: 0.1px 0px 0.1px 0px
+                        border-style: solid
+                        font-size: 13px
                     
                     & > button
                         height: 100%
                         aspect-ratio: 1/1
+                        transition: background-color 0.2s
+
+                        &:first-child
+                            border-radius: 10px 0px 0px 10px
+
+                        &:last-child
+                            border-radius: 0px 10px 10px 0px
 
                 .color__input
                     transform: scale(0)
@@ -438,13 +484,16 @@
                     display: flex
                     flex-direction: row
                     align-items: center
+                    justify-content: center
                     height: 55%
-                    width: 13%
+                    width: 35%
+                    max-width: 83px
                     padding: 8px
                     gap: 4%
                     border: 1px solid white
                     border-radius: 10px 
                     overflow: hidden
+                    font-size: 13px
                     transition: background-color 0.2s
 
                     .color__demonstration
@@ -514,7 +563,15 @@
                     font-size: 12.4px !important
 
         .terminal__appearance__selector
-            font-size: 15px
+            font-size: 14px !important
+            height: 70px !important
+            padding: 0px 10px !important
+
+            .color__input__label
+                padding: 10px !important
+
+                .color__demonstration
+                    height: 50% !important
 
         .label__description
             font-size: 13px !important

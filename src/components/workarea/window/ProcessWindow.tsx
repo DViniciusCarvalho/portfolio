@@ -48,7 +48,10 @@ export default function ProcessWindow({
 		updateProcessWindowDimensions,
 		currentActiveDesktopUUID,
 		applicationsAreBeingShowed,
-		updateProcessWindowCoordinates
+		updateProcessWindowCoordinates,
+		currentShellUser,
+        hostName,
+        currentDirectory
 	} = useContext(MainContext);
 
 
@@ -261,6 +264,28 @@ export default function ProcessWindow({
 	}
 
 
+	const getProcessWindowTitle = (
+		originalProcessTitle: string
+	) => {
+		const currentProcessIsTerminal = originalProcessTitle === 'Terminal';
+		const currentProcessIsFileManager = originalProcessTitle === 'Files';
+
+		if (currentProcessIsTerminal) {
+			const resolvedDirectory = currentDirectory === `/home/${currentShellUser}`
+									  ? '~'
+									  : currentDirectory;
+			const terminalTitle = `${currentShellUser}@${hostName}:${resolvedDirectory}`;
+			
+			return terminalTitle;
+		}
+		else if (currentProcessIsFileManager) {
+			return currentDirectory;
+		}
+
+		return originalProcessTitle;
+	}
+
+
     return (
         <div 
 			className={`
@@ -325,7 +350,7 @@ export default function ProcessWindow({
 				}
 				ref={processWindowTitleBarRef}
 			>
-				{processTitle}
+				{getProcessWindowTitle(processTitle)}
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 

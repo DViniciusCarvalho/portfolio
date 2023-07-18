@@ -4,37 +4,20 @@ import CommandLine from './lines/CommandLine';
 import ResultLine from './lines/ResultLine';
 import { Data } from '@/types/data';
 import { MainContext } from '@/components/workarea/Main';
-import { 
-    INITIAL_SHELL_USER,
-    SHELL_HOSTNAME,
-    INITIAL_CURRENT_DIRECTORY,
-    INITIAL_SHELL_ENVIRONMENT_VARIABLES 
-} from '@/lib/constants';
+import { INITIAL_SHELL_ENVIRONMENT_VARIABLES } from '@/lib/constants';
+import { lexer } from '@/lib/shell/interpreter';
+
 
 export default function Terminal() {
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
 
-    
+    const { currentShellUser, hostName, currentDirectory } = useContext(MainContext);
+
     const {
         terminalFontSizeInPixels,
         terminalBackgroundColor
     } = useContext(MainContext);
-
-    const [ 
-        currentShellUser, 
-        setCurrentShellUser 
-    ] = useState(INITIAL_SHELL_USER);
-
-    const [ 
-        hostName, 
-        setHostName 
-    ] = useState(SHELL_HOSTNAME);
-
-    const [ 
-        currentDirectory, 
-        setCurrentDirectory 
-    ] = useState(INITIAL_CURRENT_DIRECTORY);
 
     const [ 
         environmentVariables, 
@@ -129,6 +112,7 @@ export default function Terminal() {
         
         const command = lastTerminalLineContentElement.innerText;
         const trimmedCommand = command.replace(/^\s+/, '');
+        console.log(trimmedCommand)
 
         const linesToAppendToTerminal: Data.TerminalLine[] = [];
 
@@ -148,7 +132,7 @@ export default function Terminal() {
             lastTerminalLineContentElement.contentEditable = 'false';
         }
         else {
-            const result = 'resultado do comando';
+            const result = JSON.stringify(lexer(trimmedCommand));
             const newResultLine = getResultLineToAppend(result);
             const newCommandLine = getCommandLineToAppend(
                 currentShellUser,

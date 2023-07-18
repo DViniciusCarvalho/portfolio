@@ -20,15 +20,16 @@ export default function Desktop({
         backgroundImageUrl,
         applicationsAreBeingShowed, 
         currentActiveDesktopUUID,
-        changeCurrentDesktop
+        changeCurrentDesktop,
     } = useContext(MainContext);
+
 
     return (
         <div
             className={`
                 ${desktopStyles.container} 
                 ${desktopStyles[systemLayout]}
-                ${desktopStyles[!applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+                ${desktopStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 `
             }
             style={{
@@ -47,7 +48,8 @@ export default function Desktop({
             onClick={() => changeCurrentDesktop(UUID)}
         >
             {
-                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID).map((opennedProcessData, index) => (
+                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID)
+                .map((opennedProcessData, index) => (
                     <ProcessWindow  
                         key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}
                         {...opennedProcessData}

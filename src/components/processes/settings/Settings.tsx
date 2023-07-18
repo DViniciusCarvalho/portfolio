@@ -3,7 +3,7 @@ import settingsStyles from '@/styles/processes/Settings.module.sass';
 import { MainContext } from '@/components/workarea/Main';
 import BackgroundSection from '@/components/processes/settings/sections/BackgroundSection';
 import ThemeSection from '@/components/processes/settings/sections/ThemeSection';
-import TerminalSection from '@/components/processes/settings/sections/TerminalSection';
+import TerminalSection from '@/components/processes/settings/sections/terminal_section/TerminalSection';
 
 
 export default function Settings() {

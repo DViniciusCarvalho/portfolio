@@ -1,4 +1,4 @@
-import { LexerTokensResponse } from '@/types/shell_interpreter';
+import { Token } from '@/types/shell_interpreter';
 import { 
     SHELL_OPERATORS, 
     RESERVED_WORDS, 
@@ -9,76 +9,83 @@ import {
 } from './grammar';
 
 
-const startsWithSingleOrDoubleQuote = (
-    array: string[],
-    index: number
-) => {
-
-    const startsWithSingleQuote = array[index].startsWith(SHELL_STRING_QUOTE);
-    const startsWithDoubleQuote = array[index].startsWith(SHELL_STRING_DOUBLE_QUOTE);
-
-    const startsWithSomeone = startsWithSingleQuote || startsWithDoubleQuote;
-
-    return {
-        starts: startsWithSomeone,
-        quote: startsWithSomeone? (startsWithSingleQuote? 'single' : 'double') : ''
-    }
-}
-
-const endsWithSingleOrDoubleQuote = (
-    array: string[],
-    index: number
-) => {
-
-    const endsWithSingleQuote = array[index].endsWith(SHELL_STRING_QUOTE);
-    const endsWithDoubleQuote = array[index].endsWith(SHELL_STRING_DOUBLE_QUOTE);
-
-    const endsWithSomeone = endsWithSingleQuote || endsWithDoubleQuote;
-
-    return {
-        ends: endsWithSomeone,
-        quote: endsWithSomeone? (endsWithSingleQuote? 'single' : 'double') : ''
-    }
-
-}
-
 const splitCommand = (
     command: string
 ): string[] => {
 
-    const pieces = command.split(' ');
+    const parts = [];
+  
+    let currentWord = '';
+    let insideString = false;
 
-    const piecesWithMergedStringParts = pieces.reduce((
-        acc: string[], 
-        current: string, 
-        index: number,
-        piecesArray: string[]
-    ) => {
+    let isSingleQuote = false;
+    let isDoubleQuote = false;
 
-        const beforeSlice = piecesArray.slice(0, index);
-        const afterSlice = piecesArray.slice(index, piecesArray.length);
+    for (let i = 0; i < command.length; i++) {
+        const char = command[i];
 
-        const someBeforeStartsWithQuote = beforeSlice.some((piece, index, arr) => {
-            return startsWithSingleOrDoubleQuote(arr, index).starts;
-        });
+        const isSingleQuoteStringStart = char === '\'' && !insideString;
+        const isSingleQuoteStringEnd = char === '\'' && insideString && isSingleQuote;
 
-        const someAfterEndsWithQuote = afterSlice.some((piece, index, arr) => {
-            return endsWithSingleOrDoubleQuote(arr, index).ends;
-        });
+        const isDoubleQuoteStringStart = char === '"' && !insideString;
+        const isDoubleQuoteStringEnd = char === '"' && insideString && isDoubleQuote;
 
-        return acc;
-    }, []);
+        const isSpace = char === ' ';
 
-    console.log(pieces);
+        const isTheLastChar = i + 1 === command.length;
 
-    return pieces;
+
+        if (isSingleQuoteStringStart) {
+            insideString = true;
+            isSingleQuote = true;
+            currentWord += char;
+            continue;
+        }
+        else if (isDoubleQuoteStringStart) {
+            insideString = true;
+            isDoubleQuote = true;
+            currentWord += char;
+            continue;
+        }
+        else if (isSingleQuoteStringEnd) {
+            insideString = false;
+            isSingleQuote = false;
+            currentWord += char;
+            parts.push(currentWord);
+            currentWord = '';
+        }
+        else if (isDoubleQuoteStringEnd) {
+            insideString = false;
+            isDoubleQuote = false;
+            currentWord += char;
+            parts.push(currentWord);
+            currentWord = '';
+        }
+        else if (isSpace) {
+            if (insideString) {
+                currentWord += char;
+                continue;
+            }
+            else {
+                parts.push(currentWord);
+                currentWord = '';
+            }
+        }
+        else {
+            currentWord += char;
+            if (isTheLastChar) parts.push(currentWord);
+        }
+    }
+  
+    return parts.filter(part => part !== '');
 
 }
 
-export const lexer = (command: string): LexerTokensResponse[] => {
-    const commandWithoutSpaces = splitCommand(command);
 
-    const tokens = commandWithoutSpaces.reduce((
+export const lexer = (command: string): Token[] => {
+    const splittedCommand = splitCommand(command);
+
+    const tokens = splittedCommand.reduce((
         acc: {[key: string]: any}[], 
         current: string
     ) => {
@@ -119,6 +126,15 @@ export const lexer = (command: string): LexerTokensResponse[] => {
 
     }, []);
 
-    return tokens as LexerTokensResponse[];
+    return tokens as Token[];
+
+}
+
+
+export const parser = (
+    tokens: Token[]
+) => {
+
+
 
 }

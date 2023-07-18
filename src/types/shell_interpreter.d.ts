@@ -1,4 +1,4 @@
-export interface LexerTokensResponse {
+export interface Token {
     type: string;
     value?: any;
 }
