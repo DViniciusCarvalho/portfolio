@@ -177,7 +177,12 @@ export default function ApplicationsWindow({
 					))
 				}
 
-		  		{applicationsWindowRefLoaded && (<BaseDesktop key={baseDesktopUUID} {...baseDesktopProps}/>)}
+		  		{applicationsWindowRefLoaded && (
+					<BaseDesktop 
+						key={baseDesktopUUID} 
+						{...baseDesktopProps}
+					/>
+				)}
 
 			</div>
             <div className={applicationsWindowStyles.applications__wrapper}>

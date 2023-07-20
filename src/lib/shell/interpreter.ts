@@ -8,6 +8,9 @@ import {
     SHELL_VARIABLE_SIGN 
 } from './grammar';
 
+import { ParseTree } from './ParseTree';
+import { ParseTreeNode } from './ParseTreeNode';
+
 
 const splitCommand = (
     command: string
@@ -135,6 +138,23 @@ export const parser = (
     tokens: Token[]
 ) => {
 
+    const reservedWordTokens = tokens.filter(token => token.type in RESERVED_WORDS);
+    const shellOperatorsInOrder = tokens.filter(token => token.type in SHELL_OPERATORS);
 
+    const hasOperators = shellOperatorsInOrder.length;
+    const rootNodeToken = hasOperators? shellOperatorsInOrder.pop()! : tokens.shift()!;
 
+    const rootNode = new ParseTreeNode(rootNodeToken);
+    const parseTree = new ParseTree(rootNode);
+
+    if (hasOperators) {
+        const rootNodeIndex = tokens.lastIndexOf(rootNodeToken);
+        const lastCommandTokenIndex = rootNodeIndex + 1;
+    }
+
+    for (const token in tokens) {
+        
+    }
+
+    return parseTree;
 }

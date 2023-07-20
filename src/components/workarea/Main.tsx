@@ -1,4 +1,4 @@
-import React, { useState, createContext, useRef, useEffect } from 'react';
+import React, { useState, createContext, useRef, useEffect, useCallback } from 'react';
 import mainStyles from '@/styles/workarea/Main.module.sass';
 import GlobalMenuBar from './menu/GlobalMenuBar';
 import TaskBar from './taskbar/TaskBar';
@@ -37,6 +37,7 @@ import {
 
 import { 
     deepClone, 
+    debounce,
     getCorrespondentRunningProcess,
     generateUUID,
     getProcessWindowParentDesktopUUID,
@@ -173,7 +174,7 @@ export default function Main() {
         setCanChangeApplicationsState
     ] = useState(true);
 
-
+    
     // Context
     const processesDesktopDataAndManipulators = {
         opennedProcessesData,
@@ -233,8 +234,7 @@ export default function Main() {
     const applicationsSectionStatesAndManipulators = {
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed,
-        transferApplicationIconToTaskbarOtherProcessesIcons,
-        changeCanChangeApplicationsState
+        transferApplicationIconToTaskbarOtherProcessesIcons
     };
 
     const contextValues = {
@@ -263,14 +263,14 @@ export default function Main() {
         baseDesktopUUID
     };
 
-
+    
     useEffect(() => {
-        window!.addEventListener('resize', () => setTimeout(() => {
-            if (!applicationsAreBeingShowed && canChangeApplicationsState) {
+        window!.addEventListener('resize', () => {
+            if (!applicationsAreBeingShowed) {
                 changeApplicationsAreBeingShowed(true);
             }
-        }, 2));
-    }, [canChangeApplicationsState]);
+        });
+    }, []);
 
 
     function openProcess(
@@ -381,7 +381,10 @@ export default function Main() {
         });
 
         setApplicationsPropsDataInTaskbar(previous => {
-            const filteredPreviousDeepCopy = previous.filter(processData => processData.initialPID !== PID);
+            const filteredPreviousDeepCopy = previous.filter(
+                processData => processData.initialPID !== PID
+            );
+
             return filteredPreviousDeepCopy;
         });
     }
@@ -689,9 +692,6 @@ export default function Main() {
     }
 
 
-    function changeCanChangeApplicationsState(canChange: boolean): void {
-        setCanChangeApplicationsState(previous => canChange);
-    }
 
 
     return (

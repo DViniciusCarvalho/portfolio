@@ -86,8 +86,8 @@ export default function TaskBar({
                                 favoriteProcessIconProps.processName, 
                                 index
                             )} 
-                            {...favoriteProcessIconProps}
                             initialPID={0}
+                            {...favoriteProcessIconProps}
                         />
                     ))
                 }
@@ -105,8 +105,8 @@ export default function TaskBar({
                                 otherProcessIconProps.processName, 
                                 index
                             )} 
-                            {...otherProcessIconProps}
                             initialPID={0}
+                            {...otherProcessIconProps} 
                         />
                     ))
                 }
