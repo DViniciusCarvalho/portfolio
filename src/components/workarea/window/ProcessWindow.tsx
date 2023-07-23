@@ -266,7 +266,8 @@ export default function ProcessWindow({
 
 	const getProcessWindowTitle = (
 		originalProcessTitle: string
-	) => {
+	): string => {
+
 		const currentProcessIsTerminal = originalProcessTitle === 'Terminal';
 		const currentProcessIsFileManager = originalProcessTitle === 'Files';
 

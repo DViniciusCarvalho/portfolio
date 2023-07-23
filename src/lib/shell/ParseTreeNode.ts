@@ -1,12 +1,12 @@
-import { IParseTreeNode, Token } from "@/types/shell_interpreter";
+import { Shell } from '@/types/shell';
 
-export class ParseTreeNode implements IParseTreeNode {
-    public token: Token;
+export class ParseTreeNode implements Shell.IParseTreeNode {
+    public token: Shell.ParseTreeToken;
     public rightNode: ParseTreeNode | null;
     public leftNode: ParseTreeNode | null;
 
     constructor(
-        token: Token,
+        token: Shell.ParseTreeToken,
         rightNode: ParseTreeNode | null = null, 
         leftNode: ParseTreeNode | null = null
     ) {

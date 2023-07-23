@@ -1,6 +1,6 @@
-import { StaticImageData } from "next/image";
-import { Data } from "./data";
-import { MutableRefObject } from "react";
+import { StaticImageData } from 'next/image';
+import { Data } from './data';
+import { MutableRefObject } from 'react';
 
 export namespace Props {
 
@@ -70,13 +70,12 @@ export namespace Props {
     }
 
     interface CommandLineProps {
-        currentShellUser: string;
-        hostName: string;
-        currentDirectory: string;
+        user: string;
+        domain: string;
+        directory: string;
     }
 
     interface ResultLineProps {
         commandResult: string;
     }
-
 }

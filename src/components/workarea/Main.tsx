@@ -25,7 +25,8 @@ import {
     INITIAL_TERMINAL_BACKGROUND_COLOR,
     INITIAL_SHELL_USER,
     SHELL_HOSTNAME,
-    INITIAL_CURRENT_DIRECTORY
+    INITIAL_CURRENT_DIRECTORY,
+    INITIAL_FILESYSTEM
 } from '@/lib/constants';
 
 import { 
@@ -114,6 +115,11 @@ export default function Main() {
         setSystemLayout 
     ] = useState(INITIAL_SYSTEM_LAYOUT);
 
+    const [
+        fileSystem,
+        setFileSystem
+    ] = useState(INITIAL_FILESYSTEM);
+
     const [ 
         backgroundIsImageBlob, 
         setBackgroundIsImageBlob 
@@ -179,6 +185,7 @@ export default function Main() {
     const processesDesktopDataAndManipulators = {
         opennedProcessesData,
         desktopActivitiesData,
+        setOpennedProcessesData,
         openProcess,
         sendSIGKILLToProcess,
         removeDesktopActivity,
@@ -208,10 +215,17 @@ export default function Main() {
         changeTerminalBackgroundColor
     };
 
+    const fileSystemAndManipulators = {
+        fileSystem,
+        setFileSystem
+    };
+
     const terminalStatesAndManipulators = {
         currentShellUser,
         hostName,
-        currentDirectory
+        currentDirectory,
+        setCurrentShellUser,
+        setCurrentDirectory
     };
 
     const desktopsStatesAndManipulators = {

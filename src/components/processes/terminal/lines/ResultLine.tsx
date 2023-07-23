@@ -8,13 +8,13 @@ export default function ResultLine({ commandResult }: Props.ResultLineProps) {
     const { terminalDefaultColor } = useContext(MainContext);
 
     return (
-        <div 
+        <p 
             className={terminalStyles.result__line}
             style={{
                 color: terminalDefaultColor
             }}
         >
             {commandResult}
-        </div>
+        </p>
     );
 }

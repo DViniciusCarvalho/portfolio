@@ -1,4 +1,5 @@
 import { Data } from "@/types/data";
+import { Shell } from "@/types/shell";
 
 
 export const TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS = 5;
@@ -133,7 +134,7 @@ export const SHELL_HOSTNAME = 'douglasportfolio';
 
 export const INITIAL_CURRENT_DIRECTORY = '/home/visitor';
 
-export const INITIAL_SHELL_ENVIRONMENT_VARIABLES = {
+export const INITIAL_SHELL_ENVIRONMENT_VARIABLES: Shell.EnvironmentVariables = {
     PATH: '/usr/sbin:/usr/bin:/sbin:/bin',
     SHELL: '/usr/bin/bash',
     USERNAME: INITIAL_SHELL_USER,

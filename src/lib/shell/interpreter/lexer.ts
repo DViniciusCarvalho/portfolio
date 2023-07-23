@@ -1,4 +1,3 @@
-import { Token } from '@/types/shell_interpreter';
 import { 
     SHELL_OPERATORS, 
     RESERVED_WORDS, 
@@ -6,21 +5,19 @@ import {
     SHELL_STRING_DOUBLE_QUOTE, 
     SHELL_STRING_QUOTE, 
     SHELL_VARIABLE_SIGN 
-} from './grammar';
+} from '@/lib/shell/grammar';
 
-import { ParseTree } from './ParseTree';
-import { ParseTreeNode } from './ParseTreeNode';
+import { Shell } from '@/types/shell';
 
 
 const splitCommand = (
     command: string
 ): string[] => {
 
-    const parts = [];
+    const parts: string[] = [];
   
     let currentWord = '';
     let insideString = false;
-
     let isSingleQuote = false;
     let isDoubleQuote = false;
 
@@ -85,41 +82,60 @@ const splitCommand = (
 }
 
 
-export const lexer = (command: string): Token[] => {
+export const lexer = (
+    command: string
+): Shell.Token[] => {
+
     const splittedCommand = splitCommand(command);
 
     const tokens = splittedCommand.reduce((
-        acc: {[key: string]: any}[], 
+        acc: Shell.Token[], 
         current: string
     ) => {
 
-        const token: {[key: string]: any} = {};
+        const token: Shell.Token = {
+            type: 'String',
+            value: current
+        };
 
-        if (current in SHELL_OPERATORS) {
+        const startsWithSingleQuote = current.startsWith(SHELL_STRING_QUOTE);
+        const startsWithDoubleQuote = current.startsWith(SHELL_STRING_DOUBLE_QUOTE);
+
+        const isOperator = current in SHELL_OPERATORS;
+        const isStderrRedirect = current === '2>';
+        const isComment = current.startsWith(SHELL_COMMENT_SIGN);
+        const isReservedWord = current in RESERVED_WORDS;
+        const isVariable = current.startsWith(SHELL_VARIABLE_SIGN);
+        const isString = startsWithSingleQuote || startsWithDoubleQuote;
+        const isNumber = !isNaN(Number(current));
+
+
+        if (isOperator) {
             token['type'] = SHELL_OPERATORS[current];
+            token['value'] = current;
         }
-        else if (current.startsWith(SHELL_COMMENT_SIGN)) {
+        else if (isStderrRedirect) {
+            token['type'] = 'Stderr redirect';
+            token['value'] = current;
+        }
+        else if (isComment) {
             token['type'] = 'Comment';
+            token['value'] = current;
         }
-        else if (current in RESERVED_WORDS) {
+        else if (isReservedWord) {
             token['type'] = RESERVED_WORDS[current];
+            token['value'] = current;
         }
-        else if (current.startsWith(SHELL_VARIABLE_SIGN)) {
+        else if (isVariable) {
             token['type'] = 'Variable';
             token['value'] = current;
         }
-        else if (
-            current.startsWith(SHELL_STRING_QUOTE) || current.startsWith(SHELL_STRING_DOUBLE_QUOTE)
-        ) {
+        else if (isString) {
             token['type'] = 'String';
             token['value'] = current;
         }
-        else if (!isNaN(Number(current))) {
+        else if (isNumber) {
             token['type'] = 'Number';
-            token['value'] = current;
-        }
-        else {
-            token['type'] = 'String';
             token['value'] = current;
         }
 
@@ -129,32 +145,6 @@ export const lexer = (command: string): Token[] => {
 
     }, []);
 
-    return tokens as Token[];
+    return tokens as Shell.Token[];
 
-}
-
-
-export const parser = (
-    tokens: Token[]
-) => {
-
-    const reservedWordTokens = tokens.filter(token => token.type in RESERVED_WORDS);
-    const shellOperatorsInOrder = tokens.filter(token => token.type in SHELL_OPERATORS);
-
-    const hasOperators = shellOperatorsInOrder.length;
-    const rootNodeToken = hasOperators? shellOperatorsInOrder.pop()! : tokens.shift()!;
-
-    const rootNode = new ParseTreeNode(rootNodeToken);
-    const parseTree = new ParseTree(rootNode);
-
-    if (hasOperators) {
-        const rootNodeIndex = tokens.lastIndexOf(rootNodeToken);
-        const lastCommandTokenIndex = rootNodeIndex + 1;
-    }
-
-    for (const token in tokens) {
-        
-    }
-
-    return parseTree;
 }

@@ -1,4 +1,4 @@
-import { StaticImageData } from "next/image";
+import { StaticImageData } from 'next/image';
 
 export namespace Data {
 
@@ -60,7 +60,11 @@ export namespace Data {
 
     interface TerminalLine {
         element: JSX.Element;
-        key: number;
+        key: string;
+    }
+
+    interface FileSystem {
+        [key: string]: any;
     }
 
 }

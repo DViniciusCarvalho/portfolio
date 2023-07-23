@@ -4,6 +4,7 @@ export const SHELL_OPERATORS: {[key: string]: string} = {
     '|': 'Pipe',
     '||': 'Double Pipe',
     '>': 'Greater-than sign',
+    '2>': 'Greater-than sign redirect stderr',
     '>>': 'Double greather-than sign',
     '<': 'Less-than sign',
     '<<': 'Double less-than sign',

@@ -6,25 +6,25 @@ import { NORMAL_USER_PROMPT, ROOT_PROMPT } from '@/lib/constants';
 
 
 export default function CommandLine({
-    currentShellUser,
-    hostName,
-    currentDirectory,
+    user,
+    domain,
+    directory,
 }: Props.CommandLineProps) {
     
     const contentEditableRef = useRef<HTMLSpanElement | null>(null);
+
 
     const {
         terminalUserHostColor,
         terminalRootHostColor,
         terminalCurrentDirectoryColor,
-        terminalDefaultColor,
-        changeCanChangeApplicationsState
+        terminalDefaultColor
     } = useContext(MainContext);
 
 
     const handlePaste = (
         event: React.ClipboardEvent<HTMLSpanElement>
-    ) => {
+    ): void => {
 
         event.preventDefault();
         const text = event.clipboardData.getData('text/plain');
@@ -32,23 +32,23 @@ export default function CommandLine({
     };
     
 
-    const handleInput = () => {
+    const handleInput = (): void => {
         const element = contentEditableRef.current!;
         const text = element.textContent || '';
         const filteredText = text.replace(/<[^>]+>/g, '');
         element.textContent = filteredText;
       
-        const isWhiteSpaceOrNewLine = /^\s*$/.test(filteredText);
+        // const isWhiteSpaceOrNewLine = /^\s*$/.test(filteredText);
 
-        if (isWhiteSpaceOrNewLine) return;
+        // if (isWhiteSpaceOrNewLine) return;
       
-        const range = document.createRange();
-        const selection = window.getSelection();
-        range.selectNodeContents(element);
-        range.collapse(false);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        element.focus();
+        // const range = document.createRange();
+        // const selection = window.getSelection();
+        // range.selectNodeContents(element);
+        // range.collapse(false);
+        // selection?.removeAllRanges();
+        // selection?.addRange(range);
+        // element.focus();
     }
  
 
@@ -63,10 +63,10 @@ export default function CommandLine({
                 <span 
                     className={terminalStyles.user__host}
                     style={{
-                        color: currentShellUser === 'root'? terminalRootHostColor : terminalUserHostColor
+                        color: user === 'root'? terminalRootHostColor : terminalUserHostColor
                     }}
                 >
-                    {`${currentShellUser}@${hostName}`}
+                    {`${user}@${domain}`}
                 </span>
                 :
                 <span 
@@ -75,9 +75,9 @@ export default function CommandLine({
                         color: terminalCurrentDirectoryColor
                     }}
                 >
-                    {currentDirectory === `/home/${currentShellUser}`? '~' : currentDirectory}
+                    {directory === `/home/${user}`? '~' : directory}
                 </span>
-                {currentShellUser === 'root'? ROOT_PROMPT : NORMAL_USER_PROMPT}
+                {user === 'root'? ROOT_PROMPT : NORMAL_USER_PROMPT}
             </span>
             <span 
                 className={terminalStyles.command__section} 
@@ -86,8 +86,6 @@ export default function CommandLine({
                 }}
                 onPaste={handlePaste}
                 onInput={handleInput}
-                onFocus={() => changeCanChangeApplicationsState(false)}
-                onBlur={() => changeCanChangeApplicationsState(true)}
                 ref={contentEditableRef}
                 contentEditable={true}
             />

@@ -5,48 +5,87 @@ import ResultLine from './lines/ResultLine';
 import { Data } from '@/types/data';
 import { MainContext } from '@/components/workarea/Main';
 import { INITIAL_SHELL_ENVIRONMENT_VARIABLES } from '@/lib/constants';
-import { lexer } from '@/lib/shell/interpreter';
+import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
+import { Shell } from '@/types/shell';
+import { deepClone, generateUUID } from '@/lib/utils';
 
 
 export default function Terminal() {
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
 
-    const { currentShellUser, hostName, currentDirectory } = useContext(MainContext);
 
-    const {
+    const { 
+        currentShellUser, 
+        hostName, 
+        currentDirectory,
+        setCurrentShellUser,
+        setCurrentDirectory,
         terminalFontSizeInPixels,
-        terminalBackgroundColor
+        terminalBackgroundColor,
+        setFileSystem,
+        setOpennedProcessesData,
+        sendSIGKILLToProcess
     } = useContext(MainContext);
+
 
     const [ 
         environmentVariables, 
         setEnvironmentVariables 
     ] = useState(INITIAL_SHELL_ENVIRONMENT_VARIABLES);
 
+    const [
+        bashHistory,
+        setBashHistory
+    ] = useState<string[]>([]);
+
+    const [
+        currentBashHistoryPosition,
+        setCurrentBashHistoryPosition
+    ] = useState(0);
+
+    const [
+        lastCommandLineContent,
+        setLastCommandLineContent
+    ] = useState('');
+
     const [ terminalLines, setTerminalLines ] = useState<Data.TerminalLine[]>([{
         element: (
             <CommandLine
-                currentShellUser={currentShellUser}
-                hostName={hostName}
-                currentDirectory={currentDirectory}
+                user={currentShellUser}
+                domain={hostName}
+                directory={currentDirectory}
             />
         ),
-        key: Date.now()
+        key: generateUUID()
     }]);
 
-    
-    useEffect(() => {
-        terminalRef.current!.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                executeShellCommand();
-            }
-        });
-    }, [terminalRef]);
+    useEffect(() => 
+        selectLastTerminalLineToType()
+    , [terminalLines]);
 
-    useEffect(() => {
-        selectLastTerminalLineToType();
-    }, [terminalLines]);
+    useEffect(() => 
+        setCurrentBashHistoryPosition(previous => bashHistory.length)
+    , [bashHistory]);
+
+
+    const handleTerminalKeyDown = (
+        e: React.KeyboardEvent<HTMLDivElement>
+    ): void => {
+
+        if (e.key === 'Enter') {
+            handleCommandExecution();
+        }
+        else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateInBashHistory(1);
+        }
+        else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            navigateInBashHistory(-1);
+        }
+
+    }
 
 
     const selectLastTerminalLineToType = (): void => {
@@ -57,19 +96,88 @@ export default function Terminal() {
     }
 
 
+    const selectEndOfElement = (
+        element: HTMLElement
+    ): void => {
+        
+        const selection = window.getSelection();
+
+        if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const selectedText = range.toString();
+
+            range.deleteContents();
+        
+            const textNode = document.createTextNode(selectedText);
+        
+            element.appendChild(textNode);
+        
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+        
+            element.focus();   
+        }
+    }
+
+
+    const navigateInBashHistory = (
+        indexSubtrahend: number
+    ): void => {
+
+        const difference = currentBashHistoryPosition - indexSubtrahend;
+        const isValidIndex = difference >= 0 && difference <= bashHistory.length;
+    
+        const terminalElement = terminalRef.current!;
+        const lastTerminalLineContentElement = terminalElement.lastChild!.lastChild!;
+        const lastTerminalLineSpan = lastTerminalLineContentElement as HTMLSpanElement;
+    
+        if (isValidIndex) {
+            const currentIsTheLastIndex = currentBashHistoryPosition === bashHistory.length;
+            const targetIndexIsTheLastIndex = difference === bashHistory.length;
+
+            if (currentIsTheLastIndex) {
+                const commandContent = lastTerminalLineSpan.textContent ?? '';
+                setLastCommandLineContent(previous => commandContent);
+            }
+
+            const newContent = targetIndexIsTheLastIndex
+                               ? lastCommandLineContent
+                               : bashHistory[difference];
+
+            lastTerminalLineSpan.innerText = newContent;
+
+            setCurrentBashHistoryPosition(previous => difference);
+            selectEndOfElement(lastTerminalLineSpan);
+        }
+    }
+
+
     const clearTerminal = (): void => {
         const newCommandLine = (
             <CommandLine
-                currentShellUser={currentShellUser}
-                hostName={hostName}
-                currentDirectory={currentDirectory}
+                user={currentShellUser}
+                domain={hostName}
+                directory={currentDirectory}
             />
         );
 
         setTerminalLines(previous => [{
             element: newCommandLine,
-            key: Date.now()
+            key: generateUUID()
         }]);
+    }
+
+
+    const changeEnvironmentVariable = (
+        variableName: string,
+        value: any
+    ): void => {
+
+        setEnvironmentVariables(previous => {
+            const previousDeepCopy = deepClone(previous);
+            previousDeepCopy[variableName] = value;
+            return previousDeepCopy;
+        })
     }
 
 
@@ -78,78 +186,142 @@ export default function Terminal() {
     ): Data.TerminalLine => {
 
         return {
-            element: <ResultLine commandResult={result}/>,
-            key: Date.now()
+            element: (
+                <ResultLine 
+                    commandResult={result}
+                />
+            ),
+            key: generateUUID()
         };
 
     }
 
 
     const getCommandLineToAppend = (
-        currentShellUser: string,
-        hostName: string,
-        currentDirectory: string
+        user: string,
+        domain: string,
+        directory: string
     ): Data.TerminalLine => {
 
         return {
             element: (
                 <CommandLine
-                    currentShellUser={currentShellUser}
-                    hostName={hostName}
-                    currentDirectory={currentDirectory}
+                    user={user}
+                    domain={domain}
+                    directory={directory}
                 />
             ),
-            key: Date.now() + 1
+            key: generateUUID()
         };
 
     }
 
 
-    const executeShellCommand = (): void => {
+    const executeShellCommand = (
+        command: string
+    ): Shell.ExitFlux => {
+
+        const exitFlux: Shell.ExitFlux = {
+            stdout: null,
+            stderr: null,
+            exitStatus: 0
+        };
+
+        const systemAPI: Shell.SystemAPI = {
+            clearTerminal,
+            setEnvironmentVariables,
+            sendSIGKILLToProcess,
+            setOpennedProcessesData,
+            setCurrentShellUser,
+            setCurrentDirectory,
+            setFileSystem
+        };
+
+        if (command === 'clear') {
+            clearTerminal(); 
+        }
+        else if (command === '') {
+            exitFlux.stdout = '';
+            exitFlux.exitStatus = environmentVariables['?'];
+        }
+        else {
+            const { 
+                stdout, 
+                stderr,
+                exitStatus
+            } = interpretCommand(command, systemAPI);
+
+            exitFlux.stdout = stdout;
+            exitFlux.stderr = stderr;
+            exitFlux.exitStatus = exitStatus;
+        }
+
+        return exitFlux;
+    }
+
+
+    const showCommandResult = (
+        user: string,
+        domain: string,
+        directory: string,
+        stdout: string | null, 
+        stderr: string | null
+    ): void => {
+
+        if (stdout !== null || stderr !== null) {
+            const resultText = stdout !== null? stdout : stderr;
+
+            const linesToAppendToTerminal: Data.TerminalLine[] = [];
+    
+            const newCommandLine = getCommandLineToAppend(
+                user,
+                domain,
+                directory
+            );
+    
+            const newResultLine = getResultLineToAppend(resultText as string); 
+    
+            if (resultText !== '') {
+                linesToAppendToTerminal.push(newResultLine);
+            }
+
+            linesToAppendToTerminal.push(newCommandLine);
+
+            setTerminalLines(previous => [
+                ...previous, 
+                ...linesToAppendToTerminal
+            ]);
+        }
+    }
+
+
+    const handleCommandExecution = (): void => {
 
         const lastTerminalLine = terminalRef.current!.lastChild;
         const lastTerminalLineContentElement = lastTerminalLine!.lastChild as HTMLSpanElement;
         
         const command = lastTerminalLineContentElement.innerText;
         const trimmedCommand = command.replace(/^\s+/, '');
-        console.log(trimmedCommand)
 
-        const linesToAppendToTerminal: Data.TerminalLine[] = [];
+        setBashHistory(previous => [...previous, trimmedCommand].filter(command => command !== ''));
 
+        const { 
+            stdout, 
+            stderr,
+            exitStatus
+        } = executeShellCommand(trimmedCommand);
 
-        if (trimmedCommand === 'clear') {
-            clearTerminal();
-        } 
-        else if (trimmedCommand === '') {
-            const newCommandLine = getCommandLineToAppend(
-                currentShellUser,
-                hostName,
-                currentDirectory
-            );
+        changeEnvironmentVariable('?', exitStatus);
+    
+        lastTerminalLineContentElement.contentEditable = 'false';
 
-            linesToAppendToTerminal.push(newCommandLine);
-
-            lastTerminalLineContentElement.contentEditable = 'false';
-        }
-        else {
-            const result = JSON.stringify(lexer(trimmedCommand));
-            const newResultLine = getResultLineToAppend(result);
-            const newCommandLine = getCommandLineToAppend(
-                currentShellUser,
-                hostName,
-                currentDirectory
-            );
-
-            linesToAppendToTerminal.push(newResultLine);
-            linesToAppendToTerminal.push(newCommandLine);
-
-            lastTerminalLineContentElement.contentEditable = 'false';
-        }
-
-        setTerminalLines(previous => [
-            ...previous, 
-            ...linesToAppendToTerminal
-        ]);
+        showCommandResult(                
+            currentShellUser,
+            hostName,
+            currentDirectory, 
+            stdout, 
+            stderr
+        );
     }
 
 
@@ -162,6 +334,7 @@ export default function Terminal() {
             }}
             ref={terminalRef}
             onClick={selectLastTerminalLineToType}
+            onKeyDown={handleTerminalKeyDown}
         >
             {
                 terminalLines.map(terminalLine => (

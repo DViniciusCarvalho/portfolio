@@ -1,8 +1,8 @@
-import { IParseTree } from "@/types/shell_interpreter";
+import { Shell } from "@/types/shell";
 import { ParseTreeNode } from "./ParseTreeNode";
 
 
-export class ParseTree implements IParseTree {    
+export class ParseTree implements Shell.IParseTree {    
     public root: ParseTreeNode;
 
     constructor(root: ParseTreeNode) {
