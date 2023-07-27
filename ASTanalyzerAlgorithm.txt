@@ -1,0 +1,16 @@
+verificar quantos comandos são:
+-> a partir da raiz, percorre até o último nó esquerdo, e incrementa uma variavel em 1 caso ache um operador, se a função retornar 0, é apenas um comando, se retornar um valor diferente de 0, é mais que 1 comando.
+
+caso 1: único comando
+-> 1. Se o nó esquerdo for diferente de nulo, percorre todos os nós esquerdos subsequentes até preencher um array com todas as opções;
+-> 2. Se o nó direito for diferente de nulo, percorre todos os nós direitos subsequentes até preencher um array com todos os argumentos;
+-> 3. Resolve a função correspondente ao nome do comando e envia o array de opções e o array de argumentos como argumentos.
+-> 4. obtém o resultado da função e o retorna no formato Shell.ExitFlux;
+
+caso 2: mais de um comando
+-> 1. acha o ultimo nó de operador e guarda sua referência em uma variável;
+-> 2. analisa o operador do ultimo nó:
+   - caso seja '<' ou '<<', ele inverte a ordem de execução da direita pra esquerda naquele nó e joga o nó direito como argumento no nó esquerdo;
+   - caso seja '&&', ele executa o nó esquerdo primeiro e somente caso o exitStatus for 0 ele executa o nó direito;
+   - caso seja '|', ele executa o nó esquerdo primeiro e joga o stdout no stdin do nó direito;
+   - caso seja '||', ele executa o nó esquerdo primeiro e se o exitStatus for diferente de 0, ele executa o nó esquerdo;

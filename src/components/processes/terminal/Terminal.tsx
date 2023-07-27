@@ -60,8 +60,10 @@ export default function Terminal() {
         key: generateUUID()
     }]);
 
-    useEffect(() => 
+    useEffect(() => {
+        console.log(terminalLines)
         selectLastTerminalLineToType()
+    }
     , [terminalLines]);
 
     useEffect(() => 
@@ -221,12 +223,6 @@ export default function Terminal() {
         command: string
     ): Shell.ExitFlux => {
 
-        const exitFlux: Shell.ExitFlux = {
-            stdout: null,
-            stderr: null,
-            exitStatus: 0
-        };
-
         const systemAPI: Shell.SystemAPI = {
             clearTerminal,
             setEnvironmentVariables,
@@ -239,24 +235,41 @@ export default function Terminal() {
 
         if (command === 'clear') {
             clearTerminal(); 
-        }
-        else if (command === '') {
-            exitFlux.stdout = '';
-            exitFlux.exitStatus = environmentVariables['?'];
-        }
-        else {
-            const { 
-                stdout, 
-                stderr,
-                exitStatus
-            } = interpretCommand(command, systemAPI);
 
-            exitFlux.stdout = stdout;
-            exitFlux.stderr = stderr;
-            exitFlux.exitStatus = exitStatus;
+            return {
+                stdout: null,
+                stderr: null,
+                exitStatus: 0
+            };
+        }
+        
+        if (command === '') {
+            return {
+                stdout: '',
+                stderr: null,
+                exitStatus: environmentVariables['?']
+            };
         }
 
-        return exitFlux;
+        if (command === 'showstatus') {
+            return {
+                stdout: environmentVariables['?'],
+                stderr: null,
+                exitStatus: 0
+            };
+        }
+
+        const { 
+            stdout, 
+            stderr,
+            exitStatus
+        } = interpretCommand(command, systemAPI);
+
+        return {
+            stdout: stdout,
+            stderr: stderr,
+            exitStatus: exitStatus
+        }
     }
 
 
@@ -267,18 +280,18 @@ export default function Terminal() {
         stdout: string | null, 
         stderr: string | null
     ): void => {
-
+        
         if (stdout !== null || stderr !== null) {
             const resultText = stdout !== null? stdout : stderr;
 
             const linesToAppendToTerminal: Data.TerminalLine[] = [];
-    
+
             const newCommandLine = getCommandLineToAppend(
                 user,
                 domain,
                 directory
             );
-    
+
             const newResultLine = getResultLineToAppend(resultText as string); 
     
             if (resultText !== '') {

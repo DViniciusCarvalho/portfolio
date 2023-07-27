@@ -1,12 +1,12 @@
 import { Shell } from '@/types/shell';
 
 export class ParseTreeNode implements Shell.IParseTreeNode {
-    public token: Shell.ParseTreeToken;
+    public token: Shell.Token;
     public rightNode: ParseTreeNode | null;
     public leftNode: ParseTreeNode | null;
 
     constructor(
-        token: Shell.ParseTreeToken,
+        token: Shell.Token,
         rightNode: ParseTreeNode | null = null, 
         leftNode: ParseTreeNode | null = null
     ) {

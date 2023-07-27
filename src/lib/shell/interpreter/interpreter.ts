@@ -1,3 +1,5 @@
+import { ParseTreeError } from "../exception";
+import { executeAST } from "./ASTanalyzer";
 import { lexer } from "./lexer";
 import { parser } from "./parser";
 import { Shell } from "@/types/shell";
@@ -10,11 +12,25 @@ export const interpretCommand = (
 
     const commandTokens = lexer(command);
     const abstractSyntaxTree = parser(commandTokens);
-    console.log(abstractSyntaxTree)
+
+    if (abstractSyntaxTree instanceof ParseTreeError) {
+        return {
+            stdout: null,
+            stderr: abstractSyntaxTree.errorMessage,
+            exitStatus: abstractSyntaxTree.errorStatus
+        };
+    }
+
+    const { 
+        stdout, 
+        stderr, 
+        exitStatus 
+    } = executeAST(abstractSyntaxTree, systemAPI);
 
     return {
-        stdout: JSON.stringify(abstractSyntaxTree),
-        stderr: null,
-        exitStatus: 0
+        stdout: stdout === null? '' : stdout,
+        stderr: stderr,
+        exitStatus: exitStatus
     };
+
 }

@@ -1,4 +1,8 @@
 
 export class ParseTreeError {
-    constructor(public message: string) {}
+    constructor(public errorMessage: string, public errorStatus: number) {}
+}
+
+export class ExecutionTreeError {
+    constructor(public errorMessage: string, public errorStatus: number) {}
 }

@@ -18,11 +18,7 @@ const doCommandTree = (
         commandParametersSliceStartIndex
     );
 
-    const commandNode = new ParseTreeNode({ 
-        commandContext: 'Command',
-        ...commandToken
-    });
-
+    const commandNode = new ParseTreeNode(commandToken);
 
     const optionNodes: ParseTreeNode[] = [];
     const argumentNodes: ParseTreeNode[] = [];
@@ -36,10 +32,7 @@ const doCommandTree = (
 
 
         if (tokenValueIsOption) {
-            const optionNode = new ParseTreeNode({
-                commandContext: 'Option',
-                ...commandParameterToken
-            });
+            const optionNode = new ParseTreeNode(commandParameterToken);
 
             if (lastOption >= 0) {
                 optionNodes[lastOption].insertLeft(optionNode);
@@ -48,10 +41,7 @@ const doCommandTree = (
             optionNodes.push(optionNode);
         }
         else {
-            const argumentNode = new ParseTreeNode({
-                commandContext: 'Argument',
-                ...commandParameterToken
-            });
+            const argumentNode = new ParseTreeNode(commandParameterToken);
 
             if (lastArgument >= 0) {
                 argumentNodes[lastArgument].insertRight(argumentNode);
@@ -97,10 +87,7 @@ const doOperationTree = (
         }
 
         if (isOperator) {
-            const operatorNode = new ParseTreeNode({
-                commandContext: 'Operator',
-                ...token
-            });
+            const operatorNode = new ParseTreeNode(token);
 
             nodes.push(operatorNode);
             tokensAccumulator.length = 0;
@@ -150,22 +137,37 @@ export const parser = (
     tokens: Shell.Token[]
 ): ParseTree | ParseTreeError => {
 
-    const reservedWordTokens = tokens.filter(token => token.value in RESERVED_WORDS);
+    const reservedWordsToken = tokens.filter(token => token.value in RESERVED_WORDS);
+    const shellOperatorsToken = tokens.filter(token => token.value in SHELL_OPERATORS);
 
-    if (reservedWordTokens.length) {
-        return new ParseTreeError('reserved words are not yet accepted.');
+    const reservedWords = reservedWordsToken.map(token => token.value);
+    const shellOperators = shellOperatorsToken.map(token => token.value);
+    
+
+    if (reservedWords.length) {
+        const mergedReservedWords = reservedWords.join(',');
+
+        return new ParseTreeError(
+            `${mergedReservedWords}: syntax error, reserved words are not yet accepted in this shell interpreter`,
+            2
+        );
     }
 
-    const shellOperatorsInOrder = tokens.filter(token => token.value in SHELL_OPERATORS);
-    const isNotSingleCommand = shellOperatorsInOrder.length;
+    if (shellOperators.indexOf('&') !== -1) {
+        return new ParseTreeError(
+            '&: syntax error, ampersand operator is not yet accepted in this shell interpreter',
+            2
+        );
+    }
 
-    const lastOperator = shellOperatorsInOrder.pop();
 
+    const isNotSingleCommand = shellOperatorsToken.length;
+    const lastOperator = shellOperatorsToken.pop();
+    
     const rootNode = isNotSingleCommand 
-                     ? new ParseTreeNode({ commandContext: 'Operator', ...lastOperator! })
+                     ? new ParseTreeNode(lastOperator!)
                      : doCommandTree(tokens);
    
-
     if (isNotSingleCommand) {
         const rootNodeToken = lastOperator!;
         const rootNodeIndex = tokens.lastIndexOf(rootNodeToken);
