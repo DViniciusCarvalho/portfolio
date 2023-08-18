@@ -1,6 +1,7 @@
 import { Data } from '@/types/data';
 import { getCorrespondentRunningProcess } from './utils';
 import { TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS } from './constants';
+import { Shell } from '@/types/shell';
 
 
 export const getResizeSide = (
@@ -91,6 +92,7 @@ export const processIsTheCurrentOpenned = (
     return (processZIndex === highestZIndex) && !processIsMinimized;
 }
 
+
 export const desktopCanBeShowed = (
     applicationsAreBeingShowed: boolean, 
     currentActiveDesktopUUID: string, 
@@ -99,3 +101,5 @@ export const desktopCanBeShowed = (
     
     return !(applicationsAreBeingShowed || currentActiveDesktopUUID !== UUID);
 }
+
+

@@ -63,8 +63,47 @@ export namespace Data {
         key: string;
     }
 
-    interface FileSystem {
-        [key: string]: any;
+    interface LinkMetadata {
+        has: number;
+        is: boolean;
+        to?: string;
     }
 
+    interface ManagementMetadata {
+        owner: string;
+        group: string;
+        permissionOctal: string;
+    }
+
+    interface TimestampMetadata {
+        access: number;
+        modify: number;
+        change: number;
+        birth: number;
+    }
+
+    interface FileAndDirectoryMetadata {
+        links: LinkMetadata;
+        management: ManagementMetadata;
+        timestamp: TimestampMetadata;
+    }
+
+    interface SystemDirectory extends FileAndDirectoryMetadata {
+        readonly [key: string]: any;
+
+        name: string;
+        size: number;
+        children: {
+            directories: SystemDirectory[];
+            files: SystemFile[];
+        };
+    }
+
+    interface SystemFile extends FileAndDirectoryMetadata {
+        readonly [key: string]: any;
+        
+        name: string;
+        size: number;
+        content: string;
+    }
 }

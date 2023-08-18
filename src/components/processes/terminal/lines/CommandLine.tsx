@@ -35,7 +35,7 @@ export default function CommandLine({
     const handleInput = (): void => {
         const element = contentEditableRef.current!;
         const text = element.textContent || '';
-        const filteredText = text.replace(/<[^>]+>/g, '');
+        const filteredText = text.replace(/^(<br\/>)*/g, '');
         element.textContent = filteredText;
       
         // const isWhiteSpaceOrNewLine = /^\s*$/.test(filteredText);

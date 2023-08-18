@@ -1,7 +1,9 @@
-import { Shell } from "@/types/shell";
-import { ParseTree } from "../ParseTree";
-import { ParseTreeNode } from "../ParseTreeNode";
-import { SHELL_OPERATORS } from "../grammar";
+import { Shell } from '@/types/shell';
+import { ParseTree } from '../ParseTree';
+import { ParseTreeNode } from '../ParseTreeNode';
+import { SHELL_OPERATORS } from '../grammar';
+import { deepClone } from '@/lib/utils';
+import { ESCAPE_SEQUENCES_SUBSTITUTION } from '../commands/common/constants';
 
 
 const getCommandOptionsArray = (
@@ -62,33 +64,100 @@ const executeSingleCommand = (
     commandArguments: Shell.Token[],
     systemAPI: Shell.SystemAPI,
     stdin: string | null = null
-): Shell.ExitFlux => {
+): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
-    const commandName = command.value;
+    const COMMAND_SUBSTITUTION_PATTERN = /\$\([^)]*\)/g;
+    const START_PATTERN = /^\$\(/g;
+    const END_PATTERN = /\)$/g;
+    
+    const commandName = command.value.match(COMMAND_SUBSTITUTION_PATTERN)
+                        ? command.value.replace(START_PATTERN, '').replace(END_PATTERN, '')
+                        : command.value;
+                        
+    const commandIsVariableAssignment = commandName.match(/^.*=.*$/);
+
+    if (commandIsVariableAssignment) {
+        const variableName = commandName.split('=')[0];
+        const variableValue = commandName.split('=')[1];
+
+        systemAPI.setEnvironmentVariables(previous => {
+            const previousDeepCopy = deepClone(previous);
+
+            previousDeepCopy[variableName] = variableValue;
+
+            systemAPI.environmentVariables = previousDeepCopy;
+
+            return previousDeepCopy;
+        });
+
+        systemAPI.environmentVariables[variableName] = variableValue;
+
+        return {
+            stdout: null,
+            stderr: null,
+            exitStatus: 0,
+            systemAPI
+        };
+    }
 
     try {
         const commandModule = require(`@/lib/shell/commands/${commandName}`);
         const commandFunction = commandModule[commandName];
+
         const { 
             stdout,
             stderr, 
-            exitStatus 
+            exitStatus,
+            modifiedSystemAPI
         } = commandFunction(commandOptions, commandArguments, systemAPI, stdin);
+
+        systemAPI = modifiedSystemAPI;
 
         return {
             stdout,
             stderr,
-            exitStatus
+            exitStatus,
+            systemAPI
         };
     }
     catch(err: any) {
         return {
             stdout: null,
-            stderr: err.message,
-            exitStatus: 127
+            stderr: `${commandName}: command not found`,
+            exitStatus: 127,
+            systemAPI
         };
     }
+}
 
+
+const concatStdoutAndStderr = (
+    commandResult: Shell.ExitFlux,
+    commandResultAcc: Shell.ExitFlux
+) => {
+
+    const breakline = ESCAPE_SEQUENCES_SUBSTITUTION['\\n'];
+
+    const preLeftCommandStdout = commandResult.stdout !== null
+                                 ? `${breakline}${commandResult.stdout}`
+                                 : '';
+
+    const stdout = commandResultAcc.stdout !== null 
+                   ? `${commandResultAcc.stdout}${preLeftCommandStdout}`
+                   : commandResult.stdout;
+
+    const preLeftCommandStderr = commandResult.stderr !== null
+                                 ? `${breakline}${commandResult.stderr}`
+                                 : '';
+
+    const stderr = commandResultAcc.stderr !== null
+                   ? `${commandResultAcc.stderr}${preLeftCommandStderr}`
+                   : commandResult.stderr;
+
+    return {
+        stdout,
+        stderr
+    };
 }
 
 
@@ -96,7 +165,7 @@ const executeMultipleCommands = (
     numberOfOperators: number,
     AST: ParseTree,
     systemAPI: Shell.SystemAPI
-): Shell.ExitFlux => {
+): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
     const rootNode = AST.root;
 
@@ -116,18 +185,20 @@ const executeMultipleCommands = (
         '<<'
     ];
 
-    const commandResultAccumulator: Shell.ExitFlux = {
+    const commandResultAccumulator: Shell.ExitFlux & { systemAPI: Shell.SystemAPI } = {
         stdout: null,
         stderr: null,
-        exitStatus: 0
+        exitStatus: 0,
+        systemAPI
     }
 
-    const updateCommandResultAccumulator = (value: Shell.ExitFlux) => {
-        const { stdout, stderr, exitStatus } = value;
+    const updateCommandResultAccumulator = (value: Shell.ExitFlux & { systemAPI: Shell.SystemAPI }) => {
+        const { stdout, stderr, exitStatus, systemAPI } = value;
 
         commandResultAccumulator.stdout = stdout;
         commandResultAccumulator.stderr = stderr;
         commandResultAccumulator.exitStatus = exitStatus;
+        commandResultAccumulator.systemAPI = systemAPI;
     }
 
 
@@ -186,6 +257,8 @@ const executeMultipleCommands = (
                                         )
                                     : commandResultAccumulator;
 
+            systemAPI = leftCommandResult.systemAPI;
+
             
             const leftCommandWasSuccessfullyExecuted = leftCommandResult.exitStatus === 0;
 
@@ -206,26 +279,19 @@ const executeMultipleCommands = (
 
 
             if (isNotOperatorThatOmitOutput && isStartOperatorNode) {
-                const preLeftCommandStdout = leftCommandResult.stdout !== null
-                                                ? `\n${leftCommandResult.stdout}`
-                                                : '';
-
-                const stdout = commandResultAccumulator.stdout !== null 
-                                ? `${commandResultAccumulator.stdout}${preLeftCommandStdout}`
-                                : leftCommandResult.stdout;
-
-                const preLeftCommandStderr = leftCommandResult.stderr !== null
-                                                ? `\n${leftCommandResult.stderr}`
-                                                : '';
-
-                const stderr = commandResultAccumulator.stderr !== null
-                                ? `${commandResultAccumulator.stderr}${preLeftCommandStderr}`
-                                : leftCommandResult.stderr;
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    leftCommandResult, 
+                    commandResultAccumulator
+                );
 
                 updateCommandResultAccumulator({
                     stdout: stdout,
                     stderr: stderr,
-                    exitStatus: leftCommandResult.exitStatus
+                    exitStatus: leftCommandResult.exitStatus,
+                    systemAPI
                 });
             }
 
@@ -241,27 +307,22 @@ const executeMultipleCommands = (
                     rightCommandArguments,
                     systemAPI
                 );
+
+                systemAPI = rightCommandResult.systemAPI;
                 
-                const preRightCommandStdout = rightCommandResult.stdout !== null
-                                                ? `\n${rightCommandResult.stdout}`
-                                                : '';
-
-                const stdout = commandResultAccumulator.stdout !== null 
-                                ? `${commandResultAccumulator.stdout}${preRightCommandStdout}`
-                                : rightCommandResult.stdout;
-
-                const preRightCommandStderr = rightCommandResult.stderr !== null
-                                                ? `\n${rightCommandResult.stderr}`
-                                                : '';
-
-                const stderr = commandResultAccumulator.stderr !== null
-                                ? `${commandResultAccumulator.stderr}${preRightCommandStderr}`
-                                : rightCommandResult.stderr;
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
 
                 updateCommandResultAccumulator({
                     stdout: stdout,
                     stderr: stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }
             else if (nodeOperator === '|') {
@@ -276,21 +337,22 @@ const executeMultipleCommands = (
                     ? rightCommandStdin 
                     : leftCommandResult.stdout
                 );
+
+                systemAPI = rightCommandResult.systemAPI;
     
-                const stdout = commandResultAccumulator.stdout;
-
-                const preRightCommandStderr = rightCommandResult.stderr !== null
-                                                ? `\n${rightCommandResult.stderr}`
-                                                : '';
-
-                const stderr = commandResultAccumulator.stderr !== null
-                                ? `${commandResultAccumulator.stderr}${preRightCommandStderr}`
-                                : rightCommandResult.stderr;
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
                         
                 updateCommandResultAccumulator({
                     stdout: stdout,
                     stderr: stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }  
             else if (nodeOperator === '||' && !leftCommandWasSuccessfullyExecuted) {
@@ -301,26 +363,21 @@ const executeMultipleCommands = (
                     systemAPI
                 );
 
-                const preRightCommandStdout = rightCommandResult.stdout !== null
-                                                ? `\n${rightCommandResult.stdout}`
-                                                : '';
+                systemAPI = rightCommandResult.systemAPI;
 
-                const stdout = commandResultAccumulator.stdout !== null 
-                                ? `${commandResultAccumulator.stdout}${preRightCommandStdout}`
-                                : rightCommandResult.stdout;
-
-                const preRightCommandStderr = rightCommandResult.stderr !== null
-                                                ? `\n${rightCommandResult.stderr}`
-                                                : '';
-
-                const stderr = commandResultAccumulator.stderr !== null
-                                ? `${commandResultAccumulator.stderr}${preRightCommandStderr}`
-                                : rightCommandResult.stderr;
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
 
                 updateCommandResultAccumulator({
                     stdout: stdout,
                     stderr: stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }  
             else if (nodeOperator === '>') {
@@ -336,10 +393,13 @@ const executeMultipleCommands = (
                     : leftCommandResult.stdout
                 );
 
+                systemAPI = rightCommandResult.systemAPI;
+
                 updateCommandResultAccumulator({
                     stdout: commandResultAccumulator.stdout,
                     stderr: commandResultAccumulator.stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }  
             else if (nodeOperator === '>>') {
@@ -355,10 +415,13 @@ const executeMultipleCommands = (
                     : leftCommandResult.stdout
                 );
 
+                systemAPI = rightCommandResult.systemAPI;
+
                 updateCommandResultAccumulator({
                     stdout: commandResultAccumulator.stdout,
                     stderr: commandResultAccumulator.stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }  
             else if (nodeOperator === '2>') {
@@ -370,10 +433,13 @@ const executeMultipleCommands = (
                     leftCommandResult.stderr
                 );
 
+                systemAPI = rightCommandResult.systemAPI;
+
                 updateCommandResultAccumulator({
                     stdout: commandResultAccumulator.stdout,
                     stderr: commandResultAccumulator.stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }  
             else if (nodeOperator === ';') {
@@ -384,26 +450,21 @@ const executeMultipleCommands = (
                     systemAPI
                 );
 
-                const preRightCommandStdout = rightCommandResult.stdout !== null
-                                                ? `\n${rightCommandResult.stdout}`
-                                                : '';
+                systemAPI = rightCommandResult.systemAPI;
 
-                const stdout = commandResultAccumulator.stdout !== null 
-                                ? `${commandResultAccumulator.stdout}${preRightCommandStdout}`
-                                : rightCommandResult.stdout;
-
-                const preRightCommandStderr = rightCommandResult.stderr !== null
-                                                ? `\n${rightCommandResult.stderr}`
-                                                : '';
-
-                const stderr = commandResultAccumulator.stderr !== null
-                                ? `${commandResultAccumulator.stderr}${preRightCommandStderr}`
-                                : rightCommandResult.stderr;
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
 
                 updateCommandResultAccumulator({
                     stdout: stdout,
                     stderr: stderr,
-                    exitStatus: rightCommandResult.exitStatus
+                    exitStatus: rightCommandResult.exitStatus,
+                    systemAPI
                 });
             }
 
@@ -416,6 +477,8 @@ const executeMultipleCommands = (
                 systemAPI
             );
 
+            systemAPI = rightCommandResult.systemAPI;
+
             const leftCommandStdin = `${rightCommandResult.stdout}\n${rightCommandResult.stderr}`;
 
             const leftCommandResult = executeSingleCommand(
@@ -426,31 +489,32 @@ const executeMultipleCommands = (
                 leftCommandStdin
             );
 
-            const preLeftCommandStdout = leftCommandResult.stdout !== null
-                                         ? `\n${leftCommandResult.stdout}`
-                                         : '';
+            systemAPI = leftCommandResult.systemAPI;
 
-            const stdout = commandResultAccumulator.stdout !== null 
-                           ? `${commandResultAccumulator.stdout}${preLeftCommandStdout}`
-                           : leftCommandResult.stdout;
-
-            const preLeftCommandStderr = leftCommandResult.stderr !== null
-                                         ? `\n${leftCommandResult.stderr}`
-                                         : '';
-
-            const stderr = commandResultAccumulator.stderr !== null
-                           ? `${commandResultAccumulator.stderr}${preLeftCommandStderr}`
-                           : leftCommandResult.stderr;
+            const { 
+                stdout, 
+                stderr 
+            } = concatStdoutAndStderr(
+                leftCommandResult, 
+                commandResultAccumulator
+            );
 
             updateCommandResultAccumulator({
                 stdout: stdout,
                 stderr: stderr,
-                exitStatus: leftCommandResult.exitStatus
+                exitStatus: leftCommandResult.exitStatus,
+                systemAPI
             });
         }
     }
 
-    return commandResultAccumulator;
+
+    return {
+        stdout: commandResultAccumulator.stdout,
+        stderr: commandResultAccumulator.stderr,
+        exitStatus: commandResultAccumulator.exitStatus,
+        systemAPI: systemAPI
+    };
 }
 
 
@@ -492,16 +556,13 @@ const getNodeToStartAnalyzing = (
 export const executeAST = (
     AST: ParseTree,
     systemAPI: Shell.SystemAPI
-): Shell.ExitFlux => {
+): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
     const numberOfOperators = getNumberOfOperators(AST);
     const syntaxTreeIsSingleCommand = numberOfOperators === 0;
 
-    console.log(syntaxTreeIsSingleCommand);
-
     if (syntaxTreeIsSingleCommand) {
         const commandNode = AST.root;
-        console.log(!!commandNode.rightNode)
 
         const { commandContext, ...tokenWithoutContext } = commandNode.token;
 

@@ -26,7 +26,9 @@ import {
     INITIAL_SHELL_USER,
     SHELL_HOSTNAME,
     INITIAL_CURRENT_DIRECTORY,
-    INITIAL_FILESYSTEM
+    INITIAL_FILESYSTEM,
+    INITIAL_SHELL_ENVIRONMENT_VARIABLES,
+    INITIAL_UMASK
 } from '@/lib/constants';
 
 import { 
@@ -175,6 +177,16 @@ export default function Main() {
         setCurrentDirectory 
     ] = useState(INITIAL_CURRENT_DIRECTORY);
 
+    const [
+        systemEnvironmentVariables,
+        setSystemEnvironmentVariables
+    ] = useState(INITIAL_SHELL_ENVIRONMENT_VARIABLES);
+
+    const [
+        umask,
+        setUmask
+    ] = useState(INITIAL_UMASK);
+
     const [ 
         canChangeApplicationsState,
         setCanChangeApplicationsState
@@ -214,18 +226,22 @@ export default function Main() {
         changeTerminalDefaultColor,
         changeTerminalBackgroundColor
     };
-
+ 
     const fileSystemAndManipulators = {
         fileSystem,
-        setFileSystem
+        umask,
+        setFileSystem,
+        setUmask
     };
 
     const terminalStatesAndManipulators = {
         currentShellUser,
         hostName,
         currentDirectory,
+        systemEnvironmentVariables,
         setCurrentShellUser,
-        setCurrentDirectory
+        setCurrentDirectory,
+        setSystemEnvironmentVariables
     };
 
     const desktopsStatesAndManipulators = {
@@ -254,6 +270,7 @@ export default function Main() {
     const contextValues = {
         ...processesDesktopDataAndManipulators,
         ...settingsStatesAndManipulators,
+        ...fileSystemAndManipulators,
         ...terminalStatesAndManipulators,
         ...desktopsStatesAndManipulators,
         ...processesWindowStatesAndManipulators,

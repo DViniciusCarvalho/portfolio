@@ -1,21 +1,47 @@
 import { Shell } from "@/types/shell"
-import { checkProvidedPath, getDirectoryData, getDirectoryPermissionOctal, getFileOrDirectoryBytesSize } from "./common/directoryAndFile";
-import { Directory } from "./models/Directory";
+import { 
+    checkProvidedPath, 
+    getDirectoryData, 
+    getFileOrDirectoryBytesSize, 
+    getFilePermissionOctal
+} from "./common/directoryAndFile";
 import { getCommandArguments, resolveArguments } from "./common/arguments";
 import { ExecutionTreeError } from "../exception";
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage, getOption } from "./common/options";
+import { 
+    checkOption, 
+    commandHasInvalidOptions, 
+    getCommandInvalidOptionMessage, 
+    getOption 
+} from "./common/options";
 import { deepClone } from "@/lib/utils";
+import { File } from "./models/File";
+
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
     {
-        short: '-m',
-        long: /^--mode=.+$/,
-        description: 'set file mode (as in chmod), not a=rwx - umask'
+        short: '-c',
+        long: '--no-create',
+        description: 'do not create any files'
     },
     {
-        short: '-p',
-        long: '--parents',
-        description: 'make parent directories as needed'
+        short: '-a',
+        long: null,
+        description: 'change only the access time'
+    },
+    {
+        short: '-d',
+        long: /^--date=.+$/,
+        description: 'parse STRING and use it instead of current time'
+    },
+    {
+        short: '-m',
+        long: null,
+        description: 'change only the modification time'
+    },
+    {
+        short: null,
+        long: '--help',
+        description: 'display this help and exit'
     }
 ];
 
@@ -32,7 +58,7 @@ export const help = (
 }
 
 
-export const mkdir = (    
+export const touch = (    
     commandOptions: Shell.Token[],
     commandArguments: Shell.Token[],
     systemAPI: Shell.SystemAPI,
@@ -54,14 +80,12 @@ export const mkdir = (
     }
 
     const providedOptions = commandOptions.map(opt => opt.value);
-    const hasOptions = !!providedOptions.length;
     const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
 
     if (hasHelpOption) {
         return help(systemAPI);
     }
 
-    const LAST_DIRECTORY_PATTERN = /\/[^\/]+$/;
     const argumentsValue = getCommandArguments(commandArguments, stdin);
 
     const cwd = systemAPI.environmentVariables['PWD'];
@@ -70,36 +94,36 @@ export const mkdir = (
 
     try {
 
-        const directoryPaths = resolveArguments(
+        const filePaths = resolveArguments(
             argumentsValue, 
             systemAPI, 
             false
         );
 
-        for (const directoryPath of directoryPaths) {
-            const providedDirectory = checkProvidedPath(
-                directoryPath, 
+        for (const filePath of filePaths) {
+            const providedFile = checkProvidedPath(
+                filePath, 
                 cwd, 
                 currentUser, 
                 fileSystem
             );
 
-            if (providedDirectory.valid) {
+            if (providedFile.insideFileError) {
                 throw new ExecutionTreeError(
-                    `mkdir: cannot create directory '${directoryPath}': File exists`,
+                    `touch: cannot touch '${filePath}': Not a directory`,
                     1
                 );
             }
 
-            const resolvedPath = providedDirectory.resolvedPath;
+            const resolvedPath = providedFile.resolvedPath;
             const lastSlashIndex = resolvedPath.lastIndexOf('/');
-            const startOfDirName = lastSlashIndex !== -1
+            const startOfFileName = lastSlashIndex !== -1
                                     ? lastSlashIndex + 1
                                     : 0;
 
-            const parentsDirectoryPath = resolvedPath.slice(0, startOfDirName).length === 0
+            const parentsDirectoryPath = resolvedPath.slice(0, startOfFileName).length === 0
                                          ? './'
-                                         : resolvedPath.slice(0, startOfDirName);
+                                         : resolvedPath.slice(0, startOfFileName);
 
             const parentsDirectory = checkProvidedPath(
                 parentsDirectoryPath,
@@ -110,12 +134,12 @@ export const mkdir = (
 
             if (!parentsDirectory.valid) {
                 throw new ExecutionTreeError(
-                    `mkdir: cannot create directory '${directoryPath}': No such file or directory`,
+                    `touch: cannot touch '${filePath}': No such file or directory`,
                     1
                 );
             }
 
-            const directoryName = resolvedPath.slice(startOfDirName);
+            const fileName = resolvedPath.slice(startOfFileName);
             const parentDirectoryPath = parentsDirectory.resolvedPath;
 
             const parentDirectory = getDirectoryData(
@@ -125,34 +149,34 @@ export const mkdir = (
                 fileSystem
             );
 
-            const directoryPermission = getDirectoryPermissionOctal(systemAPI.umask);
 
-            const directory = new Directory(
-                directoryName, 
-                0, 
-                {
-                    directories: [],
-                    files: []
-                }, 
-                { 
-                    is: false, 
-                    has: 1 
-                }, 
-                { 
-                    group: 'root', 
-                    owner: 'root', 
-                    permissionOctal: directoryPermission
-                },
-                {
-                    access: 1,
-                    birth: 1,
-                    change: 1,
-                    modify: 1
-                }
-            );
+            if (!providedFile.valid) {
+                const filePermission = getFilePermissionOctal(systemAPI.umask);
 
-            directory.size = getFileOrDirectoryBytesSize(directory);
-            parentDirectory.children.directories.push(directory);
+                const file = new File(
+                    fileName, 
+                    0, 
+                    '', 
+                    { 
+                        is: false, 
+                        has: 1 
+                    }, 
+                    { 
+                        group: currentUser, 
+                        owner: currentUser, 
+                        permissionOctal: filePermission
+                    },
+                    {
+                        access: 1,
+                        birth: 1,
+                        change: 1,
+                        modify: 1
+                    }
+                );
+
+                file.size = getFileOrDirectoryBytesSize(file);
+                parentDirectory.children.files.push(file);
+            }
         }
 
         return {

@@ -4,10 +4,9 @@ import CommandLine from './lines/CommandLine';
 import ResultLine from './lines/ResultLine';
 import { Data } from '@/types/data';
 import { MainContext } from '@/components/workarea/Main';
-import { INITIAL_SHELL_ENVIRONMENT_VARIABLES } from '@/lib/constants';
 import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
 import { Shell } from '@/types/shell';
-import { deepClone, generateUUID } from '@/lib/utils';
+import { deepClone, delay, generateUUID } from '@/lib/utils';
 
 
 export default function Terminal() {
@@ -19,11 +18,17 @@ export default function Terminal() {
         currentShellUser, 
         hostName, 
         currentDirectory,
+        systemEnvironmentVariables,
+        umask,
         setCurrentShellUser,
         setCurrentDirectory,
+        setSystemEnvironmentVariables,
+        setUmask,
         terminalFontSizeInPixels,
         terminalBackgroundColor,
+        fileSystem,
         setFileSystem,
+        opennedProcessesData,
         setOpennedProcessesData,
         sendSIGKILLToProcess
     } = useContext(MainContext);
@@ -32,7 +37,7 @@ export default function Terminal() {
     const [ 
         environmentVariables, 
         setEnvironmentVariables 
-    ] = useState(INITIAL_SHELL_ENVIRONMENT_VARIABLES);
+    ] = useState<Shell.EnvironmentVariables>(systemEnvironmentVariables);
 
     const [
         bashHistory,
@@ -60,15 +65,16 @@ export default function Terminal() {
         key: generateUUID()
     }]);
 
-    useEffect(() => {
-        console.log(terminalLines)
+
+    useEffect(() => 
         selectLastTerminalLineToType()
-    }
     , [terminalLines]);
 
     useEffect(() => 
         setCurrentBashHistoryPosition(previous => bashHistory.length)
     , [bashHistory]);
+
+    useEffect(() => console.log(currentDirectory), [currentDirectory])
 
 
     const handleTerminalKeyDown = (
@@ -178,6 +184,7 @@ export default function Terminal() {
         setEnvironmentVariables(previous => {
             const previousDeepCopy = deepClone(previous);
             previousDeepCopy[variableName] = value;
+            
             return previousDeepCopy;
         })
     }
@@ -221,33 +228,32 @@ export default function Terminal() {
 
     const executeShellCommand = (
         command: string
-    ): Shell.ExitFlux => {
+    ): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
         const systemAPI: Shell.SystemAPI = {
             clearTerminal,
+            environmentVariables,
             setEnvironmentVariables,
+            setSystemEnvironmentVariables,
             sendSIGKILLToProcess,
+            opennedProcessesData,
             setOpennedProcessesData,
+            currentShellUser,
             setCurrentShellUser,
+            currentDirectory,
             setCurrentDirectory,
-            setFileSystem
+            fileSystem,
+            setFileSystem,
+            umask,
+            setUmask
         };
-
-        if (command === 'clear') {
-            clearTerminal(); 
-
-            return {
-                stdout: null,
-                stderr: null,
-                exitStatus: 0
-            };
-        }
-        
+    
         if (command === '') {
             return {
                 stdout: '',
                 stderr: null,
-                exitStatus: environmentVariables['?']
+                exitStatus: environmentVariables['?'],
+                systemAPI
             };
         }
 
@@ -255,21 +261,19 @@ export default function Terminal() {
             return {
                 stdout: environmentVariables['?'],
                 stderr: null,
-                exitStatus: 0
+                exitStatus: 0,
+                systemAPI
             };
         }
 
-        const { 
-            stdout, 
-            stderr,
-            exitStatus
-        } = interpretCommand(command, systemAPI);
+        const commandExecutionResult = interpretCommand(command, systemAPI);
 
         return {
-            stdout: stdout,
-            stderr: stderr,
-            exitStatus: exitStatus
-        }
+            stdout: commandExecutionResult.stdout,
+            stderr: commandExecutionResult.stderr,
+            exitStatus: commandExecutionResult.exitStatus,
+            systemAPI: commandExecutionResult.systemAPI
+        };
     }
 
 
@@ -292,7 +296,7 @@ export default function Terminal() {
                 directory
             );
 
-            const newResultLine = getResultLineToAppend(resultText as string); 
+            const newResultLine = getResultLineToAppend(resultText!); 
     
             if (resultText !== '') {
                 linesToAppendToTerminal.push(newResultLine);
@@ -321,17 +325,19 @@ export default function Terminal() {
         const { 
             stdout, 
             stderr,
-            exitStatus
+            exitStatus,
+            systemAPI
         } = executeShellCommand(trimmedCommand);
 
         changeEnvironmentVariable('?', exitStatus);
     
         lastTerminalLineContentElement.contentEditable = 'false';
 
+        console.log(systemAPI)
         showCommandResult(                
-            currentShellUser,
+            systemAPI.currentShellUser,
             hostName,
-            currentDirectory, 
+            systemAPI.currentDirectory, 
             stdout, 
             stderr
         );
@@ -359,5 +365,3 @@ export default function Terminal() {
         </div>
     );
 }
-
-

@@ -5,13 +5,14 @@ export const clear = (
     commandArguments: Shell.Token[],
     systemAPI: Shell.SystemAPI,
     stdin: string | null
-): Shell.ExitFlux => {
+): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
     systemAPI.clearTerminal();
 
     return {
         stdout: null,
         stderr: null,
-        exitStatus: 0
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
     };
 }

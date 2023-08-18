@@ -33,17 +33,47 @@ export namespace Shell {
         exitStatus: number;
     }
 
+    interface PromptVariableData {
+        currentUser: string;
+        currentDirectory: string;
+    }
+
     interface EnvironmentVariables {
         [key: string]: any;
     }
 
     interface SystemAPI {
         clearTerminal: () => void;
+        environmentVariables: EnvironmentVariables;
         setEnvironmentVariables: React.Dispatch<React.SetStateAction<EnvironmentVariables>>;
+        setSystemEnvironmentVariables: React.Dispatch<React.SetStateAction<EnvironmentVariables>>;
         sendSIGKILLToProcess: (PID: number) => void;
+        opennedProcessesData: Data.OpennedProcessData[];
         setOpennedProcessesData: React.Dispatch<React.SetStateAction<Data.OpennedProcessData[]>>;
+        currentShellUser: string;
         setCurrentShellUser: React.Dispatch<React.SetStateAction<string>>;
+        currentDirectory: string;
         setCurrentDirectory: React.Dispatch<React.SetStateAction<string>>;
-        setFileSystem: React.Dispatch<React.SetStateAction<Data.FileSystem>>;
+        fileSystem: Data.SystemDirectory;
+        setFileSystem: React.Dispatch<React.SetStateAction<Data.SystemDirectory>>;
+        umask: string;
+        setUmask: React.Dispatch<React.SetStateAction<{
+            directory: string;
+            file: string;
+        }>>;
     }
+
+    interface CommandOption {
+        short: string | null;
+        long: string | null | RegExp;
+        description: string;
+    }
+
+    interface Signal {
+        number: number;
+        name: string;
+        handler: any;
+    }
+
+
 }
