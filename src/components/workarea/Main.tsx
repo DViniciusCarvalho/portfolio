@@ -40,7 +40,6 @@ import {
 
 import { 
     deepClone, 
-    debounce,
     getCorrespondentRunningProcess,
     generateUUID,
     getProcessWindowParentDesktopUUID,
@@ -52,6 +51,9 @@ import {
 } from '@/lib/validation';
 
 import { StaticImageData } from 'next/image';
+import { Shell } from '@/types/shell';
+import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
+import { registerProcessInProcDir, removeProcessFromProcDir } from '@/lib/shell/background/process';
 
 
 export const MainContext = createContext<any>(null);
@@ -358,9 +360,7 @@ export default function Main() {
 
         setCurrentActiveDesktopUUID(previous => processWindowParentDesktopUUID);
         setApplicationsAreBeingShowed(previous => false);
-
         setLastPID(previous => nextPID);
-
         setLastHighestZIndex(previous => nextLastHighestZIndex);
 
         setOpennedProcessesData(previous => [
@@ -368,8 +368,18 @@ export default function Main() {
             newProcessData
         ]);
 
+        const partialSystemAPI = {
+            environmentVariables: systemEnvironmentVariables,
+            currentShellUser: 'root',
+            fileSystem: fileSystem,
+            umask: umask
+        } as Shell.SystemAPI;
+
+        registerProcessInProcDir(nextPID, processTitle, partialSystemAPI);
+
         return nextPID;
     }
+
 
 
     function elevateProcessWindowZIndex(PID: number): void {   
@@ -418,6 +428,15 @@ export default function Main() {
 
             return filteredPreviousDeepCopy;
         });
+
+        const partialSystemAPI = {
+            environmentVariables: systemEnvironmentVariables,
+            currentShellUser: 'root',
+            fileSystem: fileSystem,
+            umask: umask
+        } as Shell.SystemAPI;
+
+        removeProcessFromProcDir(PID, partialSystemAPI);
     }
 
 
@@ -679,6 +698,7 @@ export default function Main() {
     function changeBackgroundDefaultColorPalette(systemColorPalette: string): void {
         setBackgroundIsImageBlob(previous => false);
         setBackgroundImageUrl(previous => '');
+
         setSystemColorPalette(previous => systemColorPalette);
     }
 
@@ -721,8 +741,6 @@ export default function Main() {
     function changeTerminalBackgroundColor(color: string): void {
         setTerminalBackgroundColor(previous => color);
     }
-
-
 
 
     return (

@@ -1,4 +1,4 @@
-import { Shell } from "@/types/shell"
+import { Shell } from '@/types/shell';
 
 export const clear = (    
     commandOptions: Shell.Token[],

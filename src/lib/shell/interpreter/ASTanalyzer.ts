@@ -3,7 +3,9 @@ import { ParseTree } from '../ParseTree';
 import { ParseTreeNode } from '../ParseTreeNode';
 import { SHELL_OPERATORS } from '../grammar';
 import { deepClone } from '@/lib/utils';
-import { ESCAPE_SEQUENCES_SUBSTITUTION } from '../commands/common/constants';
+import { ESCAPE_SEQUENCES_SUBSTITUTION } from '../commands/common/patterns';
+import { checkProvidedPath, getDirectoryData, getFileData, getParentPathAndTargetName } from '../commands/common/directoryAndFile';
+import { ExecutionTreeError } from '../exception';
 
 
 const getCommandOptionsArray = (
@@ -58,11 +60,13 @@ const getCommandArgumentsArray = (
 }
 
 
-const executeSingleCommand = (
+export const executeSingleCommand = (
     command: Shell.Token,
     commandOptions: Shell.Token[],
     commandArguments: Shell.Token[],
     systemAPI: Shell.SystemAPI,
+    isRedirectAction: boolean,
+    canOverwriteContent: boolean,
     stdin: string | null = null
 ): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
@@ -75,6 +79,20 @@ const executeSingleCommand = (
                         : command.value;
                         
     const commandIsVariableAssignment = commandName.match(/^.*=.*$/);
+
+    const cwd = systemAPI.environmentVariables['PWD'];
+    const currentUser = systemAPI.currentShellUser;
+    const fileSystem = systemAPI.fileSystem;
+
+    const commandIsPathCheck = checkProvidedPath(
+        commandName,
+        cwd,
+        currentUser,
+        fileSystem
+    );
+
+    const commandIsNotExecutablePath = commandIsPathCheck.valid;
+
 
     if (commandIsVariableAssignment) {
         const variableName = commandName.split('=')[0];
@@ -99,6 +117,68 @@ const executeSingleCommand = (
             systemAPI
         };
     }
+
+    try {
+        if (commandIsNotExecutablePath) {
+            if (isRedirectAction) {
+                if (commandIsPathCheck.validAs === 'directory') {
+                    throw new ExecutionTreeError(
+                        `${commandName}: Is a directory`,
+                        1
+                    );
+                }
+
+                const {
+                    parentPath,
+                    targetName
+                } = getParentPathAndTargetName(commandIsPathCheck.resolvedPath);
+
+                const parentDirectoryData = getDirectoryData(
+                    parentPath,
+                    cwd,
+                    currentUser,
+                    fileSystem
+                );
+
+                const targetFileData = getFileData(
+                    parentDirectoryData,
+                    targetName
+                )!;
+
+                if (canOverwriteContent) {
+                    targetFileData.data.content = stdin!;
+                }
+                else {
+                    targetFileData.data.content += `${targetFileData.data.content.length? '\n' : ''}${stdin!}`;
+                }
+
+                return {
+                    stdout: '',
+                    stderr: null,
+                    exitStatus: 0,
+                    systemAPI
+                };
+            }
+    
+            return {
+                stdout: commandName,
+                stderr: null,
+                exitStatus: 0,
+                systemAPI
+            };
+        }
+    }
+    catch (err: unknown) {
+        const errorObject = err as ExecutionTreeError;
+
+        return {
+            stdout: null,
+            stderr: errorObject.errorMessage,
+            exitStatus: errorObject.errorStatus,
+            systemAPI
+        };
+    }
+
 
     try {
         const commandModule = require(`@/lib/shell/commands/${commandName}`);
@@ -138,20 +218,26 @@ const concatStdoutAndStderr = (
 
     const breakline = ESCAPE_SEQUENCES_SUBSTITUTION['\\n'];
 
-    const preLeftCommandStdout = commandResult.stdout !== null
-                                 ? `${breakline}${commandResult.stdout}`
+    const commandResultAccStdout = commandResultAcc.stdout;
+    const commandResultAccStderr = commandResultAcc.stderr;
+
+    const stdoutLineSeparation = commandResultAccStdout === ''? '' : breakline;
+    const stderrLineSeparation = commandResultAccStderr === ''? '' : breakline; 
+
+    const preFirstCommandStdout = commandResult.stdout !== null
+                                 ? `${stdoutLineSeparation}${commandResult.stdout}`
                                  : '';
 
     const stdout = commandResultAcc.stdout !== null 
-                   ? `${commandResultAcc.stdout}${preLeftCommandStdout}`
+                   ? `${commandResultAcc.stdout}${preFirstCommandStdout}`
                    : commandResult.stdout;
 
-    const preLeftCommandStderr = commandResult.stderr !== null
-                                 ? `${breakline}${commandResult.stderr}`
+    const preFirstCommandStderr = commandResult.stderr !== null
+                                 ? `${stderrLineSeparation}${commandResult.stderr}`
                                  : '';
 
     const stderr = commandResultAcc.stderr !== null
-                   ? `${commandResultAcc.stderr}${preLeftCommandStderr}`
+                   ? `${commandResultAcc.stderr}${preFirstCommandStderr}`
                    : commandResult.stderr;
 
     return {
@@ -250,11 +336,13 @@ const executeMultipleCommands = (
         if (isLeftToRightOperator) {
             const leftCommandResult = isStartOperatorNode
                                     ? executeSingleCommand(
-                                            leftCommandToken,
-                                            leftCommandOptions,
-                                            leftCommandArguments,
-                                            systemAPI
-                                        )
+                                        leftCommandToken,
+                                        leftCommandOptions,
+                                        leftCommandArguments,
+                                        systemAPI,
+                                        false,
+                                        false
+                                      )
                                     : commandResultAccumulator;
 
             systemAPI = leftCommandResult.systemAPI;
@@ -305,11 +393,13 @@ const executeMultipleCommands = (
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
-                    systemAPI
+                    systemAPI,
+                    false,
+                    false
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
-                
+
                 const { 
                     stdout, 
                     stderr 
@@ -326,16 +416,19 @@ const executeMultipleCommands = (
                 });
             }
             else if (nodeOperator === '|') {
-                const rightCommandStdin = `${leftCommandResult.stdout}\n${leftCommandResult.stderr}`;
+                const rightCommandStdin = leftCommandResult.stdout;
     
                 const rightCommandResult = executeSingleCommand(
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
                     systemAPI,
+                    false,
+                    false,
                     leftCommandHasRedirectStderrToSameAsStdoutSign
                     ? rightCommandStdin 
-                    : leftCommandResult.stdout
+                    : leftCommandResult.stdout,
+
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
@@ -360,7 +453,9 @@ const executeMultipleCommands = (
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
-                    systemAPI
+                    systemAPI,
+                    false,
+                    false
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
@@ -381,13 +476,15 @@ const executeMultipleCommands = (
                 });
             }  
             else if (nodeOperator === '>') {
-                const rightCommandStdin = `${leftCommandResult.stdout}\n${leftCommandResult.stderr}`;
+                const rightCommandStdin = leftCommandResult.stdout;
 
                 const rightCommandResult = executeSingleCommand(
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
                     systemAPI,
+                    true,
+                    true,
                     rightCommandHasRedirectStderrToSameAsStdoutSign
                     ? rightCommandStdin
                     : leftCommandResult.stdout
@@ -395,31 +492,49 @@ const executeMultipleCommands = (
 
                 systemAPI = rightCommandResult.systemAPI;
 
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
+
                 updateCommandResultAccumulator({
-                    stdout: commandResultAccumulator.stdout,
-                    stderr: commandResultAccumulator.stderr,
+                    stdout: stdout,
+                    stderr: stderr,
                     exitStatus: rightCommandResult.exitStatus,
                     systemAPI
                 });
             }  
             else if (nodeOperator === '>>') {
-                const rightCommandStdin = `${leftCommandResult.stdout}\n${leftCommandResult.stderr}`;
+                const leftCommandStdoutAndStderr = `${leftCommandResult.stdout}\n${leftCommandResult.stderr}`;
 
                 const rightCommandResult = executeSingleCommand(
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
                     systemAPI,
+                    true,
+                    false,
                     rightCommandHasRedirectStderrToSameAsStdoutSign
-                    ? rightCommandStdin
+                    ? leftCommandStdoutAndStderr
                     : leftCommandResult.stdout
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
 
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
+
                 updateCommandResultAccumulator({
-                    stdout: commandResultAccumulator.stdout,
-                    stderr: commandResultAccumulator.stderr,
+                    stdout: stdout,
+                    stderr: stderr,
                     exitStatus: rightCommandResult.exitStatus,
                     systemAPI
                 });
@@ -430,14 +545,24 @@ const executeMultipleCommands = (
                     rightCommandOptions,
                     rightCommandArguments,
                     systemAPI,
+                    true,
+                    true,
                     leftCommandResult.stderr
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
 
+                const { 
+                    stdout, 
+                    stderr 
+                } = concatStdoutAndStderr(
+                    rightCommandResult, 
+                    commandResultAccumulator
+                );
+
                 updateCommandResultAccumulator({
-                    stdout: commandResultAccumulator.stdout,
-                    stderr: commandResultAccumulator.stderr,
+                    stdout: stdout,
+                    stderr: stderr,
                     exitStatus: rightCommandResult.exitStatus,
                     systemAPI
                 });
@@ -447,7 +572,9 @@ const executeMultipleCommands = (
                     rightCommandToken,
                     rightCommandOptions,
                     rightCommandArguments,
-                    systemAPI
+                    systemAPI,
+                    false,
+                    false
                 );
 
                 systemAPI = rightCommandResult.systemAPI;
@@ -474,18 +601,22 @@ const executeMultipleCommands = (
                 rightCommandToken,
                 rightCommandOptions,
                 rightCommandArguments,
-                systemAPI
+                systemAPI,
+                false,
+                false
             );
 
             systemAPI = rightCommandResult.systemAPI;
 
-            const leftCommandStdin = `${rightCommandResult.stdout}\n${rightCommandResult.stderr}`;
+            const leftCommandStdin = rightCommandResult.stdout;
 
             const leftCommandResult = executeSingleCommand(
                 leftCommandToken,
                 leftCommandOptions,
                 leftCommandArguments,
                 systemAPI,
+                false,
+                false,
                 leftCommandStdin
             );
 
@@ -574,7 +705,9 @@ export const executeAST = (
             command, 
             commandOptions,
             commandArguments,
-            systemAPI 
+            systemAPI,
+            false,
+            false
         );
     }
 

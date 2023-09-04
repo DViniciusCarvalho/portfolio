@@ -1,5 +1,5 @@
 import { Shell } from "@/types/shell"
-import { ESCAPE_SEQUENCES_SUBSTITUTION } from "./common/constants";
+import { BREAK_LINE } from "./common/patterns";
 
 export const man = (    
     commandOptions: Shell.Token[],
@@ -11,11 +11,9 @@ export const man = (
     const targetCommand = commandArguments.at(0);
     
     if (!targetCommand) {
-        const breakLine = ESCAPE_SEQUENCES_SUBSTITUTION['\\n'];
-
         return {
             stdout: null,
-            stderr: `What manual page do you want?${breakLine}For example, try 'man man'.`,
+            stderr: `What manual page do you want?${BREAK_LINE}For example, try 'man man'.`,
             exitStatus: 1,
             modifiedSystemAPI: systemAPI
         };

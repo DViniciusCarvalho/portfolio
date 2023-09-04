@@ -48,7 +48,7 @@ export const pwd = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('pwd', invalidOptions, 'pwd --help'),
+            stderr: getCommandInvalidOptionMessage('pwd', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };

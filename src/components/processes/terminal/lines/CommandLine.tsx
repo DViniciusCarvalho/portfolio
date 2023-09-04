@@ -75,7 +75,10 @@ export default function CommandLine({
                         color: terminalCurrentDirectoryColor
                     }}
                 >
-                    {directory === `/home/${user}`? '~' : directory}
+                    {directory.includes(`/home/${user}`)
+                    ? directory.replace(`/home/${user}`, '~') 
+                    : directory
+                    }
                 </span>
                 {user === 'root'? ROOT_PROMPT : NORMAL_USER_PROMPT}
             </span>

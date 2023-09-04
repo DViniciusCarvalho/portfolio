@@ -1,18 +1,33 @@
-import { Shell } from "@/types/shell";
+import { Shell } from '@/types/shell';
+
 import { 
-    checkOption,
     commandHasInvalidOptions, 
     getCommandInvalidOptionMessage,
     optionIsPresent
-} from "./common/options";
+} from './common/options';
+
 import { 
-    getCommandArguments 
-} from "./common/arguments";
-import { ExecutionTreeError } from "../exception";
-import { checkProvidedPath, getDirectoryData, getFileData, resolveOctalPermissionInDrx } from "./common/directoryAndFile";
-import { Data } from "@/types/data";
-import { getSizeNotation } from "./common/size";
-import { Directory } from "./models/Directory";
+    resolveArguments 
+} from './common/arguments';
+
+import { ExecutionTreeError } from '../exception';
+
+import { 
+    checkProvidedPath, 
+    getDirectoryData, 
+    getFileData, 
+    getParentPathAndTargetName, 
+    resolveOctalPermissionInSymbolicFormat, 
+    targetIsDirectory
+} from './common/directoryAndFile';
+
+import { getSizeNotation } from './common/size';
+import { Directory } from './models/Directory';
+import { File } from './models/File';
+import { changeReadingTimestamps } from './common/timestamps';
+import { BREAK_LINE, COLORED_WORD_TEMPLATE } from './common/patterns';
+import { alignLineItems } from './common/formatters';
+
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
     {
@@ -55,11 +70,25 @@ export const help = (
 }
 
 
+const getSortedFilesAndDirectories = (
+    filesAndDirectories: (Directory | File)[], 
+    canSortBySize: boolean
+) => {
+    return filesAndDirectories.sort((a, b) => 
+        canSortBySize
+        ? b.data.size - a.data.size 
+        : a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+}
+
+
 const getAllDirectoryLines = (
-    directoryData: Data.SystemDirectory,
-    LS_COLORS: string[],
+    directoryData: Directory,
+    LS_COLORS: {[key: string]: string},
     canShowDetailedInfo: boolean,
-    canShowInAHumanReadableWay: boolean
+    canShowInAHumanReadableWay: boolean,
+    canShowDotFiles: boolean,
+    canSortBySize: boolean
 ) => {
 
     const childDirectories = directoryData.children.directories;
@@ -67,79 +96,179 @@ const getAllDirectoryLines = (
 
     const directoryChildren = [ ...childDirectories, ...childFiles ];
 
-    console.log(directoryChildren)
+    const filteredData = canShowDotFiles
+                         ? directoryChildren 
+                         : directoryChildren.filter(dirOrFile => !dirOrFile.name.startsWith('.'));
 
-    const stdout = directoryChildren.reduce((
-        acc, 
+    const sortedFilesAndDirectories = getSortedFilesAndDirectories(
+        filteredData, 
+        canSortBySize
+    );
+
+    const stdout = sortedFilesAndDirectories.reduce((
+        acc: string[], 
         current,
         idx, 
         arr
     ) => {
 
-        console.log('passei 1x')
-        const isLastIndex = idx === arr.length - 1;
+        const isLastLine = idx === arr.length - 1;
 
-        const type = current instanceof Directory? 'directory' : 'file';
+        const isDirectory = targetIsDirectory(current);
 
         const line = getLsStdoutLine(
-            type, 
+            isDirectory, 
             current, 
             LS_COLORS, 
             canShowDetailedInfo, 
             canShowInAHumanReadableWay
         );
 
-        const lineFormatted = isLastIndex? line : `${line}!<break_line>!`;
-
-        acc += lineFormatted;
+        acc.push(line);
 
         return acc;
 
-    }, ''); 
+    }, []); 
 
-    return stdout;
+    const formattedLines = alignLineItems(stdout, '  ', 'right');
+
+    return formattedLines.join(BREAK_LINE);
+}
+
+
+const getLsColorsObject = (
+    env: Shell.EnvironmentVariables
+) => {
+
+    const colorsString = env['LS_COLORS'];
+
+    const splittedColorsString = colorsString.split(':') as string[];
+
+    const colorsObject = splittedColorsString.reduce((
+        acc: {[key: string]: string},
+        current
+    ) => {
+
+        const equalIndex = current.indexOf('=');
+
+        const key = current.slice(0, equalIndex);
+        const value = current.slice(equalIndex + 1);
+
+        acc[key] = value;
+
+        return acc;
+    }, {});
+
+    return colorsObject;
+}
+
+
+const getDirectoryFileColorKey = (
+    isDirectory: boolean,
+    fileOrDirectory: Directory | File
+): string => {
+
+    const isSymLink = fileOrDirectory.links.is;
+    const hasSpecialBit = fileOrDirectory.management.permissionOctal[0] !== '0';
+
+    if (isSymLink) return 'sl';
+    if (hasSpecialBit) return 'sb';
+
+    return isDirectory? 'di' : getFileTypeColorKey(fileOrDirectory.name);
+}
+
+
+const getFileTypeColorKey = (
+    fileName: string
+): string => {
+
+    const FILE_EXTENSION_PATTERN = /.+\..+$/g;
+
+    if (fileName.match(FILE_EXTENSION_PATTERN)) {
+        const dotIndex = fileName.lastIndexOf('.');
+        const fileExtension = fileName.slice(dotIndex);
+
+        return `*${fileExtension}`;
+    }
+
+    return 'rf';
+}
+
+
+const fillWithSpacesToAlign = (
+    target: string | number, 
+    maxLength: number
+): string => {
+    return String(target).padStart(maxLength, ' ');
 }
 
 
 const getLsStdoutLine = (
-    type: string,
-    data: Data.SystemDirectory | Data.SystemFile,
-    colors: string[],
+    isDirectory: boolean,
+    fileOrDirectory: Directory | File,
+    colors: {[key: string]: string},
     canShowDetailedInfo: boolean,
     canShowInAHumanReadableWay: boolean
 ) => {
 
-    const color = '#cccccc';
-    const coloredFileOrDirectoryName = `!<span<${color}>>!${data.name}!<\\span>!`;
+    const LS_LINE_MODEL = 'perm  links  owner  group  size  month  monthDay  hours:minutes  name';
+
+    const isSymLink = fileOrDirectory.links.is;
+
+    const colorKey = getDirectoryFileColorKey(isDirectory, fileOrDirectory);
+
+    const color = colors[colorKey];
+    const coloredFileOrDirectoryName = COLORED_WORD_TEMPLATE
+                                       .replace('[COLOR]', color)
+                                       .replace('[CONTENT]', fileOrDirectory.name);
+
 
     if (canShowDetailedInfo) {
-        const isDirectory = data instanceof Directory;
-        const isSymLink = data.links.is;
-
         const permissionsFirstLetter = isDirectory? 'd' : (isSymLink? 'l' : '-');
 
-        const resolvedPermissions = resolveOctalPermissionInDrx(data.management.permissionOctal);
+        const resolvedPermissions = resolveOctalPermissionInSymbolicFormat(
+            fileOrDirectory.management.permissionOctal
+        );
 
         const permissions = `${permissionsFirstLetter}${resolvedPermissions}`;
-        const links = data.links.has;
-        const owner = data.management.owner;
-        const group = data.management.group;
-        const size = canShowInAHumanReadableWay? getSizeNotation(data.size) : data.size;
 
-        const modifDate = new Date(data.timestamp.modify);
+        const links = fileOrDirectory.links.has;
+        const isSymLinkTo = fileOrDirectory.links.to;
+        const owner = fileOrDirectory.management.owner;
+        const group = fileOrDirectory.management.group;
 
-        const month = modifDate.toLocaleDateString('en-us', { month: 'short' }).toLowerCase();
-        const monthDay = modifDate.toLocaleDateString('en-us', { day: '2-digit' });
+        const size = canShowInAHumanReadableWay
+                     ? getSizeNotation(fileOrDirectory.data.size) 
+                     : fileOrDirectory.data.size;
+
+        const modifyDate = new Date(fileOrDirectory.timestamp.modify);
+
+        const month = modifyDate.toLocaleDateString('en-us', { month: 'short' }).toLowerCase();
+        const monthDay = modifyDate.toLocaleDateString('en-us', { day: '2-digit' });
     
-        const hours = modifDate.getHours().toString().padStart(2, '0');
-        const minutes = modifDate.getMinutes().toString().padStart(2, '0');
+        const hours = modifyDate.getHours().toString().padStart(2, '0');
+        const minutes = modifyDate.getMinutes().toString().padStart(2, '0');
 
-        return `${permissions}  ${links}  ${owner}  ${group}  ${size}  ${month}  ${monthDay}  ${hours}:${minutes}  ${coloredFileOrDirectoryName}`;
+        const nameSuffix = isSymLink? ` -> ${isSymLinkTo}` : '';
+        const name = `${coloredFileOrDirectoryName}${nameSuffix}`;
+
+        const lineWithPerm = LS_LINE_MODEL.replace('perm', permissions);
+        const lineWithLinks = lineWithPerm.replace('links', links.toString());
+        const lineWithOwner = lineWithLinks.replace('owner', owner);
+        const lineWithGroup = lineWithOwner.replace('group', group);
+        const lineWithSize = lineWithGroup.replace('size', size.toString());
+        const lineWithMonth = lineWithSize.replace('month', month);
+        const lineWithMonthDay = lineWithMonth.replace('monthDay', monthDay);
+        const lineWithHours = lineWithMonthDay.replace('hours', hours);
+        const lineWithMinutes = lineWithHours.replace('minutes', minutes);
+        const lineWithName = lineWithMinutes.replace('name', name);
+
+        return lineWithName;
 
     }
 
-    return `${coloredFileOrDirectoryName}`;
 
+    return `${coloredFileOrDirectoryName}`;
 }
 
 
@@ -158,7 +287,7 @@ export const ls = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions, 'echo --help'),
+            stderr: getCommandInvalidOptionMessage('ls', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -171,10 +300,16 @@ export const ls = (
         return help(systemAPI);
     }
 
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
+    const argumentsValue = resolveArguments(
+        commandArguments, 
+        stdin, 
+        systemAPI, 
+        false
+    );
 
     try {
-        const LS_COLORS = ['#00000', '#ffffff'];
+
+        const LS_COLORS = getLsColorsObject(systemAPI.environmentVariables);
 
         const allEntriesOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
         const longListingOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
@@ -193,15 +328,17 @@ export const ls = (
         const fileSystem = systemAPI.fileSystem;
 
         if (!argumentsValue.length) {
-            argumentsValue.push('.')
+            argumentsValue.push('.');
         }
 
         const stdout = argumentsValue.reduce((
             acc,
             current,
-            idx,
-            arr
+            index,
+            array
         ) => {
+
+            const isLastLine = index !== array.length - 1;
 
             const providedPath = checkProvidedPath(
                 current,
@@ -210,7 +347,6 @@ export const ls = (
                 fileSystem
             );
 
-
             if (!providedPath.valid) {
                 throw new ExecutionTreeError(
                     `ls: cannot access '${current}': No such file or directory`,
@@ -218,16 +354,34 @@ export const ls = (
                 );
             }
 
-            const directoryData = getDirectoryData(
-                current, 
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
+            const currentTimestamp = Date.now();
 
             if (providedPath.validAs === 'file') {
-                acc += '';
+                const {
+                    parentPath,
+                    targetName
+                } = getParentPathAndTargetName(providedPath.resolvedPath);
+
+                const parentDirectoryData = getDirectoryData(
+                    parentPath, 
+                    cwd,
+                    currentUser,
+                    fileSystem
+                );
+
+                const fileData = getFileData(parentDirectoryData, targetName)!;
+
+                const line = getLsStdoutLine(
+                    false, 
+                    fileData, 
+                    LS_COLORS, 
+                    canShowDetailedInfo, 
+                    canShowInAHumanReadableWay
+                );
+
+                acc += `${line}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
+
+                changeReadingTimestamps(parentDirectoryData, currentTimestamp);
             }
             else {
                 const directoryData = getDirectoryData(
@@ -237,20 +391,22 @@ export const ls = (
                     fileSystem
                 );
 
-                console.log(directoryData)
-
                 const stdout = getAllDirectoryLines(
                     directoryData,
                     LS_COLORS, 
                     canShowDetailedInfo, 
-                    canShowInAHumanReadableWay
+                    canShowInAHumanReadableWay,
+                    canShowDotFiles,
+                    canSortBySize
                 );
                 
                 const startOfListing = hasMoreThanOneArgument
-                                        ? `${directoryData.name}:!<break_line>!`
+                                        ? `${directoryData.name}:${BREAK_LINE}`
                                         : '';
 
-                acc += `${startOfListing}${stdout}${idx !== arr.length - 1? '!<break_line>!!<break_line>!' : ''}`;
+                acc += `${startOfListing}${stdout}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
+
+                changeReadingTimestamps(directoryData, currentTimestamp);
             }
 
             return acc;

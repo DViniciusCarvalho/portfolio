@@ -1,10 +1,17 @@
-import { Shell } from '@/types/shell'
-import { checkOption, commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
+import { Shell } from '@/types/shell';
+
+import { 
+    checkOption, 
+    commandHasInvalidOptions, 
+    getCommandInvalidOptionMessage 
+} from './common/options';
+
 import { deepClone } from '@/lib/utils';
 import { checkProvidedPath } from './common/directoryAndFile';
 import { ExecutionTreeError } from '../exception';
 import { interpretCommand } from '../interpreter/interpreter';
-import { getCommandArguments, resolveArguments } from './common/arguments';
+import { resolveArguments } from './common/arguments';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -58,7 +65,7 @@ export const env = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('env', invalidOptions, 'env --help'),
+            stderr: getCommandInvalidOptionMessage('env', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -71,10 +78,13 @@ export const env = (
         return help(systemAPI);
     }
 
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
-    
     try {
-        const resolvedArgumentsValue = resolveArguments(argumentsValue, systemAPI, false);
+        const argumentsValue = resolveArguments(
+            commandArguments,
+            stdin,
+            systemAPI, 
+            false
+        );
 
         const hasOptions = !!commandOptions.length;
 
@@ -99,7 +109,7 @@ export const env = (
                 else if (changeDirOption.valid) {
                     const isShortOption = changeDirOption.type === 'short';
                     const dir = isShortOption
-                                ? resolvedArgumentsValue.at(index) 
+                                ? argumentsValue.at(index) 
                                 : option.replace('--chdir=', '');
 
                     const cwd = env['PWD'];
@@ -140,7 +150,7 @@ export const env = (
                 else if (unsetVariableOption.valid) {
                     const isShortOption = unsetVariableOption.type === 'short';
                     const variableName = isShortOption
-                                         ? resolvedArgumentsValue.at(index) 
+                                         ? argumentsValue.at(index) 
                                          : option.replace('--unset=', '');
 
                     if (variableName === undefined) {
@@ -161,8 +171,8 @@ export const env = (
             });
         }
 
-        const providedCommand = resolvedArgumentsValue.length > numberOfArgumentsThatAreOptionValues
-                                ? resolvedArgumentsValue
+        const providedCommand = argumentsValue.length > numberOfArgumentsThatAreOptionValues
+                                ? argumentsValue
                                   .splice(numberOfArgumentsThatAreOptionValues + 1)
                                   .join(' ')
                                 : null;
@@ -183,7 +193,7 @@ export const env = (
             }, []);
         
             return {
-                stdout: envLines.join('!<break_line>!'),
+                stdout: envLines.join(BREAK_LINE),
                 stderr: null,
                 exitStatus: 0,
                 modifiedSystemAPI: systemAPI
@@ -198,7 +208,10 @@ export const env = (
 
         systemAPI.environmentVariables = envBackup;
 
-        return {...result, modifiedSystemAPI: systemAPI};
+        return { 
+            ...result, 
+            modifiedSystemAPI: systemAPI 
+        };
 
     }
     catch(err: unknown) {

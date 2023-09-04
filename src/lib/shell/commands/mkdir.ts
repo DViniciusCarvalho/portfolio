@@ -1,10 +1,19 @@
-import { Shell } from "@/types/shell"
-import { checkProvidedPath, getDirectoryData, getDirectoryPermissionOctal, getFileOrDirectoryBytesSize } from "./common/directoryAndFile";
-import { Directory } from "./models/Directory";
-import { getCommandArguments, resolveArguments } from "./common/arguments";
-import { ExecutionTreeError } from "../exception";
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage, getOption } from "./common/options";
-import { deepClone } from "@/lib/utils";
+import { Shell } from '@/types/shell';
+
+import { 
+    checkProvidedPath, 
+    getDirectoryData, 
+    getDirectoryPermissionOctal, 
+    getFileOrDirectoryBytesSize, 
+    getParentPathAndTargetName
+} from './common/directoryAndFile';
+
+import { Directory } from './models/Directory';
+import { resolveArguments } from './common/arguments';
+import { ExecutionTreeError } from '../exception';
+import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
+import { changeContentUpdateTimestamps } from './common/timestamps';
+
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
     {
@@ -47,7 +56,7 @@ export const mkdir = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions, 'echo --help'),
+            stderr: getCommandInvalidOptionMessage('mkdir', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -61,8 +70,12 @@ export const mkdir = (
         return help(systemAPI);
     }
 
-    const LAST_DIRECTORY_PATTERN = /\/[^\/]+$/;
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
+    const argumentsValue = resolveArguments(
+        commandArguments, 
+        stdin, 
+        systemAPI, 
+        false
+    );
 
     const cwd = systemAPI.environmentVariables['PWD'];
     const currentUser = systemAPI.currentShellUser;
@@ -70,11 +83,7 @@ export const mkdir = (
 
     try {
 
-        const directoryPaths = resolveArguments(
-            argumentsValue, 
-            systemAPI, 
-            false
-        );
+        const directoryPaths = argumentsValue;
 
         for (const directoryPath of directoryPaths) {
             const providedDirectory = checkProvidedPath(
@@ -92,31 +101,27 @@ export const mkdir = (
             }
 
             const resolvedPath = providedDirectory.resolvedPath;
-            const lastSlashIndex = resolvedPath.lastIndexOf('/');
-            const startOfDirName = lastSlashIndex !== -1
-                                    ? lastSlashIndex + 1
-                                    : 0;
 
-            const parentsDirectoryPath = resolvedPath.slice(0, startOfDirName).length === 0
-                                         ? './'
-                                         : resolvedPath.slice(0, startOfDirName);
+            const { 
+                parentPath, 
+                targetName 
+            } = getParentPathAndTargetName(resolvedPath);
 
-            const parentsDirectory = checkProvidedPath(
-                parentsDirectoryPath,
+            const checkedParentDirectory = checkProvidedPath(
+                parentPath,
                 cwd,
                 currentUser,
                 fileSystem
             );
 
-            if (!parentsDirectory.valid) {
+            if (!checkedParentDirectory.valid) {
                 throw new ExecutionTreeError(
                     `mkdir: cannot create directory '${directoryPath}': No such file or directory`,
                     1
                 );
             }
 
-            const directoryName = resolvedPath.slice(startOfDirName);
-            const parentDirectoryPath = parentsDirectory.resolvedPath;
+            const parentDirectoryPath = checkedParentDirectory.resolvedPath;
 
             const parentDirectory = getDirectoryData(
                 parentDirectoryPath, 
@@ -126,10 +131,13 @@ export const mkdir = (
             );
 
             const directoryPermission = getDirectoryPermissionOctal(systemAPI.umask);
+            const currentTimestamp = Date.now();
 
             const directory = new Directory(
-                directoryName, 
-                0, 
+                targetName, 
+                {
+                    size: 0
+                },
                 {
                     directories: [],
                     files: []
@@ -139,20 +147,23 @@ export const mkdir = (
                     has: 1 
                 }, 
                 { 
-                    group: 'root', 
-                    owner: 'root', 
+                    group: currentUser, 
+                    owner: currentUser, 
                     permissionOctal: directoryPermission
                 },
                 {
-                    access: 1,
-                    birth: 1,
-                    change: 1,
-                    modify: 1
+                    access: currentTimestamp,
+                    birth: currentTimestamp,
+                    change: currentTimestamp,
+                    modify: currentTimestamp
                 }
             );
 
-            directory.size = getFileOrDirectoryBytesSize(directory);
+            directory.data.size = getFileOrDirectoryBytesSize(directory);
             parentDirectory.children.directories.push(directory);
+
+            changeContentUpdateTimestamps(parentDirectory, currentTimestamp);
+            
         }
 
         return {

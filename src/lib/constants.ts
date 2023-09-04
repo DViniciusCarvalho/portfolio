@@ -1,5 +1,7 @@
 import { Data } from "@/types/data";
 import { Shell } from "@/types/shell";
+import { Directory } from "./shell/commands/models/Directory";
+import { getFileOrDirectoryBytesSize } from "./shell/commands/common/directoryAndFile";
 
 
 export const TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS = 5;
@@ -137,11 +139,10 @@ export const INITIAL_CURRENT_DIRECTORY = '/home/visitor';
 export const INITIAL_SHELL_ENVIRONMENT_VARIABLES: Shell.EnvironmentVariables = {
     PATH: '/usr/sbin:/usr/bin:/sbin:/bin',
     SHELL: '/usr/bin/bash',
-    USERNAME: INITIAL_SHELL_USER,
     PWD: INITIAL_CURRENT_DIRECTORY,
     USER: INITIAL_SHELL_USER,
     HOME: `/home/${INITIAL_SHELL_USER}`,
-    LS_COLORS: 'rf=#ffffff:di=#12488b',
+    LS_COLORS: 'rf=#ffffff:di=#12488b:*.txt=#aaaaaa:*.tome=#ffaacc:sl=#2aa1b3:sb=#52ffbd:exec=#26a269',
     '?': 0
 };
 
@@ -155,226 +156,288 @@ const INITIAL_FILESYSTEM_TIMESTAMPS = {
     birth: WEBPAGE_START_TIMESTAMP
 };
 
-export const INITIAL_FILESYSTEM: Data.SystemDirectory = {
-    name: '/',
-    size: 0,
-    children: {
+const binDirectory = new Directory(
+    'bin',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: true,
+        to: '/usr/bin'
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0777'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const devDirectory = new Directory(
+    'dev',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const etcDirectory = new Directory(
+    'etc',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+
+
+const homeDirectory = new Directory(
+    'home',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+
+);
+
+const visitorDirectory = new Directory(
+    'visitor',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const procDirectory = new Directory(
+    'proc',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0555'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const rootDirectory = new Directory(
+    'root',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0700'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const sbinDirectory = new Directory(
+    'sbin',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: true,
+        to: '/usr/sbin'
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0777'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const tmpDirectory = new Directory(
+    'tmp',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '1777'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const usrDirectory = new Directory(
+    'usr',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+const varDirectory = new Directory(
+    'var',
+    {
+        size: 0
+    },
+    {
+        directories: [],
+        files: []
+    },
+    {
+        has: 1,
+        is: false
+    },
+    {
+        owner: 'root',
+        group: 'root',
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
+
+binDirectory.data.size = getFileOrDirectoryBytesSize(binDirectory);
+devDirectory.data.size = getFileOrDirectoryBytesSize(devDirectory);
+etcDirectory.data.size = getFileOrDirectoryBytesSize(etcDirectory);
+homeDirectory.data.size = getFileOrDirectoryBytesSize(homeDirectory);
+
+homeDirectory.children.directories.push(visitorDirectory);
+
+visitorDirectory.data.size = getFileOrDirectoryBytesSize(visitorDirectory);
+procDirectory.data.size = getFileOrDirectoryBytesSize(procDirectory);
+rootDirectory.data.size = getFileOrDirectoryBytesSize(rootDirectory);
+sbinDirectory.data.size = getFileOrDirectoryBytesSize(sbinDirectory);
+tmpDirectory.data.size = getFileOrDirectoryBytesSize(tmpDirectory);
+usrDirectory.data.size = getFileOrDirectoryBytesSize(usrDirectory);
+varDirectory.data.size = getFileOrDirectoryBytesSize(varDirectory);
+
+
+export const INITIAL_FILESYSTEM: Directory = new Directory(
+    '/',
+    {
+        size: 0
+    },
+    {
         directories: [
-            {
-                name: 'bin',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: true,
-                    to: '/usr/bin'
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '777'
-                }
-            },
-            {
-                name: 'dev',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            },
-            {
-                name: 'etc',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            },
-            {
-                name: 'home',
-                size: 0,
-                children: {
-                    directories: [
-                        {
-                            name: 'visitor',
-                            size: 0,
-                            children: {
-                                directories: [],
-                                files: []
-                            },
-                            timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                            links: {
-                                has: 1,
-                                is: false
-                            },
-                            management: {
-                                owner: 'root',
-                                group: 'root',
-                                permissionOctal: '755'
-                            }
-                        }
-                    ],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            },
-            {
-                name: 'proc',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '555'
-                }
-            },
-            {
-                name: 'root',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '700'
-                }
-            },
-            {
-                name: 'sbin',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: true,
-                    to: '/usr/sbin'
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '777'
-                }
-            },
-            {
-                name: 'tmp',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            },
-            {
-                name: 'usr',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            },
-            {
-                name: 'var',
-                size: 0,
-                children: {
-                    directories: [],
-                    files: []
-                },
-                timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-                links: {
-                    has: 1,
-                    is: false
-                },
-                management: {
-                    owner: 'root',
-                    group: 'root',
-                    permissionOctal: '755'
-                }
-            }
+            binDirectory,
+            devDirectory,
+            etcDirectory,
+            homeDirectory,
+            procDirectory,
+            rootDirectory,
+            sbinDirectory,
+            tmpDirectory,
+            usrDirectory,
+            varDirectory
         ],
         files: []
     },
-    timestamp: INITIAL_FILESYSTEM_TIMESTAMPS,
-    links: {
+    {
         is: false,
         has: 1
     },
-    management: {
+    {
         owner: 'root',
         group: 'root',
-        permissionOctal: '777'
-    }
- 
-};
+        permissionOctal: '0755'
+    },
+    INITIAL_FILESYSTEM_TIMESTAMPS
+);
 
 export const INITIAL_UMASK = '022';

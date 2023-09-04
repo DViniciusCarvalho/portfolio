@@ -1,20 +1,23 @@
-import { Shell } from "@/types/shell"
+import { Shell } from '@/types/shell';
+
 import { 
     checkProvidedPath, 
     getDirectoryData, 
     getFileOrDirectoryBytesSize, 
-    getFilePermissionOctal
-} from "./common/directoryAndFile";
-import { getCommandArguments, resolveArguments } from "./common/arguments";
-import { ExecutionTreeError } from "../exception";
-import { 
-    checkOption, 
+    getFilePermissionOctal,
+    getParentPathAndTargetName
+} from './common/directoryAndFile';
+
+import { resolveArguments } from './common/arguments';
+import { ExecutionTreeError } from '../exception';
+
+import {  
     commandHasInvalidOptions, 
     getCommandInvalidOptionMessage, 
-    getOption 
-} from "./common/options";
-import { deepClone } from "@/lib/utils";
-import { File } from "./models/File";
+} from './common/options';
+
+import { File } from './models/File';
+import { changeContentUpdateTimestamps } from './common/timestamps';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -73,7 +76,7 @@ export const touch = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions, 'echo --help'),
+            stderr: getCommandInvalidOptionMessage('touch', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -86,7 +89,12 @@ export const touch = (
         return help(systemAPI);
     }
 
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
+    const argumentsValue = resolveArguments(
+        commandArguments, 
+        stdin, 
+        systemAPI, 
+        false
+    );
 
     const cwd = systemAPI.environmentVariables['PWD'];
     const currentUser = systemAPI.currentShellUser;
@@ -94,53 +102,43 @@ export const touch = (
 
     try {
 
-        const filePaths = resolveArguments(
-            argumentsValue, 
-            systemAPI, 
-            false
-        );
+        const filePaths = argumentsValue;
 
         for (const filePath of filePaths) {
-            const providedFile = checkProvidedPath(
+            const checkedFilePath = checkProvidedPath(
                 filePath, 
                 cwd, 
                 currentUser, 
                 fileSystem
             );
 
-            if (providedFile.insideFileError) {
+            if (checkedFilePath.insideFileError) {
                 throw new ExecutionTreeError(
                     `touch: cannot touch '${filePath}': Not a directory`,
                     1
                 );
             }
 
-            const resolvedPath = providedFile.resolvedPath;
-            const lastSlashIndex = resolvedPath.lastIndexOf('/');
-            const startOfFileName = lastSlashIndex !== -1
-                                    ? lastSlashIndex + 1
-                                    : 0;
+            const { 
+                parentPath, 
+                targetName 
+            } = getParentPathAndTargetName(checkedFilePath.resolvedPath);
 
-            const parentsDirectoryPath = resolvedPath.slice(0, startOfFileName).length === 0
-                                         ? './'
-                                         : resolvedPath.slice(0, startOfFileName);
-
-            const parentsDirectory = checkProvidedPath(
-                parentsDirectoryPath,
+            const checkedParentDirectoryPath = checkProvidedPath(
+                parentPath,
                 cwd,
                 currentUser,
                 fileSystem
             );
 
-            if (!parentsDirectory.valid) {
+            if (!checkedParentDirectoryPath.valid) {
                 throw new ExecutionTreeError(
                     `touch: cannot touch '${filePath}': No such file or directory`,
                     1
                 );
             }
 
-            const fileName = resolvedPath.slice(startOfFileName);
-            const parentDirectoryPath = parentsDirectory.resolvedPath;
+            const parentDirectoryPath = checkedParentDirectoryPath.resolvedPath;
 
             const parentDirectory = getDirectoryData(
                 parentDirectoryPath, 
@@ -149,14 +147,16 @@ export const touch = (
                 fileSystem
             );
 
-
-            if (!providedFile.valid) {
+            if (!checkedFilePath.valid) {
                 const filePermission = getFilePermissionOctal(systemAPI.umask);
+                const currentTimestamp = Date.now();
 
                 const file = new File(
-                    fileName, 
-                    0, 
-                    '', 
+                    targetName, 
+                    {
+                        content: '',
+                        size: 0
+                    },
                     { 
                         is: false, 
                         has: 1 
@@ -167,15 +167,17 @@ export const touch = (
                         permissionOctal: filePermission
                     },
                     {
-                        access: 1,
-                        birth: 1,
-                        change: 1,
-                        modify: 1
+                        access: currentTimestamp,
+                        birth: currentTimestamp,
+                        change: currentTimestamp,
+                        modify: currentTimestamp
                     }
                 );
 
-                file.size = getFileOrDirectoryBytesSize(file);
+                file.data.size = getFileOrDirectoryBytesSize(file);
                 parentDirectory.children.files.push(file);
+
+                changeContentUpdateTimestamps(parentDirectory, currentTimestamp);
             }
         }
 

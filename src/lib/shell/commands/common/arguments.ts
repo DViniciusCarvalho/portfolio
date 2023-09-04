@@ -1,7 +1,13 @@
 import { Shell } from "@/types/shell";
 import { interpretCommand } from "../../interpreter/interpreter";
 import { ExecutionTreeError } from "../../exception";
-import { ESCAPE_SEQUENCES_SUBSTITUTION } from './constants';
+import { 
+    COMMAND_SUBSTITUTION_PATTERN,
+    DOUBLE_QUOTED_STRING_PATTERN, 
+    ESCAPE_SEQUENCES_SUBSTITUTION, 
+    SINGLE_QUOTED_STRING_PATTERN, 
+    VARIABLE_PATTERN 
+} from './patterns';
 
 
 export const getCommandArguments = (
@@ -18,15 +24,13 @@ export const getCommandArguments = (
 
 
 export const resolveArguments = (
-    argumentsValue: string[],
+    commandArguments: Shell.Token[],
+    stdin: string | null,
     systemAPI: Shell.SystemAPI,
     canInterpretEscapeSequences: boolean
-): string[] => {
+): any[] => {
 
-    const VARIABLE_PATTERN = /(?<!\\)\$[A-Za-z0-9_\?]+/g;
-    const COMMAND_SUBSTITUTION_PATTERN = /\$\([^)]*\)/g;
-    const SINGLE_QUOTED_STRING_PATTERN = /^[']|[']$/g;
-    const DOUBLE_QUOTED_STRING_PATTERN = /^["]|["]$/g;
+    const argumentsValue = getCommandArguments(commandArguments, stdin);
 
     const resolvedArgumentsValue = argumentsValue.map((argument: string) => {
         const argumentIsSingleQuotedString = argument.match(SINGLE_QUOTED_STRING_PATTERN);
@@ -39,15 +43,16 @@ export const resolveArguments = (
             for (const variableName of argumentVariables) {
                 const variableNameWithoutVariableSign = variableName.replace('$', '');
                 const env = systemAPI.environmentVariables;
+                const variableExists = env.hasOwnProperty(variableNameWithoutVariableSign);
 
-                if (env.hasOwnProperty(variableNameWithoutVariableSign)) {
+                if (variableExists) {
                     const variableValue = env[variableNameWithoutVariableSign];
                     argument = argument.replace(variableName, variableValue);
 
                     continue;
                 }
 
-                argument = argument.replace(variableName, 'nao tem');
+                argument = argument.replace(variableName, '');
             }
         }
 

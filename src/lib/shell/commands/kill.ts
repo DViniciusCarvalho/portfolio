@@ -2,7 +2,8 @@ import { Shell } from '@/types/shell';
 import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
 import { ExecutionTreeError } from '../exception';
 import { Data } from '@/types/data';
-import { getCommandArguments, resolveArguments } from './common/arguments';
+import { resolveArguments } from './common/arguments';
+import { POSITIVE_INTEGER_PATTERN } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -58,10 +59,10 @@ const getSignalHandler = (
     signalMapping: Shell.Signal[]
 ): any => {
 
-    const signalObjectFound = signalMapping.find(signal => {
-        return signal.number === providedSignal 
-               || signal.name.toLowerCase() === (providedSignal as string).toLowerCase();
-    });
+    const signalObjectFound = signalMapping.find(signal => 
+        signal.number === providedSignal 
+        || signal.name.toLowerCase() === (providedSignal as string).toLowerCase()
+    );
 
     return signalObjectFound?.handler;
 }
@@ -70,7 +71,8 @@ const getSignalHandler = (
 const isExistingPID = (
     providedPID: number,
     runningProcesses: Data.OpennedProcessData[]
-) => {
+): boolean => {
+
     const processPIDOwnerFound = runningProcesses.find(process => {
         return process.PID === providedPID;
     });
@@ -94,7 +96,6 @@ export const kill = (
         },
     ];
 
-    const INTEGER_PATTERN = /\d+/;
     const DASH_SIGNAL_PATTERN = /^-[A-Za-z0-9]+/;
 
     const { 
@@ -105,7 +106,7 @@ export const kill = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('kill', invalidOptions, 'kill --help'),
+            stderr: getCommandInvalidOptionMessage('kill', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -118,11 +119,15 @@ export const kill = (
         return help(systemAPI);
     }
 
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
-    const resolvedArgumentsValue = resolveArguments(argumentsValue, systemAPI, false);
+    const argumentsValue = resolveArguments(
+        commandArguments, 
+        stdin, 
+        systemAPI, 
+        false
+    );
 
     const hasOptions = !!commandOptions.length;
-    const hasArguments = !!resolvedArgumentsValue.length;
+    const hasArguments = !!argumentsValue.length;
 
     try {
         if (!hasArguments) {
@@ -149,12 +154,12 @@ export const kill = (
             let targetPID = '';
 
             if (isShortSignalOption || isLongSignalOption) {
-                signal = resolvedArgumentsValue.at(0) as string;
-                targetPID = resolvedArgumentsValue.at(1) as string;
+                signal = argumentsValue.at(0) as string;
+                targetPID = argumentsValue.at(1) as string;
             }
             else if (isDashSignalOption) {
                 signal = firstOptionValue.replace('-', '');
-                targetPID = resolvedArgumentsValue.at(0) as string;
+                targetPID = argumentsValue.at(0) as string;
             }
             else {
                 throw new ExecutionTreeError(
@@ -163,8 +168,7 @@ export const kill = (
                 );
             }
 
-
-
+            
             if (signal === undefined || targetPID === undefined) {
                 throw new ExecutionTreeError(
                     `kill: a signal number/name and PID integer must be specified: \'kill [-<signal> | -s <signal> | --signal <signal>] <PID>\'`,
@@ -186,7 +190,7 @@ export const kill = (
                 );
             }
 
-            const PIDisInteger = targetPID.match(INTEGER_PATTERN);
+            const PIDisInteger = targetPID.match(POSITIVE_INTEGER_PATTERN);
 
             if (!PIDisInteger) {
                 throw new ExecutionTreeError(
@@ -212,9 +216,9 @@ export const kill = (
             systemAPI.sendSIGKILLToProcess(numberPID);
         }
         else {
-            const targetPID = resolvedArgumentsValue.at(0) as string;
+            const targetPID = argumentsValue.at(0) as string;
 
-            const PIDisInteger = targetPID.match(INTEGER_PATTERN);
+            const PIDisInteger = targetPID.match(POSITIVE_INTEGER_PATTERN);
 
             if (!PIDisInteger) {
                 throw new ExecutionTreeError(

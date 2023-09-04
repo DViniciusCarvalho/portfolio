@@ -1,9 +1,10 @@
-import { Shell } from "@/types/shell"
-import { checkProvidedPath } from "./common/directoryAndFile";
-import { getCommandArguments, resolveArguments } from "./common/arguments";
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from "./common/options";
-import { ExecutionTreeError } from "../exception";
-import { deepClone } from "@/lib/utils";
+import { Shell } from '@/types/shell';
+import { checkProvidedPath, getDirectoryData } from './common/directoryAndFile';
+import { resolveArguments } from './common/arguments';
+import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
+import { ExecutionTreeError } from '../exception';
+import { deepClone } from '@/lib/utils';
+import { changeReadingTimestamps } from './common/timestamps';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [];
@@ -24,65 +25,72 @@ export const cd = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions, 'echo --help'),
+            stderr: getCommandInvalidOptionMessage('cd', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
     }
 
     try {
-        const argumentsValue = getCommandArguments(commandArguments, stdin);
 
-        const resolvedArguments = resolveArguments(
-            argumentsValue, 
+        const argumentsValue = resolveArguments(
+            commandArguments,
+            stdin,
             systemAPI, 
             false
         );
 
-        if (resolvedArguments.length > 1) {
+        if (argumentsValue.length > 1) {
             throw new ExecutionTreeError(
                 `cd: too many arguments.`,
                 1
             );
         }
 
-        const path = resolvedArguments[0];
+        const path = argumentsValue[0];
         const currentUser = systemAPI.currentShellUser;
         const cwd = systemAPI.environmentVariables['PWD'];
         const fileSystem = systemAPI.fileSystem;
 
-        const { 
-            valid,
-            resolvedPath,
-            validAs 
-        } = checkProvidedPath(
+        const providedPath = checkProvidedPath(
             path, 
             cwd, 
             currentUser, 
             fileSystem
         );
 
-        if (!valid) {
+        if (!providedPath.valid) {
             throw new ExecutionTreeError(
-                `cd: ${resolvedPath}: No such file or directory`,
+                `cd: ${providedPath.resolvedPath}: No such file or directory`,
                 1
             )
         }
 
-        if (validAs === 'directory') {
+        if (providedPath.validAs === 'directory') {
             systemAPI.setEnvironmentVariables(previous => {
                 const previousDeepCopy = deepClone(previous);
 
-                previousDeepCopy['PWD'] = resolvedPath;
+                previousDeepCopy['PWD'] = providedPath.resolvedPath;
 
                 return previousDeepCopy;
             });
 
-            systemAPI.setCurrentDirectory(previous => resolvedPath);
+            systemAPI.setCurrentDirectory(previous => providedPath.resolvedPath);
 
-            systemAPI.environmentVariables['PWD'] = resolvedPath;
+            systemAPI.environmentVariables['PWD'] = providedPath.resolvedPath;
 
-            systemAPI.currentDirectory = resolvedPath;
+            systemAPI.currentDirectory = providedPath.resolvedPath;
+
+            const directoryData = getDirectoryData(
+                path,
+                cwd,
+                currentUser,
+                fileSystem
+            );
+
+            const currentTimestamp = Date.now();
+
+            changeReadingTimestamps(directoryData, currentTimestamp);
 
             return {
                 stdout: '',
@@ -93,7 +101,7 @@ export const cd = (
         }
         else {
             throw new ExecutionTreeError(
-                `cd: ${resolvedPath}: Not a directory`,
+                `cd: ${providedPath.resolvedPath}: Not a directory`,
                 1
             );
         }

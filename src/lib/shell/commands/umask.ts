@@ -1,7 +1,8 @@
 import { Shell } from '@/types/shell';
 import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
-import { ExecutionTreeError } from '../exception';
 import { resolveArguments } from './common/arguments';
+import { ExecutionTreeError } from '../exception';
+import { OCTAL_NUMBER_PATTERN } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -25,7 +26,7 @@ export const help = (
 }
 
 
-export const grep = (    
+export const umask = (    
     commandOptions: Shell.Token[],
     commandArguments: Shell.Token[],
     systemAPI: Shell.SystemAPI,
@@ -40,7 +41,7 @@ export const grep = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('pwd', invalidOptions),
+            stderr: getCommandInvalidOptionMessage('umask', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -61,16 +62,36 @@ export const grep = (
     );
 
     try {
+        if (argumentsValue.length) {
+            const firstUmaskProvided = argumentsValue[0];
+
+            if (!OCTAL_NUMBER_PATTERN.test(firstUmaskProvided)) {
+                throw new ExecutionTreeError(
+                    `umask: invalid octal number: ${firstUmaskProvided}`,
+                    1
+                );
+            }
+
+            systemAPI.setUmask(previous => firstUmaskProvided);
+
+            return {
+                stdout: '',
+                stderr: null,
+                exitStatus: 0,
+                modifiedSystemAPI: systemAPI
+            };
+        }
+
+        const currentUmask = systemAPI.umask;
 
         return {
-            stdout: '',
+            stdout: currentUmask,
             stderr: null,
             exitStatus: 0,
             modifiedSystemAPI: systemAPI
         };
-
     }
-    catch (err: unknown) {
+    catch(err: unknown) {
         const errorObject = err as ExecutionTreeError;
 
         return {
@@ -80,5 +101,4 @@ export const grep = (
             modifiedSystemAPI: systemAPI
         };
     }
-
 }

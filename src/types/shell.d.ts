@@ -1,5 +1,6 @@
 import { ParseTreeNode } from '@/lib/shell/ParseTree';
 import { Data } from './data';
+import { Directory } from '@/lib/shell/commands/models/Directory';
 
 export namespace Shell {
     interface Token {
@@ -54,8 +55,8 @@ export namespace Shell {
         setCurrentShellUser: React.Dispatch<React.SetStateAction<string>>;
         currentDirectory: string;
         setCurrentDirectory: React.Dispatch<React.SetStateAction<string>>;
-        fileSystem: Data.SystemDirectory;
-        setFileSystem: React.Dispatch<React.SetStateAction<Data.SystemDirectory>>;
+        fileSystem: Directory;
+        setFileSystem: React.Dispatch<React.SetStateAction<Directory>>;
         umask: string;
         setUmask: React.Dispatch<React.SetStateAction<{
             directory: string;

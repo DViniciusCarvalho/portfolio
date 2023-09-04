@@ -3,6 +3,17 @@ import terminalStyles from '@/styles/processes/Terminal.module.sass';
 import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
 
+import { 
+    BREAK_LINE,
+    DOUBLE_QUOTE,
+    END_COLORED_WORD_PATTERN, 
+    FULL_COLORED_WORD_PATTERN, 
+    SINGLE_QUOTE, 
+    START_COLORED_WORD_PATTERN, 
+    TABULATION
+} from '@/lib/shell/commands/common/patterns';
+
+
 export default function ResultLine({ commandResult }: Props.ResultLineProps) {
 
     const { terminalDefaultColor } = useContext(MainContext);
@@ -13,20 +24,19 @@ export default function ResultLine({ commandResult }: Props.ResultLineProps) {
         index: number
     ): React.JSX.Element => {
 
-        const ESCAPED_TABULATION_PATTERN = /!<tabulation>!/g;
-        const ESCAPED_SINGLE_QUOTE_PATTERN = /!<single_quote>!/g;
-        const ESCAPED_DOUBLE_QUOTE_PATTERN = /!<double_quote>!/g;
-        const COLORED_WORD_PATTERN = /^!<span<#[A-Fa-f0-9]+>>!.+!<\\span>!$/g;
+        const escapedTabulationPattern = new RegExp(TABULATION, 'g');
+        const escapedSingleQuotePattern = new RegExp(SINGLE_QUOTE, 'g');
+        const escapedDoubleQuotePattern = new RegExp(DOUBLE_QUOTE, 'g');
 
-        resultLineWord = resultLineWord.replace(ESCAPED_TABULATION_PATTERN, '\t');
-        resultLineWord = resultLineWord.replace(ESCAPED_SINGLE_QUOTE_PATTERN, '\'');
-        resultLineWord = resultLineWord.replace(ESCAPED_DOUBLE_QUOTE_PATTERN, '"');
+        resultLineWord = resultLineWord.replace(escapedTabulationPattern, '\t');
+        resultLineWord = resultLineWord.replace(escapedSingleQuotePattern, '\'');
+        resultLineWord = resultLineWord.replace(escapedDoubleQuotePattern, '\"');
 
-        if (resultLineWord.match(COLORED_WORD_PATTERN)) {
+        if (resultLineWord.match(FULL_COLORED_WORD_PATTERN)) {
             const spanColorInHexadecimal = resultLineWord.slice(7, resultLineWord.indexOf('>'));
 
-            resultLineWord = resultLineWord.replace(/^!<span<#[A-Fa-f0-9]+>>!/g, '');
-            resultLineWord = resultLineWord.replace(/!<\\span>!$/g, '');
+            resultLineWord = resultLineWord.replace(START_COLORED_WORD_PATTERN, '');
+            resultLineWord = resultLineWord.replace(END_COLORED_WORD_PATTERN, '');
 
             return (
                 <React.Fragment key={index}>
@@ -68,7 +78,7 @@ export default function ResultLine({ commandResult }: Props.ResultLineProps) {
                 color: terminalDefaultColor
             }}
         >
-            {commandResult.split('!<break_line>!').map(getResultLine)}
+            {commandResult.split(BREAK_LINE).map(getResultLine)}
         </pre>
     );
 }

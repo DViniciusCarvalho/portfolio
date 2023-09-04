@@ -6,7 +6,8 @@ import { Data } from '@/types/data';
 import { MainContext } from '@/components/workarea/Main';
 import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
 import { Shell } from '@/types/shell';
-import { deepClone, delay, generateUUID } from '@/lib/utils';
+import { deepClone, generateUUID } from '@/lib/utils';
+import { ESCAPE_SEQUENCES_SUBSTITUTION } from '@/lib/shell/commands/common/patterns';
 
 
 export default function Terminal() {
@@ -74,8 +75,6 @@ export default function Terminal() {
         setCurrentBashHistoryPosition(previous => bashHistory.length)
     , [bashHistory]);
 
-    useEffect(() => console.log(currentDirectory), [currentDirectory])
-
 
     const handleTerminalKeyDown = (
         e: React.KeyboardEvent<HTMLDivElement>
@@ -100,6 +99,7 @@ export default function Terminal() {
         const terminalElement = terminalRef.current!;
         const lastTerminalLineContentElement = terminalElement.lastChild!.lastChild!;
         const lastTerminalLineSpan = lastTerminalLineContentElement as HTMLSpanElement;
+
         lastTerminalLineSpan.focus();
     }
 
@@ -186,7 +186,7 @@ export default function Terminal() {
             previousDeepCopy[variableName] = value;
             
             return previousDeepCopy;
-        })
+        });
     }
 
 
@@ -257,15 +257,6 @@ export default function Terminal() {
             };
         }
 
-        if (command === 'showstatus') {
-            return {
-                stdout: environmentVariables['?'],
-                stderr: null,
-                exitStatus: 0,
-                systemAPI
-            };
-        }
-
         const commandExecutionResult = interpretCommand(command, systemAPI);
 
         return {
@@ -286,7 +277,11 @@ export default function Terminal() {
     ): void => {
         
         if (stdout !== null || stderr !== null) {
-            const resultText = stdout !== null? stdout : stderr;
+            const breakLine = ESCAPE_SEQUENCES_SUBSTITUTION['\\n'];
+
+            const resultText = stdout !== null
+                               ? stderr !== null? stdout + breakLine + stderr : stdout
+                               : stderr;
 
             const linesToAppendToTerminal: Data.TerminalLine[] = [];
 
@@ -333,7 +328,6 @@ export default function Terminal() {
     
         lastTerminalLineContentElement.contentEditable = 'false';
 
-        console.log(systemAPI)
         showCommandResult(                
             systemAPI.currentShellUser,
             hostName,

@@ -2,7 +2,7 @@ import { Shell } from '@/types/shell';
 import { commandHasInvalidOptions } from './common/options';
 import { getCommandInvalidOptionMessage } from './common/options';
 import { ExecutionTreeError } from '../exception';
-import { getCommandArguments, resolveArguments } from './common/arguments';
+import { resolveArguments } from './common/arguments';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -51,7 +51,7 @@ export const echo = (
     if (hasInvalidOption) {
         return {
             stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions, 'echo --help'),
+            stderr: getCommandInvalidOptionMessage('echo', invalidOptions),
             exitStatus: 2,
             modifiedSystemAPI: systemAPI
         };
@@ -65,21 +65,19 @@ export const echo = (
     }
 
     const lastProvidedOption = providedOptions.length? providedOptions.at(-1) : null;
-    const canInterpretEscapeSequences = lastProvidedOption === '-E' || !lastProvidedOption
-                                        ? false 
-                                        : true;
-
-    const argumentsValue = getCommandArguments(commandArguments, stdin);
+    const canInterpretEscapeSequences = !(lastProvidedOption === '-E' || !lastProvidedOption);
 
     try {
-        const resolvedArgumentsValue = resolveArguments(
-            argumentsValue, 
+
+        const argumentsValue = resolveArguments(
+            commandArguments,
+            stdin,
             systemAPI, 
             canInterpretEscapeSequences
         );
 
         return {
-            stdout: resolvedArgumentsValue.join(' '),
+            stdout: argumentsValue.join(' '),
             stderr: null,
             exitStatus: 0,
             modifiedSystemAPI: systemAPI

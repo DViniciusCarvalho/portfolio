@@ -28,8 +28,6 @@ export const interpretCommand = (
         systemAPI
     );
 
-    console.log(ASTExecutionResult)
-
     return {
         stdout: ASTExecutionResult.stdout,
         stderr: ASTExecutionResult.stderr,

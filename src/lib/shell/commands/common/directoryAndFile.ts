@@ -1,21 +1,28 @@
-import { Data } from "@/types/data";
 import { File } from "../models/File";
 import { Directory } from "../models/Directory";
-import { ExecutionTreeError } from "../../exception";
+
+import { 
+    CURRENT_DIRECTORY_PATTERN, 
+    FILESYSTEM_ROOT_PATTERN, 
+    HOME_DIRECTORY_PATTERN, 
+    LAST_DIRECTORY_PATTERN,
+    PARENT_DIRECTORY_PATTERN, 
+    SLASH_AT_END_PATTERN 
+} from "./patterns";
 
 
-const getResolvedPath = (
+export const targetIsDirectory = (
+    fileOrDirectory: File | Directory
+) => {
+    return fileOrDirectory.hasOwnProperty('children');
+}
+
+
+export const getResolvedPath = (
     path: string,
     cwd: string,
     currentUser: string
 ): string => {
-
-    const PARENT_DIRECTORY_PATTERN = /^\.\.\/|\.\.$/;
-    const CURRENT_DIRECTORY_PATTERN = /^\.\/|\./;
-    const HOME_DIRECTORY_PATTERN = /^~\//;
-    const LAST_DIRECTORY_PATTERN = /\/[^\/]+$/;
-
-    const SLASH_AT_END_PATTERN = /\/$/;
 
     const isRelativePath = !path.startsWith('/');
 
@@ -46,8 +53,7 @@ const getResolvedPath = (
 
 
 const getSplittedPathParts = (resolvedPath: string) => {
-    const FILESYSTEM_ROOT_PATTERN = /^\//;
-
+    
     resolvedPath = resolvedPath.replace(FILESYSTEM_ROOT_PATTERN, '');
 
     const directories = resolvedPath.split('/').filter(dir => dir !== '');
@@ -60,7 +66,7 @@ export const checkProvidedPath = (
     path: string,
     cwd: string, 
     currentUser: string,
-    fileSystem: Data.SystemDirectory
+    fileSystem: Directory
 ) => {
 
     const resolvedPath = getResolvedPath(path, cwd, currentUser);
@@ -122,9 +128,23 @@ export const checkProvidedPath = (
 }
 
 
-const getDirectoryIndex = (
+export const getParentPathAndTargetName = (
+    resolvedPath: string
+) => {
+    const lastSlashIndex = resolvedPath.lastIndexOf('/');
+    const parentDirectoryPath = resolvedPath.slice(0, lastSlashIndex);
+    const targetName = resolvedPath.slice(lastSlashIndex + 1);
+
+    return {
+        parentPath: parentDirectoryPath === ''? '/' : parentDirectoryPath,
+        targetName: targetName
+    };
+}
+
+
+export const getDirectoryIndex = (
     name: string,
-    directoryArray: Data.SystemDirectory[]
+    directoryArray: Directory[]
 ): number => {
 
     let index = -1;
@@ -141,14 +161,14 @@ export const getDirectoryData = (
     dirPath: string, 
     cwd: string,
     currentUser: string,
-    filesystem: Data.SystemDirectory
-): Data.SystemDirectory => {
+    filesystem: Directory
+): Directory => {
 
     const resolvedPath = getResolvedPath(dirPath, cwd, currentUser);
     const directories = getSplittedPathParts(resolvedPath);
 
-    const directoryData = directories.length? directories.reduce((
-        acc: Data.SystemDirectory, 
+    const directoryData = resolvedPath === '/'? filesystem : directories.length? directories.reduce((
+        acc: Directory, 
         current: string
     ) => {
 
@@ -161,13 +181,13 @@ export const getDirectoryData = (
 
     }, filesystem) : [];
 
-    return directoryData as Data.SystemDirectory;
+    return directoryData as Directory;
 }
 
 
-const getFileIndex = (
+export const getFileIndex = (
     name: string,
-    fileArray: Data.SystemFile[]
+    fileArray: File[]
 ) => {
 
     let index = -1;
@@ -181,7 +201,7 @@ const getFileIndex = (
 
 
 export const getFileData = (
-    directory: Data.SystemDirectory,
+    directory: Directory,
     fileName: string
 ) => {
     const directoryFiles = directory.children.files;
@@ -255,7 +275,7 @@ export const getFilePermissionOctal = (
 
     const octalNumbers = binaryAcc.map(num => parseInt(num, 2).toString(8));
 
-    return octalNumbers.join('');
+    return '0' + octalNumbers.join('');
 }
 
 
@@ -282,15 +302,15 @@ export const getDirectoryPermissionOctal = (
 
     const octalNumbers = binaryAcc.map(num => parseInt(num, 2).toString(8));
 
-    return octalNumbers.join('');
+    return '0' + octalNumbers.join('');
 }
 
 
-export const resolveOctalPermissionInDrx = (
+export const resolveOctalPermissionInSymbolicFormat = (
     octal: string
 ) => {
 
-    const permissions = [
+    const PERMISSIONS_MAPPING_BY_INDEX = [
         '---', 
         '--x', 
         '-w-', 
@@ -301,18 +321,60 @@ export const resolveOctalPermissionInDrx = (
         'rwx'
     ];
 
+    const SPECIAL_BITS_MAPPING_BY_INDEX: {[key: string]: string}[] = [
+        {
+            '8': 't'
+        },
+        {
+            '5': 's'
+        },
+        {
+            '5': 's',
+            '8': 't'
+        },
+        {
+            '2': 's'
+        },
+        {
+            '2': 's',
+            '8': 't'
+        },
+        {
+            '2': 's',
+            '5': 's'
+        },
+        {
+            '2': 's',
+            '5': 's',
+            '8': 't'
+        }
+    ];
+
     const splittedOctalValues = octal.split('');
 
-    const resolvedPermissions = splittedOctalValues.reduce((
-        acc,
-        current,
-        index
+    const specialBit = splittedOctalValues[0];
+    const nonSpecialBits = splittedOctalValues.slice(1);
+
+    const resolvedPermissions = nonSpecialBits.reduce((
+        acc: string[],
+        current
     ) => {
 
-        acc += permissions[Number(current)];
+        acc.push(...Array.from(PERMISSIONS_MAPPING_BY_INDEX[Number(current)]));
+
         return acc;
 
-    }, '');
+    }, []);
 
-    return resolvedPermissions;
+    if (specialBit !== '0') {
+        const numberSpecialBit = Number(specialBit);
+        const mappingObject = SPECIAL_BITS_MAPPING_BY_INDEX[numberSpecialBit - 1];
+
+        for (const indexMapping in mappingObject) {
+            const numberIndex = Number(indexMapping);
+            resolvedPermissions[numberIndex] = mappingObject[indexMapping];
+        }
+    }
+
+    return resolvedPermissions.join('');
 }

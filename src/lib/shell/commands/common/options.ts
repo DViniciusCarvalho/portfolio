@@ -59,8 +59,7 @@ export const commandHasInvalidOptions = (
 
 export const getCommandInvalidOptionMessage = (
     commandName: string,
-    invalidOptions: string[],
-    helpCommand: string
+    invalidOptions: string[]
 ) => {
 
     const invalidOptionsMessageLines = invalidOptions.reduce((acc: string, curr) => {
@@ -69,6 +68,8 @@ export const getCommandInvalidOptionMessage = (
 
         return acc;
     }, '');
+
+    const helpCommand = `${commandName} --help`
 
     const helpCommandMessageLine = `Try '${helpCommand}' for more information.`;
 
@@ -81,9 +82,15 @@ export const optionIsPresent = (
     index: number,
     availableOptions: Shell.CommandOption[]
 ) => {
-    const initialValue: { valid: boolean, type: string | null } = {
+
+    const initialValue: { 
+        valid: boolean, 
+        type: string | null, 
+        regExpValuePart: string | null 
+    } = {
         valid: false,
-        type: null
+        type: null,
+        regExpValuePart: null
     };
 
     const option = options.reduce((
@@ -116,11 +123,16 @@ export const checkOption = (
     
     const isShortOption = option === SHORT_OPTION;
     const isLongOption = !!option.match(LONG_OPTION_PATTERN as RegExp);
+
+    const regExpValuePart = isLongOption && LONG_OPTION_PATTERN instanceof RegExp
+                            ? option.slice(option.indexOf('=') + 1)
+                            : null;
     
     const isValidOption = isShortOption || isLongOption;
     
     return {
         valid: isValidOption,
-        type: isValidOption? (isShortOption? 'short' : 'long') : null
+        type: isValidOption? (isShortOption? 'short' : 'long') : null,
+        regExpValuePart: regExpValuePart
     };
 }
