@@ -1,4 +1,4 @@
-import React, { useState, createContext, useRef, useEffect, useCallback } from 'react';
+import React, { useState, createContext, useRef, useEffect } from 'react';
 import mainStyles from '@/styles/workarea/Main.module.sass';
 import GlobalMenuBar from './menu/GlobalMenuBar';
 import TaskBar from './taskbar/TaskBar';
@@ -12,26 +12,6 @@ import {
 } from '@/lib/coordinates';
 
 import { 
-    LAST_SYSTEM_ESSENTIAL_PID, 
-    INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX,
-    INITIAL_SYSTEM_COLOR_PALETTE,
-    INITIAL_SYSTEM_THEME,
-    INITIAL_SYSTEM_LAYOUT,
-    INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS,
-    INITIAL_TERMINAL_USER_HOST_COLOR,
-    INITIAL_TERMINAL_ROOT_HOST_COLOR,
-    INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR,
-    INITIAL_TERMINAL_DEFAULT_COLOR,
-    INITIAL_TERMINAL_BACKGROUND_COLOR,
-    INITIAL_SHELL_USER,
-    SHELL_HOSTNAME,
-    INITIAL_CURRENT_DIRECTORY,
-    INITIAL_FILESYSTEM,
-    INITIAL_SHELL_ENVIRONMENT_VARIABLES,
-    INITIAL_UMASK
-} from '@/lib/constants';
-
-import { 
     getNewHeightAndYAxisOnTop, 
     getNewWidthOnRight, 
     getNewHeightAndYAxisOnBottom, 
@@ -40,44 +20,71 @@ import {
 
 import { 
     deepClone, 
-    getCorrespondentRunningProcess,
     generateUUID,
-    getProcessWindowParentDesktopUUID,
-    getInitialProcessWindowDimensions
 } from '@/lib/utils';
-
-import { 
-    parentDesktopIsNowVoid 
-} from '@/lib/validation';
 
 import { StaticImageData } from 'next/image';
 import { Shell } from '@/types/shell';
-import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
-import { registerProcessInProcDir, removeProcessFromProcDir } from '@/lib/shell/background/process';
+
+import { 
+    registerProcessInProcDir, 
+    removeProcessFromProcDir 
+} from '@/lib/shell/background/process';
+
+import {
+    INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX, 
+    LAST_SYSTEM_ESSENTIAL_PID 
+} from '@/lib/initial/process';
+
+import { 
+    INITIAL_SYSTEM_COLOR_PALETTE, 
+    INITIAL_SYSTEM_LAYOUT, 
+    INITIAL_SYSTEM_THEME 
+} from '@/lib/initial/settings';
+
+import { INITIAL_FILESYSTEM } from '@/lib/initial/filesystem';
+
+import {  
+    INITIAL_ENVIRONMENT_VARIABLES, 
+    INITIAL_TERMINAL_BACKGROUND_COLOR, 
+    INITIAL_TERMINAL_CURRENT_DIRECTORY_COLOR, 
+    INITIAL_TERMINAL_DEFAULT_COLOR, 
+    INITIAL_TERMINAL_FONT_SIZE_IN_PIXELS, 
+    INITIAL_TERMINAL_ROOT_HOST_COLOR, 
+    INITIAL_TERMINAL_USER_HOST_COLOR, 
+    INITIAL_UMASK, SHELL_HOSTNAME 
+} from '@/lib/initial/shell';
+
+import { 
+    getCorrespondentRunningProcess, 
+    getInitialProcessWindowDimensions, 
+    getProcessWindowParentWorkspaceUUID
+} from '@/lib/process';
+
+import { parentWorkspaceIsNowVoid } from '@/lib/workspace';
 
 
 export const MainContext = createContext<any>(null);
 
 export default function Main() {
     
-    // Refs
     const globalMenuRef = useRef<HTMLDivElement | null>(null);
     const taskBarRef = useRef<HTMLDivElement | null>(null);
     const applicationsWindowRef = useRef<HTMLDivElement | null>(null);
 
-    // Initial desktop identificator
-    const baseDesktopUUID = generateUUID();
+    
+    const baseWorkspaceUUID = generateUUID();
 
-    // States
+
     const [ 
         opennedProcessesData, 
         setOpennedProcessesData 
     ] = useState<Data.OpennedProcessData[]>([]);
 
     const [ 
-        desktopActivitiesData, 
-        setDesktopActivitiesData 
-    ] = useState<Data.DesktopActivityData[]>([]);
+        workspaceActivitiesData, 
+        setWorkspaceActivitiesData 
+    ] = useState<Data.WorkspaceActivityData[]>([]);
 
     const [ 
         applicationsPropsDataInTaskbar, 
@@ -95,14 +102,9 @@ export default function Main() {
     ] = useState(INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX);
 
     const [ 
-        currentActiveDesktopUUID, 
-        setCurrentActiveDesktopUUID 
-    ] = useState(baseDesktopUUID);
-
-    const [ 
-        applicationsAreBeingShowed, 
-        setApplicationsAreBeingShowed 
-    ] = useState(false);
+        currentActiveWorkspaceUUID, 
+        setCurrentActiveWorkspace 
+    ] = useState(baseWorkspaceUUID);
 
     const [ 
         systemColorPalette, 
@@ -165,24 +167,14 @@ export default function Main() {
     ] = useState(INITIAL_TERMINAL_BACKGROUND_COLOR);
 
     const [ 
-        currentShellUser, 
-        setCurrentShellUser 
-    ] = useState(INITIAL_SHELL_USER);
-
-    const [ 
         hostName, 
         setHostName 
     ] = useState(SHELL_HOSTNAME);
 
-    const [ 
-        currentDirectory, 
-        setCurrentDirectory 
-    ] = useState(INITIAL_CURRENT_DIRECTORY);
-
     const [
         systemEnvironmentVariables,
         setSystemEnvironmentVariables
-    ] = useState(INITIAL_SHELL_ENVIRONMENT_VARIABLES);
+    ] = useState(INITIAL_ENVIRONMENT_VARIABLES);
 
     const [
         umask,
@@ -190,19 +182,34 @@ export default function Main() {
     ] = useState(INITIAL_UMASK);
 
     const [ 
+        applicationsAreBeingShowed, 
+        setApplicationsAreBeingShowed 
+    ] = useState(false);
+    
+    const [ 
         canChangeApplicationsState,
         setCanChangeApplicationsState
     ] = useState(true);
 
+
+    const basicCommandSystemAPI = {
+        fileSystem: fileSystem,
+        environmentVariables: systemEnvironmentVariables,
+        umask: umask,
+        openForegroundProcess: openForegroundProcess,
+        finishForegroundProcess: finishForegroundProcess
+    } as Shell.SystemAPI;
+
     
-    // Context
-    const processesDesktopDataAndManipulators = {
+    const processesWorkspaceDataAndManipulators = {
         opennedProcessesData,
-        desktopActivitiesData,
+        workspaceActivitiesData,
         setOpennedProcessesData,
-        openProcess,
-        sendSIGKILLToProcess,
-        removeDesktopActivity,
+        openGraphicalProcess,
+        openForegroundProcess,
+        finishForegroundProcess,
+        finishGraphicalProcess,
+        removeWorkspaceActivity,
     };
 
     const settingsStatesAndManipulators = {
@@ -237,19 +244,15 @@ export default function Main() {
     };
 
     const terminalStatesAndManipulators = {
-        currentShellUser,
         hostName,
-        currentDirectory,
         systemEnvironmentVariables,
-        setCurrentShellUser,
-        setCurrentDirectory,
         setSystemEnvironmentVariables
     };
 
-    const desktopsStatesAndManipulators = {
-        baseDesktopUUID,
-        currentActiveDesktopUUID,
-        changeCurrentDesktop,
+    const workspacesStatesAndManipulators = {
+        baseWorkspaceUUID,
+        currentActiveWorkspaceUUID,
+        changeCurrentWorkspace,
     };
 
     const processesWindowStatesAndManipulators = {
@@ -270,16 +273,19 @@ export default function Main() {
     };
 
     const contextValues = {
-        ...processesDesktopDataAndManipulators,
+        taskBarRef,
+        globalMenuRef,
+        basicCommandSystemAPI,
+        ...processesWorkspaceDataAndManipulators,
         ...settingsStatesAndManipulators,
         ...fileSystemAndManipulators,
         ...terminalStatesAndManipulators,
-        ...desktopsStatesAndManipulators,
+        ...workspacesStatesAndManipulators,
         ...processesWindowStatesAndManipulators,
         ...applicationsSectionStatesAndManipulators
     };
 
-    // Props
+
     const globalMenuProps: Props.GlobalMenuProps = {
         globalMenuRef
     };
@@ -292,8 +298,8 @@ export default function Main() {
     const applicationsWindowProps: Props.ApplicationsWindowProps = {
         applicationsWindowRef,
         opennedProcessesData,
-        desktopActivitiesData,
-        baseDesktopUUID
+        workspaceActivitiesData,
+        baseWorkspaceUUID
     };
 
     
@@ -306,20 +312,22 @@ export default function Main() {
     }, []);
 
 
-    function openProcess(
+    function openGraphicalProcess(
         processTitle: string, 
         processIcon: StaticImageData,
+        processIconAlt: string,
         processElement: JSX.Element, 
-        currentActiveDesktopDoesNotExists: boolean
+        currentActiveWorkspaceDoesNotExists: boolean
     ): number {
 
         const nextPID = lastPID + 1;
+
         const nextLastHighestZIndex = lastHighestZIndex + 1;
 
-        const processWindowParentDesktopUUID = getProcessWindowParentDesktopUUID(
-            currentActiveDesktopUUID,
-            currentActiveDesktopDoesNotExists,
-            baseDesktopUUID
+        const processWindowParentWorkspaceUUID = getProcessWindowParentWorkspaceUUID(
+            currentActiveWorkspaceUUID,
+            currentActiveWorkspaceDoesNotExists,
+            baseWorkspaceUUID
         );
 
         const initialProcessWindowCoordinates = {
@@ -336,29 +344,28 @@ export default function Main() {
             PID: nextPID,
             processTitle: processTitle,
             processIcon: processIcon,
+            processIconAlt: processIconAlt,
             processElement: processElement,
             zIndex: nextLastHighestZIndex,
             isMinimized: false,
             isMaximized: false,
-            parentDesktopUUID: processWindowParentDesktopUUID,
+            parentWorkspaceUUID: processWindowParentWorkspaceUUID,
             coordinates: initialProcessWindowCoordinates,
             dimensions: initalProcessWindowDimensions
         };
 
-        const currentDesktopIsTheBaseDesktopOrDoesNotExists = currentActiveDesktopUUID === baseDesktopUUID
-                                                            || currentActiveDesktopDoesNotExists;
+        const currentWorkspaceIsInvalid = currentActiveWorkspaceUUID === baseWorkspaceUUID
+                                          || currentActiveWorkspaceDoesNotExists;
 
-
-        if (currentDesktopIsTheBaseDesktopOrDoesNotExists) {
-            const newCurrentDesktopData = {
-                UUID: processWindowParentDesktopUUID
+        if (currentWorkspaceIsInvalid) {
+            const newCurrentWorkspaceData = {
+                UUID: processWindowParentWorkspaceUUID
             };
 
-            setDesktopActivitiesData(previous => [...previous, newCurrentDesktopData]);
-            
+            setWorkspaceActivitiesData(previous => [...previous, newCurrentWorkspaceData]);
         }
 
-        setCurrentActiveDesktopUUID(previous => processWindowParentDesktopUUID);
+        setCurrentActiveWorkspace(previous => processWindowParentWorkspaceUUID);
         setApplicationsAreBeingShowed(previous => false);
         setLastPID(previous => nextPID);
         setLastHighestZIndex(previous => nextLastHighestZIndex);
@@ -370,7 +377,6 @@ export default function Main() {
 
         const partialSystemAPI = {
             environmentVariables: systemEnvironmentVariables,
-            currentShellUser: 'root',
             fileSystem: fileSystem,
             umask: umask
         } as Shell.SystemAPI;
@@ -381,8 +387,67 @@ export default function Main() {
     }
 
 
+    function finishGraphicalProcess(
+        PID: number
+    ): void { 
 
-    function elevateProcessWindowZIndex(PID: number): void {   
+        setOpennedProcessesData(previous => {
+            const process = getCorrespondentRunningProcess(previous, PID);
+            const { parentWorkspaceUUID } = process!;
+
+            if (parentWorkspaceIsNowVoid(opennedProcessesData, parentWorkspaceUUID)) {
+                setCurrentActiveWorkspace(previous => baseWorkspaceUUID);
+                removeWorkspaceActivity(parentWorkspaceUUID);
+                changeApplicationsAreBeingShowed(false);
+            }
+
+            const opennedProcessesDataWithoutElementPIDOwner = previous.filter(
+                processData => processData.PID !== PID
+            );
+
+            return opennedProcessesDataWithoutElementPIDOwner;
+        });
+
+
+        setApplicationsPropsDataInTaskbar(previous => {
+            const filteredPreviousDeepCopy = previous.filter(
+                processData => processData.initialPID !== PID
+            );
+
+            return filteredPreviousDeepCopy;
+        });
+
+        const partialSystemAPI = {
+            environmentVariables: systemEnvironmentVariables,
+            fileSystem: fileSystem,
+        } as Shell.SystemAPI;
+
+        removeProcessFromProcDir(PID, partialSystemAPI);
+    }
+
+
+    function openForegroundProcess(
+        processTitle: string
+    ): number {
+        const nextPID = lastPID + 1;
+
+        setLastPID(previous => nextPID);
+        registerProcessInProcDir(nextPID, processTitle, basicCommandSystemAPI);
+
+        return nextPID;
+    }
+
+
+    function finishForegroundProcess(
+        PID: number
+    ): void {
+        removeProcessFromProcDir(PID, basicCommandSystemAPI);
+    }
+
+
+    function elevateProcessWindowZIndex(
+        PID: number
+    ): void {   
         setLastHighestZIndex(previousHighestZIndex => {
             const nextHighestZIndex = previousHighestZIndex + 1;
 
@@ -400,43 +465,6 @@ export default function Main() {
 
             return nextHighestZIndex;
         });
-    }
-
-
-    function sendSIGKILLToProcess(PID: number): void { 
-        setOpennedProcessesData(previous => {
-            const process = getCorrespondentRunningProcess(previous, PID);
-            const { parentDesktopUUID } = process!;
-
-            if (parentDesktopIsNowVoid(opennedProcessesData, parentDesktopUUID)) {
-                setCurrentActiveDesktopUUID(previous => baseDesktopUUID);
-                removeDesktopActivity(parentDesktopUUID);
-                changeApplicationsAreBeingShowed(false);
-            }
-
-            const opennedProcessesDataWithoutElementPIDOwner = previous.filter(
-                processData => processData.PID !== PID
-            );
-
-            return opennedProcessesDataWithoutElementPIDOwner;
-        });
-
-        setApplicationsPropsDataInTaskbar(previous => {
-            const filteredPreviousDeepCopy = previous.filter(
-                processData => processData.initialPID !== PID
-            );
-
-            return filteredPreviousDeepCopy;
-        });
-
-        const partialSystemAPI = {
-            environmentVariables: systemEnvironmentVariables,
-            currentShellUser: 'root',
-            fileSystem: fileSystem,
-            umask: umask
-        } as Shell.SystemAPI;
-
-        removeProcessFromProcDir(PID, partialSystemAPI);
     }
 
 
@@ -528,9 +556,13 @@ export default function Main() {
     }
 
 
-    function maximizeProcessWindow(PID: number, parentDesktopElement: HTMLDivElement): void {
-        const parentDesktopWidth = parentDesktopElement.getBoundingClientRect().width;
-        const parentDesktopHeight = parentDesktopElement.getBoundingClientRect().height;
+    function maximizeProcessWindow(
+        PID: number, 
+        parentWorkspaceElement: HTMLDivElement
+    ): void {
+
+        const parentWorkspaceWidth = parentWorkspaceElement.getBoundingClientRect().width;
+        const parentWorkspaceHeight = parentWorkspaceElement.getBoundingClientRect().height;
 
         setOpennedProcessesData(previous => {
             const opennedProcessesDataDeepCopy = deepClone(previous);
@@ -542,8 +574,8 @@ export default function Main() {
             process!.isMaximized = true;
 
             process!.dimensions = {
-                width: parentDesktopWidth,
-                height: parentDesktopHeight
+                width: parentWorkspaceWidth,
+                height: parentWorkspaceHeight
             };
 
             process!.coordinates = {
@@ -650,6 +682,7 @@ export default function Main() {
 
     function transferApplicationIconToTaskbarOtherProcessesIcons(                
         applicationIconStaticImage: StaticImageData,
+        applicationIconAlt: string,
         applicationName: string,
         applicationElement: JSX.Element,
         startedProcessPID: number
@@ -657,6 +690,7 @@ export default function Main() {
 
         const newProcessIconProps: Props.ProcessIconProps = {
             processIconStaticImage: applicationIconStaticImage,
+            processIconAlt: applicationIconAlt,
             processName: applicationName,
             processElement: applicationElement,
             initialPID: startedProcessPID
@@ -674,16 +708,16 @@ export default function Main() {
     }
 
 
-    function changeCurrentDesktop(desktopUUID: string): void {
-        setCurrentActiveDesktopUUID(previous => desktopUUID);
+    function changeCurrentWorkspace(workspaceUUID: string): void {
+        setCurrentActiveWorkspace(previous => workspaceUUID);
         changeApplicationsAreBeingShowed(false);
     }
 
 
-    function removeDesktopActivity(UUID: string): void {
-        setDesktopActivitiesData(previous => 
-            previous.filter(desktopActivity => 
-                desktopActivity.UUID !== UUID
+    function removeWorkspaceActivity(workspaceUUID: string): void {
+        setWorkspaceActivitiesData(previous => 
+            previous.filter(workspaceActivity => 
+                workspaceActivity.UUID !== workspaceUUID
             )
         );
     }
@@ -747,7 +781,7 @@ export default function Main() {
         <div className={mainStyles.container}>
             <MainContext.Provider value={{...contextValues}}>
                 <GlobalMenuBar {...globalMenuProps}/>
-                <div className={`${mainStyles.taskbar__desktop__wrapper} ${mainStyles[systemLayout]}`}>
+                <div className={`${mainStyles.taskbar__workspace__wrapper} ${mainStyles[systemLayout]}`}>
                     <TaskBar {...taskbarProps}/>
                     <ApplicationsWindow {...applicationsWindowProps}/>
                 </div>

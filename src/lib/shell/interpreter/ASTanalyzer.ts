@@ -3,8 +3,22 @@ import { ParseTree } from '../ParseTree';
 import { ParseTreeNode } from '../ParseTreeNode';
 import { SHELL_OPERATORS } from '../grammar';
 import { deepClone } from '@/lib/utils';
-import { ESCAPE_SEQUENCES_SUBSTITUTION } from '../commands/common/patterns';
-import { checkProvidedPath, getDirectoryData, getFileData, getParentPathAndTargetName } from '../commands/common/directoryAndFile';
+
+import { 
+    END_COMMAND_SUBSTITUTION_PATTERN, 
+    ESCAPE_SEQUENCES_SUBSTITUTION, 
+    FULL_COMMAND_SUBSTITUTION_PATTERN, 
+    START_COMMAND_SUBSTITUTION_PATTERN, 
+    VARIABLE_ASSIGNMENT_PATTERN 
+} from '../commands/common/patterns';
+
+import { 
+    checkProvidedPath, 
+    getDirectoryData, 
+    getFileData, 
+    getParentPathAndTargetName 
+} from '../commands/common/directoryAndFile';
+
 import { ExecutionTreeError } from '../exception';
 
 
@@ -70,15 +84,14 @@ export const executeSingleCommand = (
     stdin: string | null = null
 ): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
 
-    const COMMAND_SUBSTITUTION_PATTERN = /\$\([^)]*\)/g;
-    const START_PATTERN = /^\$\(/g;
-    const END_PATTERN = /\)$/g;
-    
-    const commandName = command.value.match(COMMAND_SUBSTITUTION_PATTERN)
-                        ? command.value.replace(START_PATTERN, '').replace(END_PATTERN, '')
+
+    const commandName = command.value.match(FULL_COMMAND_SUBSTITUTION_PATTERN)
+                        ? command.value
+                          .replace(START_COMMAND_SUBSTITUTION_PATTERN, '')
+                          .replace(END_COMMAND_SUBSTITUTION_PATTERN, '')
                         : command.value;
                         
-    const commandIsVariableAssignment = commandName.match(/^.*=.*$/);
+    const commandIsVariableAssignment = commandName.match(VARIABLE_ASSIGNMENT_PATTERN);
 
     const cwd = systemAPI.environmentVariables['PWD'];
     const currentUser = systemAPI.currentShellUser;

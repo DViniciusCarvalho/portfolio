@@ -16,12 +16,13 @@ export namespace Props {
     interface ApplicationsWindowProps {
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
         opennedProcessesData: Data.OpennedProcessData[];
-        desktopActivitiesData: Data.DesktopActivityData[];
-        baseDesktopUUID: string;
+        workspaceActivitiesData: Data.WorkspaceActivityData[];
+        baseWorkspaceUUID: string;
     }
 
     interface ProcessIconProps {
         processIconStaticImage: StaticImageData;
+        processIconAlt: string;
         processName: string;
         processElement: JSX.Element;
         initialPID?: number;
@@ -29,19 +30,20 @@ export namespace Props {
 
     interface ApplicationIconProps {
         applicationIconStaticImage: StaticImageData;
+        applicationIconAlt: string;
         applicationName: string;
         applicationElement: JSX.Element;
     }
 
-    interface DesktopProps {
+    interface WorkspaceProps {
         UUID: string;
         opennedProcessesData: Data.OpennedProcessData[];
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
     }
 
-    interface BaseDesktopProps {
-        baseDesktopUUID: string;
-        desktopActivitiesData: Data.DesktopActivityData[];
+    interface BaseWorkspaceProps {
+        baseWorkspaceUUID: string;
+        workspaceActivitiesData: Data.WorkspaceActivityData[];
         applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>;
     }
     
@@ -49,11 +51,12 @@ export namespace Props {
         PID: number;
         processTitle: string;
         processIcon: StaticImageData;
+        processIconAlt: string;
         processElement: JSX.Element;
         zIndex: number;
         isMinimized: boolean;
         isMaximized: boolean;
-        parentDesktopUUID: string;
+        parentWorkspaceUUID: string;
         coordinates: {
             x: number;
             y: number;
@@ -66,6 +69,7 @@ export namespace Props {
 
     interface ProcessWindowMinimalContentVersionProps {
         processIcon: StaticImageData;
+        processIconAlt: string;
         processName: string;
     }
 
@@ -77,5 +81,46 @@ export namespace Props {
 
     interface ResultLineProps {
         commandResult: string;
+    }
+
+    interface NautilusProps {
+        initialPath?: string;
+    }
+
+    interface NautilusIconProps {
+        name: string;
+        path: string;
+        type: string;
+    }
+
+    interface ContextMenuProps {
+        origin: {
+            x: number;
+            y: number;
+        };
+        options: {
+            text: string;
+            handler: any;
+        }[];
+        targetPath: string;
+    }
+
+    interface RenameFilePromptProps {
+        currentPath: string;
+        oldName: string;
+        closePrompts: () => void;
+    }
+
+    interface NewFolderPromptProps {
+        currentPath: string;
+        closePrompts: () => void;
+    }
+
+    interface LocationDirButtonProps {
+        title: string;
+        iconSrc: StaticImageData;
+        iconAlt: string;
+        locationPath: string;
+        openDirectory: (path: string) => void
     }
 }

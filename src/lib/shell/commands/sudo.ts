@@ -1,6 +1,7 @@
 import { Shell } from '@/types/shell';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
 import { executeSingleCommand } from '../interpreter/ASTanalyzer';
+import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -15,8 +16,21 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'sudo - execute a command as another user';
+    const synopsis = 'sudo [COMMAND [OPTION]... [ARG]...]';
+    const description = `Allows a permitted user to execute a command as the superuser.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -33,11 +47,14 @@ export const sudo = (
 
     const commandName = commandArguments.shift()!;
 
-    const previousUser = systemAPI.currentShellUser;
+    const {
+        environmentVariables
+    } = systemAPI;
 
-    systemAPI.currentShellUser = 'root';
-    systemAPI.environmentVariables['HOME'] = '/home/root';
-    systemAPI.environmentVariables['USER'] = 'root';
+    const previousUser = environmentVariables['USER'];
+
+    environmentVariables['USER'] = 'root';
+    environmentVariables['HOME'] = '/root';
 
     const commandResult = executeSingleCommand(
         commandName, 
@@ -48,13 +65,11 @@ export const sudo = (
         false
     );
 
-    systemAPI.currentShellUser = previousUser;
-    systemAPI.environmentVariables['HOME'] = `/home/${previousUser}`;
-    systemAPI.environmentVariables['USER'] = previousUser;
+    environmentVariables['USER'] = previousUser;
+    environmentVariables['HOME'] = `/home/${previousUser}`;
 
-    commandResult.systemAPI.currentShellUser = previousUser;
-    commandResult.systemAPI.environmentVariables['HOME'] = `/home/${previousUser}`;
     commandResult.systemAPI.environmentVariables['USER'] = previousUser;
+    commandResult.systemAPI.environmentVariables['HOME'] = `/home/${previousUser}`;
 
     return {
         stdout: commandResult.stdout,

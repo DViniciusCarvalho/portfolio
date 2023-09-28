@@ -1,8 +1,8 @@
 import React, { useContext, useRef } from 'react';
 import settingsStyles from '@/styles/processes/Settings.module.sass';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 import { generateJSXKey } from '@/lib/utils';
 import { MainContext } from '@/components/workarea/Main';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 export default function BackgroundSection() {
 
@@ -18,9 +18,9 @@ export default function BackgroundSection() {
     } = useContext(MainContext);
 
 
-    const changeBackgroundStyleMiddleware = (
+    function changeBackgroundStyleMiddleware(
         colorPalette?: string
-    ): void => {
+    ): void {
 
         const files = fileInputRef.current!.files!;
   
@@ -41,13 +41,15 @@ export default function BackgroundSection() {
         }
 
         changeBackgroundDefaultColorPalette(colorPalette);
-
     }
 
 
     return (
         <React.Fragment>
-            <p className={`${settingsStyles.background__label} ${settingsStyles.label}`}>
+            <p 
+                className={`${settingsStyles.background__label} ${settingsStyles.label}`}
+                aria-label='background styles section label'
+            >
                 Background
             </p>
             <div className={`${settingsStyles.background__wrapper} ${settingsStyles.wrapper}`}>
@@ -66,12 +68,12 @@ export default function BackgroundSection() {
                         }}
                     />
                     <div 
-                        className={settingsStyles.background__previous__desktop}
+                        className={settingsStyles.background__previous__workspace}
                         style={{
                             backgroundImage: backgroundIsImageBlob
                                             ? `url(${backgroundImageUrl})`
                                             : COLOR_PALETTE_OPTIONS[systemColorPalette]
-                                              .desktop.backgroundImage
+                                              .workspace.backgroundImage
                         }}
                     />
                 </div>

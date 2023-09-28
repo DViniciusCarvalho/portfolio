@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import settingsStyles from '@/styles/processes/Settings.module.sass';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 import { MainContext } from '@/components/workarea/Main';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 export default function ThemeSection() {
 
@@ -13,7 +13,10 @@ export default function ThemeSection() {
 
     return (
         <React.Fragment>
-            <p className={`${settingsStyles.theme__label} ${settingsStyles.label}`}>
+            <p 
+                className={`${settingsStyles.theme__label} ${settingsStyles.label}`}
+                aria-label='theme styles section label'
+            >
                 Theme
             </p>
             <div className={`${settingsStyles.theme__wrapper} ${settingsStyles.wrapper}`}>

@@ -48,20 +48,15 @@ export namespace Shell {
         environmentVariables: EnvironmentVariables;
         setEnvironmentVariables: React.Dispatch<React.SetStateAction<EnvironmentVariables>>;
         setSystemEnvironmentVariables: React.Dispatch<React.SetStateAction<EnvironmentVariables>>;
-        sendSIGKILLToProcess: (PID: number) => void;
         opennedProcessesData: Data.OpennedProcessData[];
         setOpennedProcessesData: React.Dispatch<React.SetStateAction<Data.OpennedProcessData[]>>;
-        currentShellUser: string;
-        setCurrentShellUser: React.Dispatch<React.SetStateAction<string>>;
-        currentDirectory: string;
-        setCurrentDirectory: React.Dispatch<React.SetStateAction<string>>;
+        openForegroundProcess: (processTitle: string) => number;
+        finishForegroundProcess: (PID: number) => void;
+        finishGraphicalProcess: (PID: number) => void;
         fileSystem: Directory;
         setFileSystem: React.Dispatch<React.SetStateAction<Directory>>;
         umask: string;
-        setUmask: React.Dispatch<React.SetStateAction<{
-            directory: string;
-            file: string;
-        }>>;
+        setUmask: React.Dispatch<React.SetStateAction<string>>;
     }
 
     interface CommandOption {

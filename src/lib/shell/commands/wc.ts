@@ -15,8 +15,15 @@ import {
     getFileIndex, 
     getParentPathAndTargetName 
 } from './common/directoryAndFile';
+
 import { BREAK_LINE } from './common/patterns';
-import { alignLineItems } from './common/formatters';
+
+import { 
+    alignLineItems, 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -51,8 +58,146 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'wc - print newline, word, and byte counts for each file';
+    const synopsis = `wc [OPTION]... [FILE]...`;
+    const description = `Print newline, word, and byte counts for each FILE.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    const charsCountOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
+    const linesCountOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
+    const wordsCountOption = optionIsPresent(providedOptions, 2, COMMAND_OPTIONS);
+    const bytesCountOption = optionIsPresent(providedOptions, 3, COMMAND_OPTIONS);
+
+    const canShowCharsCount = charsCountOption.valid;
+    const canShowLinesCount = !providedOptions.length || linesCountOption.valid;
+    const canShowWordsCount = !providedOptions.length || wordsCountOption.valid;
+    const canShowBytesCount = !providedOptions.length || bytesCountOption.valid;
+
+    const {
+        environmentVariables,
+        fileSystem
+    } = systemAPI;
+    
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentShellUser = environmentVariables['USER'];
+
+    const pathsToRead = providedArguments;
+
+    const stdout = pathsToRead.reduce((
+        acc,
+        pathToRead
+    ) => {
+
+        const checkedPathToRead = checkProvidedPath(
+            pathToRead,
+            currentWorkingDirectory,
+            currentShellUser,
+            fileSystem
+        );
+
+        if (!checkedPathToRead.valid) {
+            throw new ExecutionTreeError(
+                `wc: ${pathToRead}: No such file or directory`,
+                1
+            );
+        }
+
+        if (checkedPathToRead.validAs === 'directory') {
+            throw new ExecutionTreeError(
+                `wc: ${pathToRead}: Is a directory`,
+                1
+            );
+        }
+
+        const {
+            parentPath,
+            targetName
+        } = getParentPathAndTargetName(checkedPathToRead.resolvedPath);
+
+        const parentDirectoryData = getDirectoryData(
+            parentPath,
+            currentWorkingDirectory,
+            currentShellUser,
+            fileSystem
+        );
+
+        const parentDirectoryChildrenFiles = parentDirectoryData.children.files;
+
+        const fileIndex = getFileIndex(
+            targetName,
+            parentDirectoryChildrenFiles
+        );
+
+        const fileData = parentDirectoryChildrenFiles[fileIndex];
+
+        const fileContent = fileData.data.content;
+
+        const infoToShow = [
+            targetName
+        ];
+
+
+        if (canShowCharsCount){
+            const fileContentLength = fileContent.length;
+
+            infoToShow.unshift(fileContentLength.toString());
+        }
+
+        if (canShowLinesCount){
+            const fileContentLines = fileContent.split('\n');
+            const fileContentLinesLength = fileContentLines.length;
+
+            infoToShow.unshift(fileContentLinesLength.toString());
+        }
+
+        if (canShowWordsCount){
+            const noEscapedFileContent = fileContent.replace(/\\[tn]/g, ' ');
+            const fileContentWords = noEscapedFileContent.split(' ');
+            const fileContentWordsLength = fileContentWords.length;
+
+            infoToShow.unshift(fileContentWordsLength.toString());
+        }
+
+        if (canShowBytesCount) {
+            const encoder = new TextEncoder();
+            const bytesArray = encoder.encode(fileContent);
+            const bytesSize = bytesArray.length;
+
+            infoToShow.unshift(bytesSize.toString());
+        }
+
+        acc.push(infoToShow.join(' '));
+
+        return acc;
+        
+    }, [] as string[]);
+
+    const formattedLines = alignLineItems(stdout, ' ', 'right');
+
+    return {
+        stdout: formattedLines.join(BREAK_LINE),
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -67,159 +212,14 @@ export const wc = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('wc', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    const argumentsValue = resolveArguments(
+    return commandDecorator(
+        'wc', 
+        commandOptions, 
         commandArguments, 
-        stdin, 
         systemAPI, 
-        false
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
     );
-
-    try {
-
-        const charsCountOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
-        const linesCountOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
-        const wordsCountOption = optionIsPresent(providedOptions, 2, COMMAND_OPTIONS);
-        const bytesCountOption = optionIsPresent(providedOptions, 3, COMMAND_OPTIONS);
-
-        const canShowCharsCount = charsCountOption.valid;
-        const canShowLinesCount = !providedOptions.length || linesCountOption.valid;
-        const canShowWordsCount = !providedOptions.length || wordsCountOption.valid;
-        const canShowBytesCount = !providedOptions.length || bytesCountOption.valid;
-
-        const cwd = systemAPI.environmentVariables['PWD'];
-        const currentUser = systemAPI.currentShellUser;
-        const fileSystem = systemAPI.fileSystem;
-
-        const pathsToRead = argumentsValue;
-
-        const stdout = pathsToRead.reduce((
-            acc,
-            pathToRead
-        ) => {
-
-            const checkedPathToRead = checkProvidedPath(
-                pathToRead,
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
-            if (!checkedPathToRead.valid) {
-                throw new ExecutionTreeError(
-                    `wc: ${pathToRead}: No such file or directory`,
-                    1
-                );
-            }
-
-            if (checkedPathToRead.validAs === 'directory') {
-                throw new ExecutionTreeError(
-                    `wc: ${pathToRead}: Is a directory`,
-                    1
-                );
-            }
-
-            const {
-                parentPath,
-                targetName
-            } = getParentPathAndTargetName(checkedPathToRead.resolvedPath);
-
-            const parentDirectoryData = getDirectoryData(
-                parentPath,
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
-            const parentDirectoryChildrenFiles = parentDirectoryData.children.files;
-
-            const fileIndex = getFileIndex(
-                targetName,
-                parentDirectoryChildrenFiles
-            );
-
-            const fileData = parentDirectoryChildrenFiles[fileIndex];
-
-            const fileContent = fileData.data.content;
-
-            const infoToShow = [
-                targetName
-            ];
-
-
-            if (canShowCharsCount){
-                const fileContentLength = fileContent.length;
-
-                infoToShow.unshift(fileContentLength.toString());
-            }
-
-            if (canShowLinesCount){
-                const fileContentLines = fileContent.split('\n');
-                const fileContentLinesLength = fileContentLines.length;
-
-                infoToShow.unshift(fileContentLinesLength.toString());
-            }
-
-            if (canShowWordsCount){
-                const noEscapedFileContent = fileContent.replace(/\\[tn]/g, ' ');
-                const fileContentWords = noEscapedFileContent.split(' ');
-                const fileContentWordsLength = fileContentWords.length;
-
-                infoToShow.unshift(fileContentWordsLength.toString());
-            }
-
-            if (canShowBytesCount) {
-                const encoder = new TextEncoder();
-                const bytesArray = encoder.encode(fileContent);
-                const bytesSize = bytesArray.length;
-
-                infoToShow.unshift(bytesSize.toString());
-            }
-
-            acc.push(infoToShow.join(' '));
-
-            return acc;
-        }, []);
-
-        const formattedLines = alignLineItems(stdout, ' ', 'right');
-
-        return {
-            stdout: formattedLines.join(BREAK_LINE),
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-
-    }
-    catch (err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
 }

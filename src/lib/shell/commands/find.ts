@@ -29,7 +29,18 @@ import {
 
 import { Directory } from './models/Directory';
 import { File } from './models/File';
-import { ALL_CHARACTERS_PATTERN, ALL_PERMISSIONS_PATTERN, BREAK_LINE } from './common/patterns';
+
+import { 
+    ALL_CHARACTERS_PATTERN, 
+    ALL_PERMISSIONS_PATTERN, 
+    BREAK_LINE 
+} from './common/patterns';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -84,8 +95,20 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'find - search for files in a directory hierarchy';
+    const synopsis = 'find [STARTING-POINT] [SEARCH-RULE]...';
+    const description = `Searches for files and directories according to the SEARCH-RULES and starts the search from the STARTING-POINT.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -226,6 +249,177 @@ const getIsInTheDepthRangeCheckerFunction = (
 }
 
 
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    const DEFAULT_START_PATH = '.';
+
+    const startPathWasProvided = providedOptions.length
+                                 ? providedArguments.length === providedOptions.length + 1
+                                 : !!providedArguments.length;
+
+    const {
+        environmentVariables,
+        fileSystem
+    } = systemAPI;
+
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentShellUser = environmentVariables['USER'];
+
+    const startPath = startPathWasProvided? providedArguments[0] : DEFAULT_START_PATH;
+
+    const checkedStartPath = checkProvidedPath(
+        startPath,
+        currentWorkingDirectory,
+        currentShellUser,
+        fileSystem
+    );
+
+    if (startPathWasProvided && !checkedStartPath.valid) {
+        throw new ExecutionTreeError(
+            `find: '${startPath}': No such file or directory`,
+            1
+        );
+    }
+
+    const startOptionValueIndex = startPathWasProvided? 1 : 0;
+
+    const criteria = providedOptions.reduce((
+        acc,
+        current,
+        index
+    ) => {
+        acc[current] = providedArguments[index + startOptionValueIndex];
+
+        return acc;
+    }, {} as any);
+
+    const startPathData = getDirectoryData(
+        startPath,
+        currentWorkingDirectory,
+        currentShellUser,
+        fileSystem
+    );
+
+    const currentTimestamp = Date.now();
+
+    changeReadingTimestamps(startPathData, currentTimestamp);
+
+    const typePatternToTest = getValidatedTypePattern(criteria);
+    const permissionPatternToTest = getValidatedPermissionPattern(criteria);
+
+    const userPatternToTest = '-user' in criteria
+                              ? getPatternRegEx(criteria['-user'])  
+                              : ALL_CHARACTERS_PATTERN;
+
+    const groupPatternToTest = '-group' in criteria
+                               ? getPatternRegEx(criteria['-group'])
+                               : ALL_CHARACTERS_PATTERN;
+
+    const sizeFunctionToTest = '-size' in criteria
+                               ? getSizeTestingFunction(criteria['-size'])
+                               : returnAlwaysTrue;
+    
+    const mtimeFunctionToTest = '-mtime' in criteria
+                                ? getMtimeTestingFunction(criteria['-mtime']) 
+                                : returnAlwaysTrue;
+                                                    
+    const namePatternToTest = '-name' in criteria
+                              ? getPatternRegEx(criteria['-name']) 
+                              : ALL_CHARACTERS_PATTERN;
+
+    const maxDepthFunctionToTest = '-maxdepth' in criteria
+                                   ? getIsInTheDepthRangeCheckerFunction(criteria['-maxdepth'])
+                                   : returnAlwaysTrue;
+
+    const stdoutLines: string[] = [];
+
+    const startPathFilesAndDirectories = [
+        ...startPathData.children.files,
+        ...startPathData.children.directories
+    ];
+    
+    const INITIAL_DEPTH = 1;
+
+    const findRecursively = (
+        pathFilesAndDirectories: (Directory | File)[],
+        pathAcc: string,
+        depthAcc: number
+    ) => {
+
+        for (let index = 0; index < pathFilesAndDirectories.length; index++) {
+            const fileOrDirectory = pathFilesAndDirectories[index];
+
+            const type = targetIsDirectory(fileOrDirectory)? 'd' : 'f';
+            const isSymLink = fileOrDirectory.links.is;
+
+            const permission = fileOrDirectory.management.permissionOctal;
+            const owner = fileOrDirectory.management.owner;
+            const group = fileOrDirectory.management.group;
+            const size = fileOrDirectory.data.size;
+            const mtime = fileOrDirectory.timestamp.modify;
+            const name = fileOrDirectory.name;
+
+            const currentTimestamp = Date.now();
+
+            const typeOptionIsPresent = '-type' in criteria;
+
+            const typeDoesNotMatch = typeOptionIsPresent
+                                     && ((typePatternToTest.test('l') && !isSymLink)
+                                     || (typePatternToTest.test('f') && type !== 'f')
+                                     || (typePatternToTest.test('d') && type !== 'd'));
+
+            const permissionDoesNotMatch = !permission.match(permissionPatternToTest);
+            const ownerDoesNotMatch = !owner.match(userPatternToTest);
+            const groupDoesNotMatch = !group.match(groupPatternToTest);
+            const sizeDoesNotMatch = !sizeFunctionToTest(size);
+            const mtimeDoesNotMatch = !mtimeFunctionToTest(currentTimestamp, mtime);
+            const nameDoesNotMatch = !name.match(namePatternToTest);
+
+            if (!maxDepthFunctionToTest(depthAcc)) break;
+
+            if (typeDoesNotMatch) continue;
+            if (permissionDoesNotMatch) continue;
+            if (ownerDoesNotMatch) continue;
+            if (groupDoesNotMatch) continue;
+            if (sizeDoesNotMatch) continue;
+            if (mtimeDoesNotMatch) continue;
+            if (nameDoesNotMatch) continue;
+
+            const fullPath = `${pathAcc === '/'? '' : pathAcc}/${name}`;
+
+            stdoutLines.push(fullPath);
+
+            changeReadingTimestamps(fileOrDirectory, currentTimestamp);
+
+            if (type === 'd') {
+                const pathFilesAndDirectories = [
+                    ...(fileOrDirectory as Directory).children.files,
+                    ...(fileOrDirectory as Directory).children.directories
+                ];
+
+                findRecursively(pathFilesAndDirectories, fullPath, depthAcc + 1);
+            }
+
+        }
+
+        return;
+    }
+
+    findRecursively(startPathFilesAndDirectories, startPath, INITIAL_DEPTH);
+
+    return {
+        stdout: stdoutLines.join(BREAK_LINE),
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
+
+
 export const find = (    
     commandOptions: Shell.Token[],
     commandArguments: Shell.Token[],
@@ -233,205 +427,14 @@ export const find = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('find', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    const argumentsValue = resolveArguments(
+    return commandDecorator(
+        'find', 
+        commandOptions, 
         commandArguments, 
-        stdin, 
         systemAPI, 
-        false
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
     );
-
-    try {
-
-        const DEFAULT_START_PATH = '.';
-
-        const startPathWasProvided = providedOptions.length
-                                     ? argumentsValue.length === providedOptions.length + 1
-                                     : !!argumentsValue.length;
-
-        const cwd = systemAPI.environmentVariables['PWD'];
-        const currentUser = systemAPI.currentShellUser;
-        const fileSystem = systemAPI.fileSystem;
-
-        const startPath = startPathWasProvided? argumentsValue[0] : DEFAULT_START_PATH;
-
-        const checkedStartPath = checkProvidedPath(
-            startPath,
-            cwd,
-            currentUser,
-            fileSystem
-        );
-
-        if (startPathWasProvided && !checkedStartPath.valid) {
-            throw new ExecutionTreeError(
-                `find: '${startPath}': No such file or directory`,
-                1
-            );
-        }
-
-        const startOptionValueIndex = startPathWasProvided? 1 : 0;
-
-        const criteria = providedOptions.reduce((
-            acc,
-            current,
-            index
-        ) => {
-            acc[current] = argumentsValue[index + startOptionValueIndex];
-
-            return acc;
-        }, {});
-
-        const startPathData = getDirectoryData(
-            startPath,
-            cwd,
-            currentUser,
-            fileSystem
-        );
-
-        const currentTimestamp = Date.now();
-
-        changeReadingTimestamps(startPathData, currentTimestamp);
-
-        const typePatternToTest = getValidatedTypePattern(criteria);
-        const permissionPatternToTest = getValidatedPermissionPattern(criteria);
-
-        const userPatternToTest = '-user' in criteria
-                                  ? getPatternRegEx(criteria['-user'])  
-                                  : ALL_CHARACTERS_PATTERN;
-
-        const groupPatternToTest = '-group' in criteria
-                                   ? getPatternRegEx(criteria['-group'])
-                                   : ALL_CHARACTERS_PATTERN;
-
-        const sizeFunctionToTest = '-size' in criteria
-                                   ? getSizeTestingFunction(criteria['-size'])
-                                   : returnAlwaysTrue;
-        
-        const mtimeFunctionToTest = '-mtime' in criteria
-                                    ? getMtimeTestingFunction(criteria['-mtime']) 
-                                    : returnAlwaysTrue;
-                                                        
-        const namePatternToTest = '-name' in criteria
-                                  ? getPatternRegEx(criteria['-name']) 
-                                  : ALL_CHARACTERS_PATTERN;
-
-        const maxDepthFunctionToTest = '-maxdepth' in criteria
-                                       ? getIsInTheDepthRangeCheckerFunction(criteria['-maxdepth'])
-                                       : returnAlwaysTrue;
-
-        const stdoutLines: string[] = [];
-
-        const startPathFilesAndDirectories = [
-            ...startPathData.children.files,
-            ...startPathData.children.directories
-        ];
-        
-        const INITIAL_DEPTH = 1;
-
-        const findRecursively = (
-            pathFilesAndDirectories: (Directory | File)[],
-            pathAcc: string,
-            depthAcc: number
-        ) => {
-
-            for (let index = 0; index < pathFilesAndDirectories.length; index++) {
-                const fileOrDirectory = pathFilesAndDirectories[index];
-    
-                const type = targetIsDirectory(fileOrDirectory)? 'd' : 'f';
-                const isSymLink = fileOrDirectory.links.is;
-    
-                const permission = fileOrDirectory.management.permissionOctal;
-                const owner = fileOrDirectory.management.owner;
-                const group = fileOrDirectory.management.group;
-                const size = fileOrDirectory.data.size;
-                const mtime = fileOrDirectory.timestamp.modify;
-                const name = fileOrDirectory.name;
-
-                const currentTimestamp = Date.now();
-
-                const typeOptionIsPresent = '-type' in criteria;
-
-                const typeDoesNotMatch = typeOptionIsPresent
-                                         && ((typePatternToTest.test('l') && !isSymLink)
-                                         || (typePatternToTest.test('f') && type !== 'f')
-                                         || (typePatternToTest.test('d') && type !== 'd'));
-
-                const permissionDoesNotMatch = !permission.match(permissionPatternToTest);
-                const ownerDoesNotMatch = !owner.match(userPatternToTest);
-                const groupDoesNotMatch = !group.match(groupPatternToTest);
-                const sizeDoesNotMatch = !sizeFunctionToTest(size);
-                const mtimeDoesNotMatch = !mtimeFunctionToTest(currentTimestamp, mtime);
-                const nameDoesNotMatch = !name.match(namePatternToTest);
-    
-                if (!maxDepthFunctionToTest(depthAcc)) break;
-    
-                if (typeDoesNotMatch) continue;
-                if (permissionDoesNotMatch) continue;
-                if (ownerDoesNotMatch) continue;
-                if (groupDoesNotMatch) continue;
-                if (sizeDoesNotMatch) continue;
-                if (mtimeDoesNotMatch) continue;
-                if (nameDoesNotMatch) continue;
-
-                const fullPath = `${pathAcc === '/'? '' : pathAcc}/${name}`;
-
-                stdoutLines.push(fullPath);
-
-                changeReadingTimestamps(fileOrDirectory, currentTimestamp);
-
-                if (type === 'd') {
-                    const pathFilesAndDirectories = [
-                        ...(fileOrDirectory as Directory).children.files,
-                        ...(fileOrDirectory as Directory).children.directories
-                    ];
-
-                    findRecursively(pathFilesAndDirectories, fullPath, depthAcc + 1);
-                }
-
-            }
-
-            return;
-        }
-
-        findRecursively(startPathFilesAndDirectories, startPath, INITIAL_DEPTH);
-
-        return {
-            stdout: stdoutLines.join(BREAK_LINE),
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-
-    }
-    catch (err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
 }

@@ -1,17 +1,17 @@
 import React, { useContext } from 'react';
-import desktopStyles from '@/styles/workarea/Desktop.module.sass';
+import workspaceStyles from '@/styles/workarea/Workspace.module.sass';
 import ProcessWindow from '../window/ProcessWindow';
 import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
-import { getDesktopStyles } from '@/lib/style';
-import { getCurrentDesktopProcessesWindow } from '@/lib/utils';
+import { getWorkspaceStyles } from '@/lib/style';
+import { getCurrentWorkspaceProcessesWindow } from '@/lib/workspace';
 
 
-export default function Desktop({ 
+export default function Workspace({ 
     UUID,
     opennedProcessesData, 
     applicationsWindowRef
-}: Props.DesktopProps) {
+}: Props.WorkspaceProps) {
 
     const { 
         systemColorPalette, 
@@ -19,23 +19,23 @@ export default function Desktop({
         backgroundIsImageBlob,
         backgroundImageUrl,
         applicationsAreBeingShowed, 
-        currentActiveDesktopUUID,
-        changeCurrentDesktop,
+        currentActiveWorkspaceUUID,
+        changeCurrentWorkspace,
     } = useContext(MainContext);
 
 
     return (
         <div
             className={`
-                ${desktopStyles.container} 
-                ${desktopStyles[systemLayout]}
-                ${desktopStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+                ${workspaceStyles.container} 
+                ${workspaceStyles[systemLayout]}
+                ${workspaceStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
                 `
             }
             style={{
-                ...getDesktopStyles(
+                ...getWorkspaceStyles(
                     applicationsAreBeingShowed, 
-                    currentActiveDesktopUUID, 
+                    currentActiveWorkspaceUUID, 
                     UUID, 
                     applicationsWindowRef,
                     systemColorPalette,
@@ -45,10 +45,10 @@ export default function Desktop({
 
             }}
             id={UUID}
-            onClick={() => changeCurrentDesktop(UUID)}
+            onClick={() => changeCurrentWorkspace(UUID)}
         >
             {
-                getCurrentDesktopProcessesWindow(opennedProcessesData, UUID)
+                getCurrentWorkspaceProcessesWindow(opennedProcessesData, UUID)
                 .map((opennedProcessData, index) => (
                     <ProcessWindow  
                         key={`${opennedProcessData.processTitle}-${opennedProcessData.PID}`}

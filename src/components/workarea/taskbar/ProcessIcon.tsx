@@ -3,14 +3,15 @@ import processIconStyles from '@/styles/workarea/taskbar/ProcessIcon.module.sass
 import Image from 'next/image';
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { getCorrespondentDesktop, getCorrespondentRunningProcess } from '@/lib/utils';
-import { processIsRunning, processIsTheCurrentOpenned } from '@/lib/validation';
 import { Data } from '@/types/data';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { getCorrespondentRunningProcess, processIsRunning, processIsTheCurrentOpenned } from '@/lib/process';
+import { getCorrespondentWorkspace } from '@/lib/workspace';
 
 
 export default function ProcessIcon({ 
     processIconStaticImage, 
+    processIconAlt,
     processName,
     processElement,
     initialPID
@@ -20,24 +21,28 @@ export default function ProcessIcon({
         systemColorPalette,
         systemLayout, 
         opennedProcessesData, 
-        desktopActivitiesData,
+        workspaceActivitiesData,
         elevateProcessWindowZIndex, 
-        currentActiveDesktopUUID,
-        changeCurrentDesktop,
-        openProcess,
+        currentActiveWorkspaceUUID,
+        changeCurrentWorkspace,
+        openGraphicalProcess,
         restoreProcessWindowPreviousDimensions,
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed
     } = useContext(MainContext);
 
-    const [ processPID, setProcessPID ] = useState(initialPID!);
+
+    const [ 
+        processPID, 
+        setProcessPID 
+    ] = useState(initialPID!);
 
 	
     function startProcessMiddleware(
         opennedProcessesData: Data.OpennedProcessData[], 
-        desktopActivitiesData: Data.DesktopActivityData[],
+        workspaceActivitiesData: Data.WorkspaceActivityData[],
         processPID: number,
-        currentActiveDesktopUUID: string
+        currentActiveWorkspaceUUID: string
     ): void {
 
 		const process = getCorrespondentRunningProcess(
@@ -48,23 +53,24 @@ export default function ProcessIcon({
         const processIsAlreadyRunning = !!process;
         const processIsNotRunning = !processIsAlreadyRunning;
 
-        const currentDesktopDoesNotExists = !getCorrespondentDesktop(
-            desktopActivitiesData, 
-            currentActiveDesktopUUID
+        const currentWorkspaceDoesNotExists = !getCorrespondentWorkspace(
+            workspaceActivitiesData, 
+            currentActiveWorkspaceUUID
         );
 
         const processIsMinimized = process?.isMinimized;
 
-        const processIsRunningAndNotInTheCurrentDesktop = processIsAlreadyRunning 
-                                                        && process?.parentDesktopUUID 
-                                                        !== currentActiveDesktopUUID;
+        const processIsRunningAndNotInTheCurrentWorkspace = processIsAlreadyRunning 
+                                                        && process?.parentWorkspaceUUID 
+                                                        !== currentActiveWorkspaceUUID;
 
         if (processIsNotRunning) {
-            const startedProcessPID = openProcess(
+            const startedProcessPID = openGraphicalProcess(
                 processName, 
                 processIconStaticImage,
+                processIconAlt,
                 processElement,
-                currentDesktopDoesNotExists
+                currentWorkspaceDoesNotExists
             );
 
             setProcessPID(previous => startedProcessPID);
@@ -79,17 +85,16 @@ export default function ProcessIcon({
             restoreProcessWindowPreviousDimensions(processPID);
         }
 
-        if (processIsRunningAndNotInTheCurrentDesktop) {
-            changeCurrentDesktop(process!.parentDesktopUUID);
+        if (processIsRunningAndNotInTheCurrentWorkspace) {
+            changeCurrentWorkspace(process!.parentWorkspaceUUID);
         }
 
         if (processIsAlreadyRunning && applicationsAreBeingShowed) {
             changeApplicationsAreBeingShowed(false);
         }
-
-        
     }
 
+    
     return (
         <abbr 
 			className={`
@@ -104,15 +109,15 @@ export default function ProcessIcon({
 			}  
 			onClick={() => startProcessMiddleware(
                 opennedProcessesData, 
-                desktopActivitiesData, 
+                workspaceActivitiesData, 
                 processPID, 
-                currentActiveDesktopUUID
+                currentActiveWorkspaceUUID
             )}
             title={processName}
         >
             <Image 
                 src={processIconStaticImage} 
-                alt={`${processName} icon`} 
+                alt={processIconAlt} 
                 className={processIconStyles.icon}
             />
             <div 

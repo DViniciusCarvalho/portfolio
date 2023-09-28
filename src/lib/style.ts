@@ -1,17 +1,27 @@
-import { Data } from "@/types/data";
-import { getCorrespondentDesktop } from "@/lib/utils";
-import { desktopCanBeShowed } from "@/lib/validation";
-import { COLOR_PALETTE_OPTIONS, INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS } from "@/lib/constants";
+import { Data } from '@/types/data';
+
+import { 
+    INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, 
+    INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS 
+} from './initial/process';
+
+import { COLOR_PALETTE_OPTIONS } from './initial/settings';
+
+import { 
+    workspaceCanBeShowed, 
+    getCorrespondentWorkspace 
+} from './workspace';
+
 
 export const getProcessWindowDisplayStyle = (
-    currentActiveDesktopUUID: string,
-    parentDesktopUUID: string,
+    currentActiveWorkspaceUUID: string,
+    parentWorkspaceUUID: string,
     applicationsAreBeingShowed: boolean
 ): string => {
 
-    const currentActiveDesktopIsNotTheParentDesktop = currentActiveDesktopUUID !== parentDesktopUUID;
+    const currentActiveWorkspaceIsNotTheParentWorkspace = currentActiveWorkspaceUUID !== parentWorkspaceUUID;
 
-    const processWindowCanNotBeDisplayed = currentActiveDesktopIsNotTheParentDesktop 
+    const processWindowCanNotBeDisplayed = currentActiveWorkspaceIsNotTheParentWorkspace 
                                             && !applicationsAreBeingShowed;
 
     return processWindowCanNotBeDisplayed ? 'none' : 'block';
@@ -32,9 +42,9 @@ export const getRelativeDimensionAndCoordinatesStyle = (
                         <= LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS;
 
     if (processWindowElement) {
-        const parentDesktopElement = processWindowElement.parentElement as HTMLDivElement;
-        const parentDesktopWrapper = parentDesktopElement.parentElement as HTMLDivElement;
-        const applicationsWindowElement = parentDesktopWrapper.parentElement as HTMLDivElement;
+        const parentWorkspaceElement = processWindowElement.parentElement as HTMLDivElement;
+        const parentWorkspaceWrapper = parentWorkspaceElement.parentElement as HTMLDivElement;
+        const applicationsWindowElement = parentWorkspaceWrapper.parentElement as HTMLDivElement;
 
         const applicationsWindowWidth = applicationsWindowElement.getBoundingClientRect().width;
         const applicationsWindowHeight = applicationsWindowElement.getBoundingClientRect().height;
@@ -63,9 +73,9 @@ export const getRelativeDimensionAndCoordinatesStyle = (
 }
 
 
-export const getDesktopStyles = (
+export const getWorkspaceStyles = (
     applicationsAreBeingShowed: boolean, 
-    currentActiveDesktopUUID: string, 
+    currentActiveWorkspaceUUID: string, 
     UUID: string,
     applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
     backgroundColorPalette: string,
@@ -75,12 +85,12 @@ export const getDesktopStyles = (
 
     const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];
 
-    const applicationsAreHiddenAndIsNotCurrentDesktop = !applicationsAreBeingShowed 
-                                                        && (currentActiveDesktopUUID !== UUID);
+    const applicationsAreHiddenAndIsNotCurrentWorkspace = !applicationsAreBeingShowed 
+                                                        && (currentActiveWorkspaceUUID !== UUID);
 
-    const currentDesktopCanBeShowed = desktopCanBeShowed(
+    const currentWorkspaceCanBeShowed = workspaceCanBeShowed(
         applicationsAreBeingShowed, 
-        currentActiveDesktopUUID, 
+        currentActiveWorkspaceUUID, 
         UUID
     );
 
@@ -88,16 +98,16 @@ export const getDesktopStyles = (
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
 
     return {
-        display: applicationsAreHiddenAndIsNotCurrentDesktop? 'none' : 'block',
-        position: currentDesktopCanBeShowed? 'absolute' : 'relative',
-        width: currentDesktopCanBeShowed? applicationsWindowWidth : '220px',
-        height: currentDesktopCanBeShowed? applicationsWindowHeight : '90%',
-        top: currentDesktopCanBeShowed? 0 : 0,
-        left: currentDesktopCanBeShowed? 0 : 0,
-        transform: `scale(${currentDesktopCanBeShowed? 1 : 0.9})`,
+        display: applicationsAreHiddenAndIsNotCurrentWorkspace? 'none' : 'block',
+        position: currentWorkspaceCanBeShowed? 'absolute' : 'relative',
+        width: currentWorkspaceCanBeShowed? applicationsWindowWidth : '220px',
+        height: currentWorkspaceCanBeShowed? applicationsWindowHeight : '90%',
+        top: currentWorkspaceCanBeShowed? 0 : 0,
+        left: currentWorkspaceCanBeShowed? 0 : 0,
+        transform: `scale(${currentWorkspaceCanBeShowed? 1 : 0.9})`,
         backgroundImage: backgroundIsImageBlob
                         ? `url(${backgroundImageUrl})` 
-                        : colorPaletteStyles.desktop.backgroundImage,
+                        : colorPaletteStyles.workspace.backgroundImage,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat'
     };
@@ -105,11 +115,11 @@ export const getDesktopStyles = (
 }
 
 
-export const getBaseDesktopStyles = (
+export const getBaseWorkspaceStyles = (
     applicationsAreBeingShowed: boolean, 
-    currentActiveDesktopUUID: string,
-    baseDesktopUUID: string,
-    desktopActivitiesData: Data.DesktopActivityData[],
+    currentActiveWorkspaceUUID: string,
+    baseWorkspaceUUID: string,
+    workspaceActivitiesData: Data.WorkspaceActivityData[],
     applicationsWindowRef: React.MutableRefObject<HTMLDivElement | null>,
     backgroundColorPalette: string,
     backgroundIsImageBlob: boolean,
@@ -118,33 +128,35 @@ export const getBaseDesktopStyles = (
 
     const colorPaletteStyles = COLOR_PALETTE_OPTIONS[backgroundColorPalette];
 
-    const anInvalidDesktopIsBeingShowed = !applicationsAreBeingShowed && !getCorrespondentDesktop(
-                                                                            desktopActivitiesData, 
-                                                                            currentActiveDesktopUUID
-                                                                         );
+    const currentActiveWorkspace = getCorrespondentWorkspace(
+        workspaceActivitiesData, 
+        currentActiveWorkspaceUUID
+    );
 
-    const baseDesktopIsBeingShowed = currentActiveDesktopUUID === baseDesktopUUID 
-                                     && !applicationsAreBeingShowed;
+    const anInvalidWorkspaceIsBeingShowed = !applicationsAreBeingShowed && !currentActiveWorkspace;
 
-    const baseDesktopAndCanBeShowed = anInvalidDesktopIsBeingShowed || baseDesktopIsBeingShowed;
+    const baseWorkspaceIsBeingShowed = currentActiveWorkspaceUUID === baseWorkspaceUUID 
+                                       && !applicationsAreBeingShowed;
 
-    const applicationsAreHiddenAndIsNotCurrentDesktop = !applicationsAreBeingShowed 
-                                                        && currentActiveDesktopUUID 
-                                                        !== baseDesktopUUID;
+    const baseWorkspaceAndCanBeShowed = anInvalidWorkspaceIsBeingShowed || baseWorkspaceIsBeingShowed;
+
+    const applicationsAreHiddenAndIsNotCurrentWorkspace = !applicationsAreBeingShowed 
+                                                        && currentActiveWorkspaceUUID 
+                                                        !== baseWorkspaceUUID;
 
     const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
 
     const stylesWithoutTransform = {
-        display: applicationsAreHiddenAndIsNotCurrentDesktop && !baseDesktopAndCanBeShowed? 'none' : 'block',
-        position: baseDesktopAndCanBeShowed? 'absolute' : 'relative',
-        width: baseDesktopAndCanBeShowed? applicationsWindowWidth : '220px',
-        height: baseDesktopAndCanBeShowed? applicationsWindowHeight : '90%',
-        top: baseDesktopAndCanBeShowed? 0 : 0,
-        left: baseDesktopAndCanBeShowed? 0 : 0,
+        display: applicationsAreHiddenAndIsNotCurrentWorkspace && !baseWorkspaceAndCanBeShowed? 'none' : 'block',
+        position: baseWorkspaceAndCanBeShowed? 'absolute' : 'relative',
+        width: baseWorkspaceAndCanBeShowed? applicationsWindowWidth : '220px',
+        height: baseWorkspaceAndCanBeShowed? applicationsWindowHeight : '90%',
+        top: baseWorkspaceAndCanBeShowed? 0 : 0,
+        left: baseWorkspaceAndCanBeShowed? 0 : 0,
         backgroundImage: backgroundIsImageBlob
                         ? `url(${backgroundImageUrl})` 
-                        : colorPaletteStyles.desktop.backgroundImage,
+                        : colorPaletteStyles.workspace.backgroundImage,
         backgroundSize: 'cover',
         backgroundRepeat: 'no-repeat'
     };
@@ -152,10 +164,11 @@ export const getBaseDesktopStyles = (
 
     return {
         ...stylesWithoutTransform,
-        transform: `scale(${baseDesktopAndCanBeShowed? 1 : 0.9})`
+        transform: `scale(${baseWorkspaceAndCanBeShowed? 1 : 0.9})`
     };
 
 }
+
 
 export const getTaskBarStyles = (
     backgroundColorPalette: string,

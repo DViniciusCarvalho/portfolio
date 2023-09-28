@@ -22,9 +22,10 @@ export default function TerminalSection() {
 	} = useContext(MainContext);
 
 
-	const handleFontSizeChanging = (
+	function handleFontSizeChanging(
 		inputValue: string
-	) => {
+	): void {
+		
 		const valueAsANumber = Number(inputValue);
 		const inputIsNumber = !isNaN(valueAsANumber);
 
@@ -34,7 +35,10 @@ export default function TerminalSection() {
 	
 	return (
 		<React.Fragment>
-			<p className={`${settingsStyles.terminal__label} ${settingsStyles.label}`}>
+			<p 
+				className={`${settingsStyles.terminal__label} ${settingsStyles.label}`}
+				aria-label='terminal styles section label'
+			>
 				Terminal
 			</p>
 			<div className={`${settingsStyles.terminal__wrapper} ${settingsStyles.wrapper}`}>

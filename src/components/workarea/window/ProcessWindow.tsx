@@ -2,19 +2,8 @@ import React, { useContext, useRef, useState } from 'react';
 import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import Image from 'next/image';
 
-import WindowCloseIconDark from '../../../../public/assets/dark/window-close-symbolic.svg';
-import WindowRestoreIconDark from '../../../../public/assets/dark/window-restore-symbolic.svg';
-import WindowMaximizeIconDark from '../../../../public/assets/dark/window-maximize-symbolic.svg';
-import WindowMinimizeIconDark from '../../../../public/assets/dark/window-minimize-symbolic.svg';
-
-import WindowCloseIconLight from '../../../../public/assets/light/window-close-symbolic.svg';
-import WindowRestoreIconLight from '../../../../public/assets/light/window-restore-symbolic.svg';
-import WindowMaximizeIconLight from '../../../../public/assets/light/window-maximize-symbolic.svg';
-import WindowMinimizeIconLight from '../../../../public/assets/light/window-minimize-symbolic.svg';
-
 import { Props } from '@/types/props';
 import { MainContext } from '../Main';
-import { getResizeSide } from '@/lib/validation';
 
 import { 
 	getProcessWindowDisplayStyle, 
@@ -23,30 +12,36 @@ import {
 
 import ProcessWindowMinimalContentVersion from './ProcessWindowMinimalContentVersion';
 import { delay } from '@/lib/utils';
+import { getResizeSide } from '@/lib/resize';
 
 
 export default function ProcessWindow({ 
 	PID, 
 	processTitle, 
 	processIcon,
+	processIconAlt,
 	processElement, 
 	zIndex,
 	isMinimized,
 	isMaximized,
-	parentDesktopUUID,
+	parentWorkspaceUUID,
 	coordinates,
 	dimensions
 }: Props.ProcessWindowProps) {
 
+	const processWindowRef = useRef<HTMLDivElement | null>(null);
+	const processWindowTitleBarRef = useRef<HTMLDivElement | null>(null);
+
+
 	const { 
 		systemTheme,
 		elevateProcessWindowZIndex, 
-		sendSIGKILLToProcess, 
+		finishGraphicalProcess, 
 		minimizeProcessWindow, 
 		restoreProcessWindowLastDimensions,
 		maximizeProcessWindow,
 		updateProcessWindowDimensions,
-		currentActiveDesktopUUID,
+		currentActiveWorkspaceUUID,
 		applicationsAreBeingShowed,
 		updateProcessWindowCoordinates,
 		currentShellUser,
@@ -55,28 +50,44 @@ export default function ProcessWindow({
 	} = useContext(MainContext);
 
 
-    const processWindowRef = useRef<HTMLDivElement | null>(null);
-	const processWindowTitleBarRef = useRef<HTMLDivElement | null>(null);
+	const [ 
+		isDragging, 
+		setIsDragging 
+	] = useState(false);
 
-	const [ isDragging, setIsDragging ] = useState(false);
-	const [ alreadyRestoredDimension, setAlreadyRestoredDimension ] = useState(true);
+	const [ 
+		alreadyRestoredDimension, 
+		setAlreadyRestoredDimension 
+	] = useState(true);
 
-	const [ processWindowResizeData, setProcessWindowResizeData ] = useState({
+	const [ 
+		processWindowResizeData, 
+		setProcessWindowResizeData 
+	] = useState({
 		isResizing: false,
 		resizeSide: ''
 	});
 
-	const [ previousPressedCoordinates, setPreviousPressedCoordinates ] = useState({
+	const [ 
+		previousPressedCoordinates, 
+		setPreviousPressedCoordinates 
+	] = useState({
 		x: 0,
 		y: 0
 	});
 
-	const [ pressedCoordinates, setPressedCoordinates ] = useState({
+	const [ 
+		pressedCoordinates, 
+		setPressedCoordinates 
+	] = useState({
 		x: 0,
 		y: 0
 	});
 
-	const [ lastDimensionsCoordBeforeMaximize, setLastDimensionsCoordBeforeMaximize ] = useState({
+	const [ 
+		lastDimensionsCoordBeforeMaximize, 
+		setLastDimensionsCoordBeforeMaximize 
+	] = useState({
 		dimensions: {
 			width: 0,
 			height: 0
@@ -87,16 +98,20 @@ export default function ProcessWindow({
 		}
 	});
 
+	const isDarkTheme = systemTheme === 'dark';
+
+
 	const processWindowMinimizedVersionProps: Props.ProcessWindowMinimalContentVersionProps = {
 		processIcon: processIcon, 
+		processIconAlt: processIconAlt,
 		processName: processTitle
 	};
 
 
-	const memoizeProcessWindowPressedCoordinates = (
+	function memoizeProcessWindowPressedCoordinates(
 		clientX: number,
 		clientY: number
-	): void => {
+	): void {
 
 		const elementXAxis = processWindowRef.current!.getBoundingClientRect().x;
 		const elementYAxis = processWindowRef.current!.getBoundingClientRect().y;
@@ -105,15 +120,14 @@ export default function ProcessWindow({
 			x: clientX - elementXAxis,
 			y: clientY - elementYAxis
 		}));
-
 	}
 
 
-	const handleProcessWindowStartPressing = (
+	function handleProcessWindowStartPressing(
 		clientX: number,
 		clientY: number,
 		pressedTarget: EventTarget
-	): void => {
+	): void {
 
 		const isProcessWindowTitleBarBeingPressed = pressedTarget === processWindowTitleBarRef.current!;
 
@@ -141,14 +155,13 @@ export default function ProcessWindow({
 		}
 		
 		elevateProcessWindowZIndex(PID);
-		
 	}
 
 
-	const handleProcessWindowMovement = (
+	function handleProcessWindowMovement(
 		clientX: number,
 		clientY: number
-	): void => {
+	): void {
 
 		if (
 			processWindowResizeData.isResizing 
@@ -192,11 +205,10 @@ export default function ProcessWindow({
 			);
 
 		}
-
 	}
 
 
-	const handleProcessWindowEndPressing = (): void => {
+	function handleProcessWindowEndPressing(): void {
 		
 		if (processWindowResizeData.isResizing) {
 			setProcessWindowResizeData(previous => ({
@@ -207,15 +219,14 @@ export default function ProcessWindow({
 		else if (isDragging) {
 			setIsDragging(previous => false);
 		}
-
 	}
 
 
-	const handleRestoreMaximizeWindow = async (
+	async function handleRestoreMaximizeWindow(
 		PID: number, 
 		isMaximized: boolean, 
 		processWindowRef: React.MutableRefObject<HTMLDivElement | null>
-	): Promise<void> => {
+	): Promise<void> {
 
 		const widthMemoization = dimensions.width;
 		const heightMemoization = dimensions.height;
@@ -224,7 +235,7 @@ export default function ProcessWindow({
 		const yAxisMemoization = coordinates.y;
 
 		const processWindowElement = processWindowRef.current! as HTMLDivElement;
-		const processWindowParentDesktop = processWindowElement.parentElement! as HTMLDivElement;
+		const processWindowParentWorkspace = processWindowElement.parentElement! as HTMLDivElement;
 
 		if (isMaximized) {
 			const memoizedWidth = lastDimensionsCoordBeforeMaximize.dimensions.width;
@@ -247,7 +258,7 @@ export default function ProcessWindow({
 			return;
 		}
 			
-		maximizeProcessWindow(PID, processWindowParentDesktop);
+		maximizeProcessWindow(PID, processWindowParentWorkspace);
 		setAlreadyRestoredDimension(previous => false);
 
 		setLastDimensionsCoordBeforeMaximize(previous => ({
@@ -260,16 +271,14 @@ export default function ProcessWindow({
 				y: yAxisMemoization
 			}
 		}));
-
 	}
 
 
-	const getProcessWindowTitle = (
+	function getProcessWindowTitle(
 		originalProcessTitle: string
-	): string => {
+	): string {
 
 		const currentProcessIsTerminal = originalProcessTitle === 'Terminal';
-		const currentProcessIsFileManager = originalProcessTitle === 'Files';
 
 		if (currentProcessIsTerminal) {
 			const resolvedDirectory = currentDirectory === `/home/${currentShellUser}`
@@ -278,9 +287,6 @@ export default function ProcessWindow({
 			const terminalTitle = `${currentShellUser}@${hostName}:${resolvedDirectory}`;
 			
 			return terminalTitle;
-		}
-		else if (currentProcessIsFileManager) {
-			return currentDirectory;
 		}
 
 		return originalProcessTitle;
@@ -298,8 +304,8 @@ export default function ProcessWindow({
 			style={{
 				zIndex: zIndex,
 				display: getProcessWindowDisplayStyle(
-					currentActiveDesktopUUID,
-					parentDesktopUUID,
+					currentActiveWorkspaceUUID,
+					parentWorkspaceUUID,
 					applicationsAreBeingShowed
 				),
 				...getRelativeDimensionAndCoordinatesStyle(
@@ -316,7 +322,6 @@ export default function ProcessWindow({
 			id={`${pressedCoordinates.x}:${processTitle}-${PID}:${pressedCoordinates.y}`}
 			ref={processWindowRef}
 			
-			// click-based
 			onMouseDown={(e) => handleProcessWindowStartPressing(
 				e.clientX, 
 				e.clientY,
@@ -329,7 +334,6 @@ export default function ProcessWindow({
 			onMouseUp={handleProcessWindowEndPressing}
 			onMouseLeave={handleProcessWindowEndPressing}
 
-			// touch-based
 			onTouchStart={(e) => handleProcessWindowStartPressing(
 				e.touches[0].clientX, 
 				e.touches[0].clientY,
@@ -355,23 +359,30 @@ export default function ProcessWindow({
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
-							src={systemTheme === 'dark'? WindowMinimizeIconDark : WindowMinimizeIconLight} 
-							alt='window minimize icon'
+							src={require(
+								`../../../../public/assets/${systemTheme}/window-minimize-symbolic.svg`
+							)} 
+							alt={'Window minimize icon: it\'s a simple horizontal straight line, a minus symbol'}
 						/>
 					</button>
 					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, processWindowRef)}>
 						<Image 
-							src={isMaximized
-								? systemTheme === 'dark'? WindowRestoreIconDark : WindowRestoreIconLight 
-								: systemTheme === 'dark'? WindowMaximizeIconDark : WindowMaximizeIconLight
-							} 
-							alt='window restore size icon'
+							src={require(
+								`../../../../public/assets/${systemTheme}/${
+									isMaximized
+									? 'window-restore-symbolic.svg' 
+									: 'window-maximize-symbolic.svg'
+								}`
+							)} 
+							alt={'Window restore icon: it\'s a simple rectangle'}
 						/>
 					</button>
-					<button onClick={() => sendSIGKILLToProcess(PID)}>
+					<button onClick={() => finishGraphicalProcess(PID)}>
 						<Image 
-							src={systemTheme === 'dark'? WindowCloseIconDark : WindowCloseIconLight} 
-							alt='window close icon'
+							src={require(
+								`../../../../public/assets/${systemTheme}/window-close-symbolic.svg`
+							)} 
+							alt={'Window close icon: it\'s a x symbol, two lines crossed'}
 						/>
 					</button>
 				</div>

@@ -18,6 +18,9 @@ import {
 } from './common/directoryAndFile';
 
 import { changeContentUpdateTimestamps } from './common/timestamps';
+import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+import { BREAK_LINE } from './common/patterns';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -42,6 +45,105 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'rm - remove files or directories';
+    const synopsis = 'rm [OPTION]... [FILE]...';
+    const description = `Remove (unlink) the FILE(s).${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
+    return {
+        stdout: formattedHelp,
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+    
+    const removeRecursivelyOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
+    const ignoreNonExistentOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
+
+    const canRemoveDirectoryData = removeRecursivelyOption.valid;
+    const canIgnoreNonExistentFailure = ignoreNonExistentOption.valid;
+
+    const {
+        environmentVariables,
+        fileSystem
+    } = systemAPI;
+
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentShellUser = environmentVariables['USER'];
+
+    for (const argument of providedArguments) {
+        const providedPath = checkProvidedPath(
+            argument,
+            currentWorkingDirectory,
+            currentShellUser,
+            fileSystem
+        );
+
+        if (!providedPath.valid && !canIgnoreNonExistentFailure) {
+            throw new ExecutionTreeError(
+                `rmdir: failed to remove '${argument}': No such file or directory`,
+                1
+            );
+        }
+
+        const pathToRemove = providedPath.resolvedPath;
+
+        const {
+            parentPath,
+            targetName
+        } = getParentPathAndTargetName(pathToRemove);
+
+        const parentDirectoryData = getDirectoryData(
+            parentPath, 
+            currentWorkingDirectory,
+            currentShellUser,
+            fileSystem
+        );
+
+        if (providedPath.validAs === 'directory') {
+            if (!canRemoveDirectoryData) {
+                throw new ExecutionTreeError(
+                    `rm: cannot remove '${argument}': Is a directory`,
+                    1
+                );
+            }
+         
+            const targetDirectoryIndex = getDirectoryIndex(
+                targetName, 
+                parentDirectoryData.children.directories
+            );
+
+            parentDirectoryData.children.directories.splice(targetDirectoryIndex, 1);
+        }
+        else {
+            const targetFileIndex = getFileIndex(
+                targetName,
+                parentDirectoryData.children.files
+            );
+
+            parentDirectoryData.children.files.splice(targetFileIndex, 1);
+        }
+
+        const currentTimestamp = Date.now();
+
+        changeContentUpdateTimestamps(parentDirectoryData, currentTimestamp);
+    }
+    
     return {
         stdout: '',
         stderr: null,
@@ -58,120 +160,14 @@ export const rm = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('rm', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    const argumentsValue = resolveArguments(
+    return commandDecorator(
+        'rm', 
+        commandOptions, 
         commandArguments, 
-        stdin, 
         systemAPI, 
-        false
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
     );
-
-    try {
-
-        const removeRecursivelyOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
-        const ignoreNonExistentOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
-
-        const canRemoveDirectoryData = removeRecursivelyOption.valid;
-        const canIgnoreNonExistentFailure = ignoreNonExistentOption.valid;
-
-        const cwd = systemAPI.environmentVariables['PWD'];
-        const currentUser = systemAPI.currentShellUser;
-        const fileSystem = systemAPI.fileSystem;
-
-        for (const argument of argumentsValue) {
-            const providedPath = checkProvidedPath(
-                argument,
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
-            if (!providedPath.valid && !canIgnoreNonExistentFailure) {
-                throw new ExecutionTreeError(
-                    `rmdir: failed to remove '${argument}': No such file or directory`,
-                    1
-                );
-            }
-
-            const pathToRemove = providedPath.resolvedPath;
-
-            const {
-                parentPath,
-                targetName
-            } = getParentPathAndTargetName(pathToRemove);
-
-            const parentDirectoryData = getDirectoryData(
-                parentPath, 
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
-            if (providedPath.validAs === 'directory') {
-                if (!canRemoveDirectoryData) {
-                    throw new ExecutionTreeError(
-                        `rm: cannot remove '${argument}': Is a directory`,
-                        1
-                    );
-                }
-             
-                const targetDirectoryIndex = getDirectoryIndex(
-                    targetName, 
-                    parentDirectoryData.children.directories
-                );
-    
-                parentDirectoryData.children.directories.splice(targetDirectoryIndex, 1);
-            }
-            else {
-                const targetFileIndex = getFileIndex(
-                    targetName,
-                    parentDirectoryData.children.files
-                );
-
-                parentDirectoryData.children.files.splice(targetFileIndex, 1);
-            }
-
-            const currentTimestamp = Date.now();
-
-            changeContentUpdateTimestamps(parentDirectoryData, currentTimestamp);
-
-        }
-        
-        return {
-            stdout: '',
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-    catch (err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
 }

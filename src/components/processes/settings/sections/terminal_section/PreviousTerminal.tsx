@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import settingsStyles from '@/styles/processes/Settings.module.sass';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
 import { MainContext } from '@/components/workarea/Main';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function PreviousTerminal({
@@ -10,7 +10,6 @@ export default function PreviousTerminal({
 
     const { 
         systemColorPalette, 
-        terminalFontSizeInPixels,
 		terminalUserHostColor,
 		terminalRootHostColor,
 		terminalCurrentDirectoryColor,
@@ -44,9 +43,9 @@ export default function PreviousTerminal({
                         <div
                             className={settingsStyles.terminal__title__bar__buttons}
                         >
-                            <button />
-                            <button />
-                            <button />
+                            <button/>
+                            <button/>
+                            <button/>
                         </div>
                     </div>
                     <div

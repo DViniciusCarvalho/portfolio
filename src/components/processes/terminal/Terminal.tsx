@@ -16,29 +16,27 @@ export default function Terminal() {
 
 
     const { 
-        currentShellUser, 
         hostName, 
-        currentDirectory,
         systemEnvironmentVariables,
         umask,
-        setCurrentShellUser,
-        setCurrentDirectory,
         setSystemEnvironmentVariables,
         setUmask,
         terminalFontSizeInPixels,
         terminalBackgroundColor,
         fileSystem,
         setFileSystem,
+        openForegroundProcess,
+        finishForegroundProcess,
+        finishGraphicalProcess,
         opennedProcessesData,
-        setOpennedProcessesData,
-        sendSIGKILLToProcess
+        setOpennedProcessesData
     } = useContext(MainContext);
 
 
     const [ 
         environmentVariables, 
         setEnvironmentVariables 
-    ] = useState<Shell.EnvironmentVariables>(systemEnvironmentVariables);
+    ] = useState<Shell.EnvironmentVariables>(deepClone(systemEnvironmentVariables));
 
     const [
         bashHistory,
@@ -55,12 +53,15 @@ export default function Terminal() {
         setLastCommandLineContent
     ] = useState('');
 
-    const [ terminalLines, setTerminalLines ] = useState<Data.TerminalLine[]>([{
+    const [ 
+        terminalLines, 
+        setTerminalLines 
+    ] = useState<Data.TerminalLine[]>([{
         element: (
             <CommandLine
-                user={currentShellUser}
+                user={environmentVariables['USER']}
                 domain={hostName}
-                directory={currentDirectory}
+                directory={environmentVariables['PWD']}
             />
         ),
         key: generateUUID()
@@ -76,9 +77,9 @@ export default function Terminal() {
     , [bashHistory]);
 
 
-    const handleTerminalKeyDown = (
+    function handleTerminalKeyDown(
         e: React.KeyboardEvent<HTMLDivElement>
-    ): void => {
+    ): void {
 
         if (e.key === 'Enter') {
             handleCommandExecution();
@@ -95,7 +96,8 @@ export default function Terminal() {
     }
 
 
-    const selectLastTerminalLineToType = (): void => {
+    function selectLastTerminalLineToType(): void {
+
         const terminalElement = terminalRef.current!;
         const lastTerminalLineContentElement = terminalElement.lastChild!.lastChild!;
         const lastTerminalLineSpan = lastTerminalLineContentElement as HTMLSpanElement;
@@ -104,9 +106,9 @@ export default function Terminal() {
     }
 
 
-    const selectEndOfElement = (
+    function selectEndOfElement(
         element: HTMLElement
-    ): void => {
+    ): void {
         
         const selection = window.getSelection();
 
@@ -128,9 +130,9 @@ export default function Terminal() {
     }
 
 
-    const navigateInBashHistory = (
+    function navigateInBashHistory(
         indexSubtrahend: number
-    ): void => {
+    ): void {
 
         const difference = currentBashHistoryPosition - indexSubtrahend;
         const isValidIndex = difference >= 0 && difference <= bashHistory.length;
@@ -160,12 +162,16 @@ export default function Terminal() {
     }
 
 
-    const clearTerminal = (): void => {
+    function clearTerminal(): void {
+
+        const currentShellUser = environmentVariables['USER'];
+        const currentWorkingDirectory = environmentVariables['PWD'];
+
         const newCommandLine = (
             <CommandLine
                 user={currentShellUser}
                 domain={hostName}
-                directory={currentDirectory}
+                directory={currentWorkingDirectory}
             />
         );
 
@@ -176,23 +182,9 @@ export default function Terminal() {
     }
 
 
-    const changeEnvironmentVariable = (
-        variableName: string,
-        value: any
-    ): void => {
-
-        setEnvironmentVariables(previous => {
-            const previousDeepCopy = deepClone(previous);
-            previousDeepCopy[variableName] = value;
-            
-            return previousDeepCopy;
-        });
-    }
-
-
-    const getResultLineToAppend = (
+    function getResultLineToAppend(
         result: string
-    ): Data.TerminalLine => {
+    ): Data.TerminalLine {
 
         return {
             element: (
@@ -202,15 +194,14 @@ export default function Terminal() {
             ),
             key: generateUUID()
         };
-
     }
 
 
-    const getCommandLineToAppend = (
+    function getCommandLineToAppend(
         user: string,
         domain: string,
         directory: string
-    ): Data.TerminalLine => {
+    ): Data.TerminalLine {
 
         return {
             element: (
@@ -222,26 +213,56 @@ export default function Terminal() {
             ),
             key: generateUUID()
         };
-
     }
 
 
-    const executeShellCommand = (
+    function handleCommandExecution(): void {
+
+        const lastTerminalLine = terminalRef.current!.lastChild;
+        const lastTerminalLineContentElement = lastTerminalLine!.lastChild as HTMLSpanElement;
+        
+        const command = lastTerminalLineContentElement.innerText;
+        const trimmedCommand = command.replace(/^\s+/, '');
+
+        setBashHistory(previous => [...previous, trimmedCommand].filter(command => command !== ''));
+
+        const { 
+            stdout, 
+            stderr,
+            exitStatus
+        } = executeShellCommand(trimmedCommand);
+
+        changeEnvironmentVariable('?', exitStatus);
+    
+        lastTerminalLineContentElement.contentEditable = 'false';
+
+        const currentShellUser = environmentVariables['USER'];
+        const currentWorkingDirectory = environmentVariables['PWD'];
+
+        showCommandResult(                
+            currentShellUser,
+            hostName,
+            currentWorkingDirectory, 
+            stdout, 
+            stderr
+        );
+    }
+
+
+    function executeShellCommand(
         command: string
-    ): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } => {
+    ): Shell.ExitFlux & { systemAPI: Shell.SystemAPI } {
 
         const systemAPI: Shell.SystemAPI = {
             clearTerminal,
             environmentVariables,
             setEnvironmentVariables,
             setSystemEnvironmentVariables,
-            sendSIGKILLToProcess,
+            openForegroundProcess,
+            finishForegroundProcess,
+            finishGraphicalProcess,
             opennedProcessesData,
             setOpennedProcessesData,
-            currentShellUser,
-            setCurrentShellUser,
-            currentDirectory,
-            setCurrentDirectory,
             fileSystem,
             setFileSystem,
             umask,
@@ -268,13 +289,27 @@ export default function Terminal() {
     }
 
 
-    const showCommandResult = (
+    function changeEnvironmentVariable(
+        variableName: string,
+        value: any
+    ): void {
+
+        setEnvironmentVariables(previous => {
+            const previousDeepCopy = deepClone(previous);
+            previousDeepCopy[variableName] = value;
+            
+            return previousDeepCopy;
+        });
+    }
+
+    
+    function showCommandResult(
         user: string,
         domain: string,
         directory: string,
         stdout: string | null, 
         stderr: string | null
-    ): void => {
+    ): void {
         
         if (stdout !== null || stderr !== null) {
             const breakLine = ESCAPE_SEQUENCES_SUBSTITUTION['\\n'];
@@ -307,37 +342,6 @@ export default function Terminal() {
     }
 
 
-    const handleCommandExecution = (): void => {
-
-        const lastTerminalLine = terminalRef.current!.lastChild;
-        const lastTerminalLineContentElement = lastTerminalLine!.lastChild as HTMLSpanElement;
-        
-        const command = lastTerminalLineContentElement.innerText;
-        const trimmedCommand = command.replace(/^\s+/, '');
-
-        setBashHistory(previous => [...previous, trimmedCommand].filter(command => command !== ''));
-
-        const { 
-            stdout, 
-            stderr,
-            exitStatus,
-            systemAPI
-        } = executeShellCommand(trimmedCommand);
-
-        changeEnvironmentVariable('?', exitStatus);
-    
-        lastTerminalLineContentElement.contentEditable = 'false';
-
-        showCommandResult(                
-            systemAPI.currentShellUser,
-            hostName,
-            systemAPI.currentDirectory, 
-            stdout, 
-            stderr
-        );
-    }
-
-
     return (
         <div 
             className={terminalStyles.container}
@@ -349,6 +353,7 @@ export default function Terminal() {
             onClick={selectLastTerminalLineToType}
             onKeyDown={handleTerminalKeyDown}
         >
+
             {
                 terminalLines.map(terminalLine => (
                     <React.Fragment key={terminalLine.key}>
@@ -356,6 +361,7 @@ export default function Terminal() {
                     </React.Fragment>
                 ))
             }
+
         </div>
     );
 }

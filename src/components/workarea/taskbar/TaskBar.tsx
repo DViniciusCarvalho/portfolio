@@ -8,7 +8,7 @@ import TerminalIcon from '../../../../public/assets/terminal.png';
 import SettingsIcon from '../../../../public/assets/preferences-desktop.png';
 import UserTrashIcon from '../../../../public/assets/user-trash.png';
 
-import Nautilus from '@/components/processes/Nautilus';
+import Nautilus from '@/components/processes/nautilus/Nautilus';
 import Terminal from '@/components/processes/terminal/Terminal';
 import Settings from '@/components/processes/settings/Settings';
 import UserTrash from '@/components/processes/UserTrash';
@@ -36,16 +36,19 @@ export default function TaskBar({
     const favoriteProcessesIconProps: Props.ProcessIconProps[] = [
         {
             processIconStaticImage: NautilusIcon,
+            processIconAlt: 'Nautilus icon: it\'s a gray folder with orange accents and a white horizontal line.',
             processName: 'Files',
             processElement: <Nautilus/>
         },
         {
             processIconStaticImage: TerminalIcon,
+            processIconAlt: 'Terminal icon: it\'s a black square with a ">_" prompt inside',
             processName: 'Terminal',
             processElement: <Terminal/>
         },
         {
             processIconStaticImage: SettingsIcon,
+            processIconAlt: 'Settings icon: it\'s a light gray circle with a dark gray circle and a light gray gear inside.',
             processName: 'Settings',
             processElement: <Settings/>
         }
@@ -54,8 +57,9 @@ export default function TaskBar({
     const otherProcessesIconProps: Props.ProcessIconProps[] = [
         {
             processIconStaticImage: UserTrashIcon,
+            processIconAlt: 'Trash icon: it\'s a light gray rectangle, with a dark gray rectangular hole on the top and a green recycle symbol on the middle',
             processName: 'Trash',
-            processElement: <UserTrash/>
+            processElement: <Nautilus initialPath='/home/visitor/.local/share/Trash'/>
         }
     ];
 

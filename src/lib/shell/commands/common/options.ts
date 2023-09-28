@@ -1,4 +1,4 @@
-import { Shell } from "@/types/shell";
+import { Shell } from '@/types/shell';
 
 
 export const getOption = (
@@ -118,13 +118,18 @@ export const checkOption = (
     availableOptions: Shell.CommandOption[]
 ) => {
 
-    const SHORT_OPTION = availableOptions[index].short;
-    const LONG_OPTION_PATTERN = availableOptions[index].long;
-    
-    const isShortOption = option === SHORT_OPTION;
-    const isLongOption = !!option.match(LONG_OPTION_PATTERN as RegExp);
+    const shortOption = availableOptions[index].short;
+    const longOption = availableOptions[index].long;
 
-    const regExpValuePart = isLongOption && LONG_OPTION_PATTERN instanceof RegExp
+    const longOptionIsRegExp = longOption instanceof RegExp
+    
+    const isShortOption = option === shortOption;
+
+    const isLongOption = longOptionIsRegExp
+                         ? !!option.match(longOption)
+                         : option === longOption;
+
+    const regExpValuePart = isLongOption && longOptionIsRegExp
                             ? option.slice(option.indexOf('=') + 1)
                             : null;
     

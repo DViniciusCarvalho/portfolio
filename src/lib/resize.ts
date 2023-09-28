@@ -1,4 +1,5 @@
-import { Data } from "@/types/data";
+import { Data } from '@/types/data';
+import { TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS } from './initial/process';
 
 
 export const getNewHeightAndYAxisOnTop = (
@@ -76,4 +77,50 @@ export const getNewWidthAndXAxisOnLeft = (
         newCoordinates
     };
     
+}
+
+
+export const getResizeSide = (
+    clientX: number,
+    clientY: number, 
+    processWindowRef: React.MutableRefObject<HTMLDivElement | null>
+): string | undefined => {
+
+    const processWindowElement = processWindowRef.current! as HTMLDivElement;
+
+    const processWindowElementTop = processWindowElement.getBoundingClientRect().top;
+    const processWindowElementRight = processWindowElement.getBoundingClientRect().right;
+    const processWindowElementBottom = processWindowElement.getBoundingClientRect().bottom;
+    const processWindowElementLeft = processWindowElement.getBoundingClientRect().left;
+
+    const resizingTop = clientY
+                        >= processWindowElementTop
+                        && clientY
+                        <= processWindowElementTop + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
+
+    const resizingRight = clientX
+                        <= processWindowElementRight
+                        && clientX
+                        >= processWindowElementRight - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
+
+    const resizingBottom = clientY
+                        <= processWindowElementBottom
+                        && clientY
+                        >= processWindowElementBottom - TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
+
+    const resizingLeft = clientX
+                        >= processWindowElementLeft
+                        && clientX
+                        <= processWindowElementLeft + TOUCHABLE_AREA_TO_START_RESIZING_IN_PIXELS;
+
+    const isResizing = resizingTop || resizingRight || resizingBottom || resizingLeft;
+
+    if (isResizing) {
+        if (resizingTop) return 'top';
+        if (resizingRight) return 'right';
+        if (resizingBottom) return 'bottom';
+        if (resizingLeft) return 'left';
+    }
+ 
+    return undefined;
 }

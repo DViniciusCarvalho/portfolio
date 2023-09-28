@@ -1,5 +1,5 @@
-import { File } from "../models/File";
-import { Directory } from "../models/Directory";
+import { File } from '../models/File';
+import { Directory } from '../models/Directory';
 
 import { 
     CURRENT_DIRECTORY_PATTERN, 
@@ -8,7 +8,7 @@ import {
     LAST_DIRECTORY_PATTERN,
     PARENT_DIRECTORY_PATTERN, 
     SLASH_AT_END_PATTERN 
-} from "./patterns";
+} from './patterns';
 
 
 export const targetIsDirectory = (
@@ -39,7 +39,7 @@ export const getResolvedPath = (
             path = path.replace(CURRENT_DIRECTORY_PATTERN, cwd);
         }
         else if (isCurrentUserHomeDirectory) {
-            const resolvedHomeDir = currentUser === 'root'? '/root' : `/home/${currentUser}`;
+            const resolvedHomeDir = currentUser === 'root'? '/root' : `/home/${currentUser}/`;
             path = path.replace(HOME_DIRECTORY_PATTERN, resolvedHomeDir);
         }
         else {
@@ -377,4 +377,25 @@ export const resolveOctalPermissionInSymbolicFormat = (
     }
 
     return resolvedPermissions.join('');
+}
+
+
+
+export const getOrderedDirsHierarchy = (
+    path: string,
+    order: 'asc' | 'desc' = 'asc'
+) => {
+
+    const pathsAcc: string[] = [];
+
+    let pathAcc = path;
+
+    for (let i = 0; i < path.split('/').length; i++) {
+        pathsAcc.push(pathAcc);
+
+        const lastSlashIndex = pathAcc.lastIndexOf('/');
+        pathAcc = pathAcc.slice(0, lastSlashIndex);
+    }
+
+    return order === 'asc'? pathsAcc : pathsAcc.reverse();
 }

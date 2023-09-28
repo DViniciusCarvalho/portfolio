@@ -6,10 +6,8 @@ import { MainContext } from '@/components/workarea/Main';
 import { 
     BREAK_LINE,
     DOUBLE_QUOTE,
-    END_COLORED_WORD_PATTERN, 
     FULL_COLORED_WORD_PATTERN, 
     SINGLE_QUOTE, 
-    START_COLORED_WORD_PATTERN, 
     TABULATION
 } from '@/lib/shell/commands/common/patterns';
 
@@ -19,57 +17,45 @@ export default function ResultLine({ commandResult }: Props.ResultLineProps) {
     const { terminalDefaultColor } = useContext(MainContext);
 
 
-    const getColoredWordAndConvertEscapeSequences = (
-        resultLineWord: string,
+    function getResultLineWithColoredWordAndConvertEscapeSequences(
+        resultLine: string,
         index: number
-    ): React.JSX.Element => {
+    ): React.JSX.Element {
 
         const escapedTabulationPattern = new RegExp(TABULATION, 'g');
         const escapedSingleQuotePattern = new RegExp(SINGLE_QUOTE, 'g');
         const escapedDoubleQuotePattern = new RegExp(DOUBLE_QUOTE, 'g');
 
-        resultLineWord = resultLineWord.replace(escapedTabulationPattern, '\t');
-        resultLineWord = resultLineWord.replace(escapedSingleQuotePattern, '\'');
-        resultLineWord = resultLineWord.replace(escapedDoubleQuotePattern, '\"');
+        resultLine = resultLine.replace(escapedTabulationPattern, '\t');
+        resultLine = resultLine.replace(escapedSingleQuotePattern, '\'');
+        resultLine = resultLine.replace(escapedDoubleQuotePattern, '\"');
 
-        if (resultLineWord.match(FULL_COLORED_WORD_PATTERN)) {
-            const spanColorInHexadecimal = resultLineWord.slice(7, resultLineWord.indexOf('>'));
+        const coloredWords = resultLine.match(FULL_COLORED_WORD_PATTERN);
 
-            resultLineWord = resultLineWord.replace(START_COLORED_WORD_PATTERN, '');
-            resultLineWord = resultLineWord.replace(END_COLORED_WORD_PATTERN, '');
+        if (coloredWords?.length) {
+            coloredWords.forEach(coloredWord => {
+                const firstGtSignalIndex = coloredWord.indexOf('>');
+                const backSlashIndex = coloredWord.indexOf('\\');
 
-            return (
-                <React.Fragment key={index}>
-                    <span style={{color: spanColorInHexadecimal}}>
-                        {resultLineWord}
-                    </span>&nbsp;
-                </React.Fragment>
-            );
+                const spanColorInHexadecimal = coloredWord.slice(7, firstGtSignalIndex);
+                const spanContent = coloredWord.slice(firstGtSignalIndex + 3, backSlashIndex - 2);
+
+                const spanElement = `<span style="color:${spanColorInHexadecimal}">${spanContent}</span>`;
+
+                resultLine = resultLine.replace(coloredWord, spanElement as any);
+            });
         }
 
         return (
             <React.Fragment key={index}>
-                {resultLineWord}&nbsp;
+                <pre 
+                    dangerouslySetInnerHTML={{ __html: resultLine }} 
+                    className={terminalStyles.result__line}
+                >
+                </pre>
             </React.Fragment>
         );
     }
-
-
-    const getResultLine = (
-        resultLine: string,
-        index: number
-    ): React.JSX.Element => {
-
-        const resultLineWords = resultLine.split(' ');
-
-        return (
-            <React.Fragment key={index}>
-                {resultLineWords.map(getColoredWordAndConvertEscapeSequences)}
-                <br/>
-            </React.Fragment>
-        );
-    }
-
 
     return (
         <pre 
@@ -78,7 +64,7 @@ export default function ResultLine({ commandResult }: Props.ResultLineProps) {
                 color: terminalDefaultColor
             }}
         >
-            {commandResult.split(BREAK_LINE).map(getResultLine)}
+            {commandResult.split(BREAK_LINE).map(getResultLineWithColoredWordAndConvertEscapeSequences)}
         </pre>
     );
 }

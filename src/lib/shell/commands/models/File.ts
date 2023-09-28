@@ -1,5 +1,5 @@
-import { BaseMetadata } from "./BaseMetadata";
-import { Data } from "@/types/data";
+import { BaseMetadata } from './BaseMetadata';
+import { Data } from '@/types/data';
 
 export class File extends BaseMetadata {
     constructor(

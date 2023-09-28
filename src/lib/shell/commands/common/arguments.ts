@@ -1,8 +1,9 @@
-import { Shell } from "@/types/shell";
-import { interpretCommand } from "../../interpreter/interpreter";
-import { ExecutionTreeError } from "../../exception";
+import { Shell } from '@/types/shell';
+import { interpretCommand } from '../../interpreter/interpreter';
+import { ExecutionTreeError } from '../../exception';
+
 import { 
-    COMMAND_SUBSTITUTION_PATTERN,
+    FULL_COMMAND_SUBSTITUTION_PATTERN,
     DOUBLE_QUOTED_STRING_PATTERN, 
     ESCAPE_SEQUENCES_SUBSTITUTION, 
     SINGLE_QUOTED_STRING_PATTERN, 
@@ -17,7 +18,11 @@ export const getCommandArguments = (
     
     const commandArgumentsPassedDirectly = commandArguments.map(argument => argument.value);
     const commandArgumentsPassedByStdin = stdin !== null? stdin.split(' ') : [];
-    const argumentsValue = [...commandArgumentsPassedDirectly, ...commandArgumentsPassedByStdin];
+    
+    const argumentsValue = [
+        ...commandArgumentsPassedDirectly, 
+        ...commandArgumentsPassedByStdin
+    ];
 
     return argumentsValue;
 }
@@ -37,7 +42,7 @@ export const resolveArguments = (
         const argumentIsDoubleQuotedString = argument.match(DOUBLE_QUOTED_STRING_PATTERN);
 
         const argumentVariables = argument.match(VARIABLE_PATTERN);
-        const commandSubstitutions = argument.match(COMMAND_SUBSTITUTION_PATTERN);
+        const commandSubstitutions = argument.match(FULL_COMMAND_SUBSTITUTION_PATTERN);
 
         if (argumentVariables && !argumentIsSingleQuotedString) {
             for (const variableName of argumentVariables) {
@@ -82,10 +87,22 @@ export const resolveArguments = (
             }
         }
 
-        argument = argument.replace(SINGLE_QUOTED_STRING_PATTERN, '');
-        argument = argument.replace(DOUBLE_QUOTED_STRING_PATTERN, '');
+        const splittedPathParts = argument.split('/');
 
-        return argument;
+        const withoutQuotesParts = splittedPathParts.reduce((
+            acc,
+            argument
+        ) => {
+            argument = argument.replace(SINGLE_QUOTED_STRING_PATTERN, '');
+            argument = argument.replace(DOUBLE_QUOTED_STRING_PATTERN, '');
+
+            acc.push(argument);
+
+            return acc;
+        }, [] as string[]);
+
+
+        return withoutQuotesParts.join('/');
     });
 
     return resolvedArgumentsValue;

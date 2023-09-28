@@ -26,7 +26,7 @@ export default function ShowApplications() {
         >
             <Image 
                 src={ShowApplicationsIcon} 
-                alt='view apps grid icon' 
+                alt={'App view icon: 3x3 grid of white squares.'} 
                 className={showApplicationsStyles.icon}
             />
         </abbr>

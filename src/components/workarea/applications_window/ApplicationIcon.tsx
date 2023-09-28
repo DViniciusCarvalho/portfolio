@@ -3,13 +3,14 @@ import applicationIconStyles from '@/styles/workarea/applications/ApplicationIco
 import Image from 'next/image';
 import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
-import { processIsRunning } from '@/lib/validation';
-import { getCorrespondentRunningProcess, getCorrespondentDesktop } from '@/lib/utils';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { getCorrespondentRunningProcess, processIsRunning } from '@/lib/process';
+import { getCorrespondentWorkspace } from '@/lib/workspace';
 
 
 export default function ApplicationIcon({ 
     applicationIconStaticImage, 
+    applicationIconAlt,
     applicationName, 
     applicationElement 
 }: Props.ApplicationIconProps) {
@@ -17,13 +18,13 @@ export default function ApplicationIcon({
     const { 
         systemColorPalette,
         opennedProcessesData, 
-        desktopActivitiesData,
-        currentActiveDesktopUUID,
+        workspaceActivitiesData,
+        currentActiveWorkspaceUUID,
         applicationsAreBeingShowed, 
-        openProcess,
+        openGraphicalProcess,
         elevateProcessWindowZIndex,
         restoreProcessWindowPreviousDimensions,
-        changeCurrentDesktop,
+        changeCurrentWorkspace,
         changeApplicationsAreBeingShowed,
         transferApplicationIconToTaskbarOtherProcessesIcons
     } = useContext(MainContext);
@@ -44,23 +45,24 @@ export default function ApplicationIcon({
 
         const processIsNotRunning = !processIsAlreadyRunning;
 
-        const currentDesktopDoesNotExists = !getCorrespondentDesktop(
-            desktopActivitiesData, 
-            currentActiveDesktopUUID
+        const currentWorkspaceDoesNotExists = !getCorrespondentWorkspace(
+            workspaceActivitiesData, 
+            currentActiveWorkspaceUUID
         );
 
         const processIsMinimized = processFound?.isMinimized;
 
-        const processIsRunningAndNotInTheCurrentDesktop = processIsRunning(opennedProcessesData, processPID) 
-                                                        && processFound?.parentDesktopUUID 
-                                                        !== currentActiveDesktopUUID;
+        const processIsRunningAndNotInTheCurrentWorkspace = processIsAlreadyRunning 
+                                                            && processFound?.parentWorkspaceUUID 
+                                                            !== currentActiveWorkspaceUUID;
 
         if (processIsNotRunning) {
-            const startedProcessPID = openProcess(
+            const startedProcessPID = openGraphicalProcess(
                 applicationName, 
                 applicationIconStaticImage,
+                applicationIconAlt,
                 applicationElement,
-                currentDesktopDoesNotExists,
+                currentWorkspaceDoesNotExists
             );
                 
             transferApplicationIconToTaskbarOtherProcessesIcons(
@@ -82,8 +84,8 @@ export default function ApplicationIcon({
             restoreProcessWindowPreviousDimensions(processPID);
         }
 
-        if (processIsRunningAndNotInTheCurrentDesktop) {
-            changeCurrentDesktop(processFound!.parentDesktopUUID);
+        if (processIsRunningAndNotInTheCurrentWorkspace) {
+            changeCurrentWorkspace(processFound!.parentWorkspaceUUID);
         }
 
         if (processIsAlreadyRunning && applicationsAreBeingShowed) {
@@ -103,7 +105,7 @@ export default function ApplicationIcon({
             <div className={applicationIconStyles.icon__wrapper}>
                 <Image 
                     src={applicationIconStaticImage} 
-                    alt={`${applicationName} icon`} 
+                    alt={applicationIconAlt} 
                     className={applicationIconStyles.icon}
                 />
 

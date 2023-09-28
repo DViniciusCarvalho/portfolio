@@ -2,7 +2,7 @@ import React, { useContext, useRef } from 'react';
 import terminalStyles from '@/styles/processes/Terminal.module.sass';
 import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
-import { NORMAL_USER_PROMPT, ROOT_PROMPT } from '@/lib/constants';
+import { NORMAL_USER_PROMPT, ROOT_PROMPT } from '@/lib/initial/shell';
 
 
 export default function CommandLine({
@@ -22,9 +22,9 @@ export default function CommandLine({
     } = useContext(MainContext);
 
 
-    const handlePaste = (
+    function handlePaste(
         event: React.ClipboardEvent<HTMLSpanElement>
-    ): void => {
+    ): void {
 
         event.preventDefault();
         const text = event.clipboardData.getData('text/plain');
@@ -32,23 +32,31 @@ export default function CommandLine({
     };
     
 
-    const handleInput = (): void => {
+    function handleInput(): void {
+        
         const element = contentEditableRef.current!;
         const text = element.textContent || '';
-        const filteredText = text.replace(/^(<br\/>)*/g, '');
-        element.textContent = filteredText;
-      
-        // const isWhiteSpaceOrNewLine = /^\s*$/.test(filteredText);
 
-        // if (isWhiteSpaceOrNewLine) return;
-      
-        // const range = document.createRange();
-        // const selection = window.getSelection();
-        // range.selectNodeContents(element);
-        // range.collapse(false);
-        // selection?.removeAllRanges();
-        // selection?.addRange(range);
-        // element.focus();
+        const selection = window.getSelection();
+        const startOffset = selection?.anchorOffset || 0;
+
+        const filteredText = text.replace(/^(<br\s*\/?>)*/g, '');
+        
+        element.innerHTML = filteredText;
+
+        if (selection) {
+            const range = document.createRange();
+
+            range.setStart(
+                element.firstChild || element, 
+                Math.min(startOffset, element.textContent!.length)
+            );
+
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            element.focus();
+        }
     }
  
 

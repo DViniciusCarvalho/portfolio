@@ -26,7 +26,13 @@ import { Directory } from './models/Directory';
 import { File } from './models/File';
 import { changeReadingTimestamps } from './common/timestamps';
 import { BREAK_LINE, COLORED_WORD_TEMPLATE } from './common/patterns';
-import { alignLineItems } from './common/formatters';
+
+import { 
+    alignLineItems, 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -61,8 +67,21 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'ls - list directory contents';
+    const synopsis = 'ls [OPTION]... [FILE]...';
+    const description = `List information about the FILEs (the current directory by default). Sort entries alphabetically if -S is not specified.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -195,14 +214,6 @@ const getFileTypeColorKey = (
 }
 
 
-const fillWithSpacesToAlign = (
-    target: string | number, 
-    maxLength: number
-): string => {
-    return String(target).padStart(maxLength, ' ');
-}
-
-
 const getLsStdoutLine = (
     isDirectory: boolean,
     fileOrDirectory: Directory | File,
@@ -267,8 +278,130 @@ const getLsStdoutLine = (
 
     }
 
-
     return `${coloredFileOrDirectoryName}`;
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    const LS_COLORS = getLsColorsObject(systemAPI.environmentVariables);
+
+    const allEntriesOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
+    const longListingOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
+    const sizeSortingOption = optionIsPresent(providedOptions, 2, COMMAND_OPTIONS);
+    const humanReadableOption = optionIsPresent(providedOptions, 3, COMMAND_OPTIONS);
+
+    const canShowDotFiles = allEntriesOption.valid;
+    const canShowDetailedInfo = longListingOption.valid;
+    const canSortBySize = sizeSortingOption.valid;
+    const canShowInAHumanReadableWay = humanReadableOption.valid;
+
+    const hasMoreThanOneArgument = providedArguments.length > 1;
+
+    const {
+        environmentVariables,
+        fileSystem
+    } = systemAPI;
+
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentShellUser = environmentVariables['USER'];
+
+    if (!providedArguments.length) {
+        providedArguments.push('.');
+    }
+
+    const stdout = providedArguments.reduce((
+        acc,
+        current,
+        index,
+        array
+    ) => {
+
+        const isLastLine = index !== array.length - 1;
+
+        const providedPath = checkProvidedPath(
+            current,
+            currentWorkingDirectory,
+            currentShellUser,
+            fileSystem
+        );
+
+        if (!providedPath.valid) {
+            throw new ExecutionTreeError(
+                `ls: cannot access '${current}': No such file or directory`,
+                2
+            );
+        }
+
+        const currentTimestamp = Date.now();
+
+        if (providedPath.validAs === 'file') {
+            const {
+                parentPath,
+                targetName
+            } = getParentPathAndTargetName(providedPath.resolvedPath);
+
+            const parentDirectoryData = getDirectoryData(
+                parentPath, 
+                currentWorkingDirectory,
+                currentShellUser,
+                fileSystem
+            );
+
+            const fileData = getFileData(parentDirectoryData, targetName)!;
+
+            const line = getLsStdoutLine(
+                false, 
+                fileData, 
+                LS_COLORS, 
+                canShowDetailedInfo, 
+                canShowInAHumanReadableWay
+            );
+
+            acc += `${line}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
+
+            changeReadingTimestamps(parentDirectoryData, currentTimestamp);
+        }
+        else {
+            const directoryData = getDirectoryData(
+                current,
+                currentWorkingDirectory,
+                currentShellUser,
+                fileSystem
+            );
+
+            const stdout = getAllDirectoryLines(
+                directoryData,
+                LS_COLORS, 
+                canShowDetailedInfo, 
+                canShowInAHumanReadableWay,
+                canShowDotFiles,
+                canSortBySize
+            );
+            
+            const startOfListing = hasMoreThanOneArgument
+                                    ? `${directoryData.name}:${BREAK_LINE}`
+                                    : '';
+
+            acc += `${startOfListing}${stdout}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
+
+            changeReadingTimestamps(directoryData, currentTimestamp);
+        }
+
+        return acc;
+        
+    }, '');
+
+    return {
+        stdout: stdout,
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
 }
 
 
@@ -279,157 +412,14 @@ export const ls = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('ls', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    const argumentsValue = resolveArguments(
+    return commandDecorator(
+        'ls', 
+        commandOptions, 
         commandArguments, 
-        stdin, 
         systemAPI, 
-        false
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
     );
-
-    try {
-
-        const LS_COLORS = getLsColorsObject(systemAPI.environmentVariables);
-
-        const allEntriesOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
-        const longListingOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
-        const sizeSortingOption = optionIsPresent(providedOptions, 2, COMMAND_OPTIONS);
-        const humanReadableOption = optionIsPresent(providedOptions, 3, COMMAND_OPTIONS);
-
-        const canShowDotFiles = allEntriesOption.valid;
-        const canShowDetailedInfo = longListingOption.valid;
-        const canSortBySize = sizeSortingOption.valid;
-        const canShowInAHumanReadableWay = humanReadableOption.valid;
-
-        const hasMoreThanOneArgument = argumentsValue.length > 1;
-
-        const cwd = systemAPI.environmentVariables['PWD'];
-        const currentUser = systemAPI.currentShellUser;
-        const fileSystem = systemAPI.fileSystem;
-
-        if (!argumentsValue.length) {
-            argumentsValue.push('.');
-        }
-
-        const stdout = argumentsValue.reduce((
-            acc,
-            current,
-            index,
-            array
-        ) => {
-
-            const isLastLine = index !== array.length - 1;
-
-            const providedPath = checkProvidedPath(
-                current,
-                cwd,
-                currentUser,
-                fileSystem
-            );
-
-            if (!providedPath.valid) {
-                throw new ExecutionTreeError(
-                    `ls: cannot access '${current}': No such file or directory`,
-                    2
-                );
-            }
-
-            const currentTimestamp = Date.now();
-
-            if (providedPath.validAs === 'file') {
-                const {
-                    parentPath,
-                    targetName
-                } = getParentPathAndTargetName(providedPath.resolvedPath);
-
-                const parentDirectoryData = getDirectoryData(
-                    parentPath, 
-                    cwd,
-                    currentUser,
-                    fileSystem
-                );
-
-                const fileData = getFileData(parentDirectoryData, targetName)!;
-
-                const line = getLsStdoutLine(
-                    false, 
-                    fileData, 
-                    LS_COLORS, 
-                    canShowDetailedInfo, 
-                    canShowInAHumanReadableWay
-                );
-
-                acc += `${line}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
-
-                changeReadingTimestamps(parentDirectoryData, currentTimestamp);
-            }
-            else {
-                const directoryData = getDirectoryData(
-                    current,
-                    cwd,
-                    currentUser,
-                    fileSystem
-                );
-
-                const stdout = getAllDirectoryLines(
-                    directoryData,
-                    LS_COLORS, 
-                    canShowDetailedInfo, 
-                    canShowInAHumanReadableWay,
-                    canShowDotFiles,
-                    canSortBySize
-                );
-                
-                const startOfListing = hasMoreThanOneArgument
-                                        ? `${directoryData.name}:${BREAK_LINE}`
-                                        : '';
-
-                acc += `${startOfListing}${stdout}${isLastLine? `${BREAK_LINE}${BREAK_LINE}` : ''}`;
-
-                changeReadingTimestamps(directoryData, currentTimestamp);
-            }
-
-            return acc;
-            
-        }, '');
-
-        return {
-            stdout: stdout,
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-
-    }
-    catch (err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
 }

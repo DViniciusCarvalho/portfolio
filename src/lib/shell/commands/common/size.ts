@@ -1,4 +1,4 @@
-import { SIZE_PREFIX_PATTERN } from "./patterns";
+import { SIZE_PREFIX_PATTERN } from './patterns';
 
 const PREFIX_MAPPING: {[key: string]: number} = {
     'K': 10e3,

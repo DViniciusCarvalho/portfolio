@@ -11,7 +11,17 @@ import { checkProvidedPath } from './common/directoryAndFile';
 import { ExecutionTreeError } from '../exception';
 import { interpretCommand } from '../interpreter/interpreter';
 import { resolveArguments } from './common/arguments';
-import { BREAK_LINE } from './common/patterns';
+
+import { 
+    BREAK_LINE, 
+    VARIABLE_ASSIGNMENT_PATTERN
+} from './common/patterns';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
@@ -41,11 +51,199 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const regexOptionsMapping = new Map();
+
+    regexOptionsMapping.set(COMMAND_OPTIONS[1].long, '--chdir=DIR');
+    regexOptionsMapping.set(COMMAND_OPTIONS[2].long, '--unset=NAME');
+
+    const formattedOptions = formatHelpPageOptions(
+        COMMAND_OPTIONS, 
+        regexOptionsMapping
+    );
+
+    const name = 'env - run a program in a modified environment';
+    const synopsis = 'env [OPTION]... [NAME=VALUE]... ["COMMAND [OPTION]... [ARG]..."]';
+    const description = `Set each NAME to VALUE in the environment and run COMMAND.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
+    };
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    const {
+        environmentVariables
+    } = systemAPI;
+
+    const envDeepClone = deepClone(environmentVariables);
+
+    const currentWorkingDirectory = envDeepClone['PWD']
+    const currentShellUser = envDeepClone['USER'];
+
+    systemAPI.environmentVariables = envDeepClone;
+
+    // options operations
+    const numberOfOptionValues = providedOptions.reduce((
+        acc: number,
+        option,
+        index
+    ) => {
+
+        const ignoreEnvOption = checkOption(option, 0, COMMAND_OPTIONS);
+        const changeDirOption = checkOption(option, 1, COMMAND_OPTIONS);
+        const unsetVariableOption = checkOption(option, 2, COMMAND_OPTIONS);
+
+        const isIgnoreEnvOption = ignoreEnvOption.valid;
+        const isChangeDirOption = changeDirOption.valid;
+        const isUnsetVariableOption = unsetVariableOption.valid;
+
+        const changeDirOptionType = changeDirOption.type;
+        const unsetVariableOptionType = unsetVariableOption.type;
+
+
+        if (isIgnoreEnvOption) {
+            const variableNames = Object.keys(envDeepClone);
+
+            variableNames.forEach(variableName => delete envDeepClone[variableName]);
+        }
+        else if (isChangeDirOption) {
+            const isShortOption = changeDirOptionType === 'short';
+
+            const dir = isShortOption
+                        ? providedArguments.at(index) 
+                        : option.replace('--chdir=', '');
+             
+            if (dir === undefined) {
+                throw new ExecutionTreeError(
+                    `env: a directory must be provided if you are using '-C' or '--chdir'`,
+                    2
+                );
+            }
+
+            const checkedProvidedDirectory = checkProvidedPath(
+                dir, 
+                currentWorkingDirectory,
+                currentShellUser,
+                systemAPI.fileSystem
+            );
+
+            // logica de permissao de arquivo e diretorio
+
+            if (!checkedProvidedDirectory.valid) {
+                throw new ExecutionTreeError(
+                    `env: cannot change directory to ${dir}: No such file or directory`,
+                    1
+                );
+            }
+
+            // logica de permissao de arquivo e diretorio
+
+            envDeepClone['PWD'] = dir;
+
+            acc = isShortOption? acc : ++acc;
+        }
+        else if (isUnsetVariableOption) {
+            const isShortOption = unsetVariableOptionType === 'short';
+
+            const variableName = isShortOption
+                                 ? providedArguments.at(index) 
+                                 : option.replace('--unset=', '');
+
+            if (variableName === undefined) {
+                throw new ExecutionTreeError(
+                    `env: a variable name must be provided if you are using the '-u' or '--unset`,
+                    2
+                );
+            }
+
+            if (envDeepClone.hasOwnProperty(variableName)) {
+                delete envDeepClone[variableName];
+            }
+
+            acc = isShortOption? acc : ++acc;
+        }
+
+        return acc;
+
+    }, 0);
+
+    
+    // variable assignments
+    providedArguments.forEach((argument: string) => {
+        if (argument.match(VARIABLE_ASSIGNMENT_PATTERN)) {
+            const equalSignalIndex = argument.indexOf('=');
+
+            const variableName = argument.slice(0, equalSignalIndex);
+            const variableValue = argument.slice(equalSignalIndex + 1);
+
+            envDeepClone[variableName] = variableValue;
+        }
+    });
+
+    
+    const providedCommand = providedArguments.length > numberOfOptionValues
+                            ? providedArguments
+                              .splice(numberOfOptionValues + 1)
+                              .join(' ')
+                            : null;
+
+    if (!providedCommand) {
+        const variableNames = Object.keys(envDeepClone);
+
+        const envLines = variableNames.reduce((
+            acc: string[], 
+            variableName: string
+        ) => {
+
+            const line = `${variableName}=${envDeepClone[variableName]}`;
+
+            acc.push(line);
+
+            return acc;
+
+        }, []);
+    
+        return {
+            stdout: envLines.join(BREAK_LINE),
+            stderr: null,
+            exitStatus: 0,
+            modifiedSystemAPI: systemAPI
+        };
+    }
+
+
+    const {
+        stdout,
+        stderr,
+        exitStatus
+    } = interpretCommand(
+        providedCommand.replace(/^[\'\"]/, '').replace(/[\'\"]$/, ''), 
+        systemAPI
+    );
+
+    systemAPI.environmentVariables = env;
+
+    return { 
+        stdout, 
+        stderr,
+        exitStatus,
+        modifiedSystemAPI: systemAPI 
     };
 }
 
@@ -57,172 +255,14 @@ export const env = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('env', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    try {
-        const argumentsValue = resolveArguments(
-            commandArguments,
-            stdin,
-            systemAPI, 
-            false
-        );
-
-        const hasOptions = !!commandOptions.length;
-
-        const env = systemAPI.environmentVariables;
-        const envBackup = deepClone(env);
-
-        let numberOfArgumentsThatAreOptionValues = 0;
-
-        if (hasOptions) {
-            providedOptions.forEach((option: string, index) => {
-                const changeDirOption = checkOption(option, 1, COMMAND_OPTIONS);
-                const unsetVariableOption = checkOption(option, 2, COMMAND_OPTIONS);
-
-                const IsIgnoreEnvOption = option === '-i' || option === '--ignore-environment';
-
-
-                if (IsIgnoreEnvOption) {
-                    const variableNames = Object.keys(env);
-
-                    variableNames.forEach(variableName => delete env[variableName]);
-                }
-                else if (changeDirOption.valid) {
-                    const isShortOption = changeDirOption.type === 'short';
-                    const dir = isShortOption
-                                ? argumentsValue.at(index) 
-                                : option.replace('--chdir=', '');
-
-                    const cwd = env['PWD'];
-                    const currentUser = systemAPI.currentShellUser;
-
-                    
-                    if (dir === undefined) {
-                        throw new ExecutionTreeError(
-                            `env: a directory must be provided if you are using '-C' or '--chdir'`,
-                            2
-                        );
-                    }
-
-                    const isValidDirectory = checkProvidedPath(
-                        dir, 
-                        cwd,
-                        currentUser,
-                        systemAPI.fileSystem
-                    );
-
-                    // logica de permissao de arquivo e diretorio
-
-                    if (!isValidDirectory) {
-                        throw new ExecutionTreeError(
-                            `env: cannot change directory to ${dir}: No such file or directory`,
-                            1
-                        );
-                    }
-
-                    // logica de permissao de arquivo e diretorio
-
-                    env['PWD'] = dir;
-
-                    numberOfArgumentsThatAreOptionValues = isShortOption
-                                                           ? numberOfArgumentsThatAreOptionValues
-                                                           : numberOfArgumentsThatAreOptionValues + 1;
-                }
-                else if (unsetVariableOption.valid) {
-                    const isShortOption = unsetVariableOption.type === 'short';
-                    const variableName = isShortOption
-                                         ? argumentsValue.at(index) 
-                                         : option.replace('--unset=', '');
-
-                    if (variableName === undefined) {
-                        throw new ExecutionTreeError(
-                            `env: a variable name must be provided if you are using the '-u' or '--unset`,
-                            2
-                        );
-                    }
-
-                    if (env.hasOwnProperty(variableName)) {
-                        delete env[variableName];
-                    }
-
-                    numberOfArgumentsThatAreOptionValues = isShortOption
-                                                           ? numberOfArgumentsThatAreOptionValues
-                                                           : numberOfArgumentsThatAreOptionValues + 1;
-                }
-            });
-        }
-
-        const providedCommand = argumentsValue.length > numberOfArgumentsThatAreOptionValues
-                                ? argumentsValue
-                                  .splice(numberOfArgumentsThatAreOptionValues + 1)
-                                  .join(' ')
-                                : null;
-
-        if (!providedCommand) {
-            const variableNames = Object.keys(env);
-
-            const envLines = variableNames.reduce((
-                acc: string[], 
-                variableName: string
-            ) => {
-
-                const line = `${variableName}=${env[variableName]}`;
-                acc.push(line);
-
-                return acc;
-
-            }, []);
-        
-            return {
-                stdout: envLines.join(BREAK_LINE),
-                stderr: null,
-                exitStatus: 0,
-                modifiedSystemAPI: systemAPI
-            };
-        }
-
-
-        const result = interpretCommand(
-            providedCommand.replace(/^[\'\"]/, '').replace(/[\'\"]$/, ''), 
-            systemAPI
-        );
-
-        systemAPI.environmentVariables = envBackup;
-
-        return { 
-            ...result, 
-            modifiedSystemAPI: systemAPI 
-        };
-
-    }
-    catch(err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-    
+    return commandDecorator(
+        'env', 
+        commandOptions, 
+        commandArguments, 
+        systemAPI, 
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
+    );
 }

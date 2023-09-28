@@ -1,5 +1,5 @@
-import { Directory } from "../models/Directory";
-import { File } from "../models/File";
+import { Directory } from '../models/Directory';
+import { File } from '../models/File';
 
 const ONE_DAY_IN_MILLISECONDS = 60 * 60 * 24 * 1000;
 

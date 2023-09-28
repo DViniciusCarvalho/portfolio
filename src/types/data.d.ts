@@ -8,11 +8,12 @@ export namespace Data {
         PID: number;
         processTitle: string;
         processIcon: StaticImageData;
+        processIconAlt: string;
         processElement: JSX.Element;
         zIndex: number;
         isMinimized: boolean;
         isMaximized: boolean;
-        parentDesktopUUID: string;
+        parentWorkspaceUUID: string;
         coordinates: {
             x: number;
             y: number;
@@ -23,9 +24,8 @@ export namespace Data {
         }
     }
 
-    interface DesktopActivityData {
+    interface WorkspaceActivityData {
         UUID: string;
-
     }
 
     interface DraggableProcessWindow {
@@ -50,7 +50,7 @@ export namespace Data {
             settingsColor: string;
             lightenedColor: string;
             opennedIndicatorColor: string;
-            desktop: {
+            workspace: {
                 backgroundImage: string;
             },
             taskbar: {

@@ -5,21 +5,25 @@ import {
     getDirectoryData, 
     getDirectoryPermissionOctal, 
     getFileOrDirectoryBytesSize, 
+    getOrderedDirsHierarchy, 
     getParentPathAndTargetName
 } from './common/directoryAndFile';
 
 import { Directory } from './models/Directory';
 import { resolveArguments } from './common/arguments';
 import { ExecutionTreeError } from '../exception';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
+import { commandHasInvalidOptions, getCommandInvalidOptionMessage, optionIsPresent } from './common/options';
 import { changeContentUpdateTimestamps } from './common/timestamps';
+import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+import { BREAK_LINE, OCTAL_NUMBER_PATTERN } from './common/patterns';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
     {
         short: '-m',
         long: /^--mode=.+$/,
-        description: 'set file mode (as in chmod), not a=rwx - umask'
+        description: 'set file mode (as in chmod), using octals like 0777 567 etc'
     },
     {
         short: '-p',
@@ -32,8 +36,27 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+    const regexOptionsMapping = new Map();
+
+    regexOptionsMapping.set(COMMAND_OPTIONS[0].long, '--mode=MODE');
+
+    const formattedOptions = formatHelpPageOptions(
+        COMMAND_OPTIONS, 
+        regexOptionsMapping
+    );
+
+    const name = 'mkdir - make directories';
+    const synopsis = 'mkdir [OPTION]... DIRECTORY...';
+    const description = `Create the DIRECTORY(ies), if they do not already exist.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -41,67 +64,117 @@ export const help = (
 }
 
 
-export const mkdir = (    
-    commandOptions: Shell.Token[],
-    commandArguments: Shell.Token[],
-    systemAPI: Shell.SystemAPI,
-    stdin: string | null
-): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
+    const {
+        environmentVariables,
+        fileSystem
+    } = systemAPI;
 
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('mkdir', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentShellUser = environmentVariables['USER'];
 
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasOptions = !!providedOptions.length;
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
+    const setModeOption = optionIsPresent(providedOptions, 0, COMMAND_OPTIONS);
+    const createParentsOption = optionIsPresent(providedOptions, 1, COMMAND_OPTIONS);
 
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
+    const canSetMode = setModeOption.valid;
+    const canCreateParents = createParentsOption.valid;
 
-    const argumentsValue = resolveArguments(
-        commandArguments, 
-        stdin, 
-        systemAPI, 
-        false
-    );
+    const modeToSet = setModeOption.regExpValuePart;
 
-    const cwd = systemAPI.environmentVariables['PWD'];
-    const currentUser = systemAPI.currentShellUser;
-    const fileSystem = systemAPI.fileSystem;
+    const pathsToCreate = providedArguments;
 
-    try {
+    for (const pathToCreate of pathsToCreate) {
+        const checkedProvidedPath = checkProvidedPath(
+            pathToCreate, 
+            currentWorkingDirectory, 
+            currentShellUser, 
+            fileSystem
+        );
 
-        const directoryPaths = argumentsValue;
+        const resolvedPath = checkedProvidedPath.resolvedPath;
 
-        for (const directoryPath of directoryPaths) {
-            const providedDirectory = checkProvidedPath(
-                directoryPath, 
-                cwd, 
-                currentUser, 
-                fileSystem
+        if (checkedProvidedPath.valid) {
+            throw new ExecutionTreeError(
+                `mkdir: cannot create directory '${pathToCreate}': File exists`,
+                1
             );
+        }
 
-            if (providedDirectory.valid) {
-                throw new ExecutionTreeError(
-                    `mkdir: cannot create directory '${directoryPath}': File exists`,
-                    1
+        if (canSetMode && !modeToSet?.match(OCTAL_NUMBER_PATTERN)) {
+            throw new ExecutionTreeError(
+                `mkdir: invalid mode '${modeToSet}'`,
+                1
+            );
+        }
+
+        const directoryPermission = canSetMode
+                                    ? modeToSet!
+                                    : getDirectoryPermissionOctal(systemAPI.umask);
+
+        const currentTimestamp = Date.now();
+
+        if (canCreateParents) {
+            const pathsHierarchy = getOrderedDirsHierarchy(pathToCreate, 'desc');
+
+            for (const path of pathsHierarchy) {
+                const checkedProvidedPath = checkProvidedPath(
+                    path,
+                    currentWorkingDirectory,
+                    currentShellUser,
+                    fileSystem
                 );
+
+                if (!checkedProvidedPath.valid) {
+                    const {
+                        parentPath,
+                        targetName
+                    } = getParentPathAndTargetName(checkedProvidedPath.resolvedPath);
+
+                    const parentDirectoryData = getDirectoryData(
+                        parentPath,
+                        currentWorkingDirectory,
+                        currentShellUser,
+                        fileSystem
+                    );
+
+                    const directory = new Directory(
+                        targetName, 
+                        {
+                            size: 0
+                        },
+                        {
+                            directories: [],
+                            files: []
+                        }, 
+                        { 
+                            is: false, 
+                            has: 1 
+                        }, 
+                        { 
+                            group: currentShellUser, 
+                            owner: currentShellUser, 
+                            permissionOctal: directoryPermission
+                        },
+                        {
+                            access: currentTimestamp,
+                            birth: currentTimestamp,
+                            change: currentTimestamp,
+                            modify: currentTimestamp
+                        }
+                    );
+
+                    parentDirectoryData.children.directories.push(directory);
+
+                    changeContentUpdateTimestamps(parentDirectoryData, currentTimestamp);
+                }
             }
-
-            const resolvedPath = providedDirectory.resolvedPath;
-
+        }
+        else {
             const { 
                 parentPath, 
                 targetName 
@@ -109,14 +182,14 @@ export const mkdir = (
 
             const checkedParentDirectory = checkProvidedPath(
                 parentPath,
-                cwd,
-                currentUser,
+                currentWorkingDirectory,
+                currentShellUser,
                 fileSystem
             );
 
             if (!checkedParentDirectory.valid) {
                 throw new ExecutionTreeError(
-                    `mkdir: cannot create directory '${directoryPath}': No such file or directory`,
+                    `mkdir: cannot create directory '${pathToCreate}': No such file or directory`,
                     1
                 );
             }
@@ -125,14 +198,10 @@ export const mkdir = (
 
             const parentDirectory = getDirectoryData(
                 parentDirectoryPath, 
-                cwd, 
-                currentUser, 
+                currentWorkingDirectory, 
+                currentShellUser, 
                 fileSystem
             );
-
-            const directoryPermission = getDirectoryPermissionOctal(systemAPI.umask);
-            const currentTimestamp = Date.now();
-
             const directory = new Directory(
                 targetName, 
                 {
@@ -147,8 +216,8 @@ export const mkdir = (
                     has: 1 
                 }, 
                 { 
-                    group: currentUser, 
-                    owner: currentUser, 
+                    group: currentShellUser, 
+                    owner: currentShellUser, 
                     permissionOctal: directoryPermission
                 },
                 {
@@ -165,24 +234,32 @@ export const mkdir = (
             changeContentUpdateTimestamps(parentDirectory, currentTimestamp);
             
         }
-
-        return {
-            stdout: '',
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-    catch (err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
     }
 
+    return {
+        stdout: '',
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
 
+
+export const mkdir = (    
+    commandOptions: Shell.Token[],
+    commandArguments: Shell.Token[],
+    systemAPI: Shell.SystemAPI,
+    stdin: string | null
+): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    return commandDecorator(
+        'mkdir', 
+        commandOptions, 
+        commandArguments, 
+        systemAPI, 
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
+    );
 }

@@ -6,20 +6,21 @@ import A from '../../../../public/assets/terminal.png';
 import B from '../../../../public/assets/nautilus.png';
 import C from '../../../../public/assets/preferences-desktop.png';
 import ApplicationIcon from './ApplicationIcon';
-import Desktop from '../desktop/Desktop';
-import BaseDesktop from '../desktop/BaseDesktop';
+import Workspace from '../workspace/Workspace';
+import BaseWorkspace from '../workspace/BaseWorkspace';
 import { MainContext } from '../Main';
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
-import { generateJSXKey, getFilteredApplicationsByNameAndMetadata } from '@/lib/utils';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/constants';
+import { generateJSXKey } from '@/lib/utils';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { getFilteredApplicationsByNameAndMetadata } from '@/lib/application';
 
 
 export default function ApplicationsWindow({ 
 	applicationsWindowRef,
 	opennedProcessesData, 
-	desktopActivitiesData,
-	baseDesktopUUID 
+	workspaceActivitiesData,
+	baseWorkspaceUUID 
 }: Props.ApplicationsWindowProps) {
 
     const { 
@@ -35,9 +36,9 @@ export default function ApplicationsWindow({
 	}, [applicationsWindowRef]);
 
 	
-	const baseDesktopProps: Props.BaseDesktopProps = {
-		baseDesktopUUID: baseDesktopUUID,
-		desktopActivitiesData,
+	const baseWorkspaceProps: Props.BaseWorkspaceProps = {
+		baseWorkspaceUUID: baseWorkspaceUUID,
+		workspaceActivitiesData,
 		applicationsWindowRef
 	};
 
@@ -46,6 +47,7 @@ export default function ApplicationsWindow({
 	const applicationsIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[] = [
 		{
 			applicationIconStaticImage: A,
+			applicationIconAlt: '',
 			applicationName: 'Terminal',
 			applicationElement: <></>,
 			metadata: {
@@ -56,6 +58,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: B,
+			applicationIconAlt: '',
 			applicationName: 'nautilus',
 			applicationElement: <></>,
 			metadata: {
@@ -66,6 +69,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: C,
+			applicationIconAlt: '',
 			applicationName: 'settings',
 			applicationElement: <></>,
 			metadata: {
@@ -76,6 +80,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: A,
+			applicationIconAlt: '',
 			applicationName: 'Terminal',
 			applicationElement: <></>,
 			metadata: {
@@ -86,6 +91,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: B,
+			applicationIconAlt: '',
 			applicationName: 'nautilus',
 			applicationElement: <></>,
 			metadata: {
@@ -96,6 +102,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: C,
+			applicationIconAlt: '',
 			applicationName: 'settings',
 			applicationElement: <></>,
 			metadata: {
@@ -106,6 +113,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: A,
+			applicationIconAlt: '',
 			applicationName: 'Terminal',
 			applicationElement: <></>,
 			metadata: {
@@ -116,6 +124,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: B,
+			applicationIconAlt: '',
 			applicationName: 'nautilus',
 			applicationElement: <></>,
 			metadata: {
@@ -126,6 +135,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: C,
+			applicationIconAlt: '',
 			applicationName: 'settings',
 			applicationElement: <></>,
 			metadata: {
@@ -154,7 +164,11 @@ export default function ApplicationsWindow({
 				}}
 			>
                 <div className={applicationsWindowStyles.search__icon__wrapper}>
-		  			<Image src={SearchIcon} alt='search icon' className={applicationsWindowStyles.icon}/>
+		  			<Image 
+						src={SearchIcon} 
+						alt={'Search icon: it\'s a black magnifying glass.'} 
+						className={applicationsWindowStyles.icon}
+					/>
                 </div>
                 <input 
 					type='text' 
@@ -167,10 +181,10 @@ export default function ApplicationsWindow({
             <div className={applicationsWindowStyles.activities__wrapper}>
 
 				{
-					desktopActivitiesData.map((desktopActivityData, index) => (
-						<Desktop 
-							key={desktopActivityData.UUID}
-							UUID={desktopActivityData.UUID} 
+					workspaceActivitiesData.map((workspaceActivityData, index) => (
+						<Workspace 
+							key={workspaceActivityData.UUID}
+							UUID={workspaceActivityData.UUID} 
 							opennedProcessesData={opennedProcessesData}
 							applicationsWindowRef={applicationsWindowRef}
 						/>
@@ -178,9 +192,9 @@ export default function ApplicationsWindow({
 				}
 
 		  		{applicationsWindowRefLoaded && (
-					<BaseDesktop 
-						key={baseDesktopUUID} 
-						{...baseDesktopProps}
+					<BaseWorkspace 
+						key={baseWorkspaceUUID} 
+						{...baseWorkspaceProps}
 					/>
 				)}
 

@@ -4,6 +4,14 @@ import { getCommandInvalidOptionMessage } from './common/options';
 import { ExecutionTreeError } from '../exception';
 import { resolveArguments } from './common/arguments';
 
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
+import { BREAK_LINE } from './common/patterns';
+import { commandDecorator } from './common/decorator';
+
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
     {
@@ -27,8 +35,35 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'echo - display a line of text';
+    const synopsis = 'echo [SHORT-OPTION]... [STRING]...';
+    const description = `Echo the STRING(s) to standard output.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    return {
+        stdout: providedArguments.join(' '),
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -43,56 +78,14 @@ export const echo = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
-
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('echo', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    const lastProvidedOption = providedOptions.length? providedOptions.at(-1) : null;
-    const canInterpretEscapeSequences = !(lastProvidedOption === '-E' || !lastProvidedOption);
-
-    try {
-
-        const argumentsValue = resolveArguments(
-            commandArguments,
-            stdin,
-            systemAPI, 
-            canInterpretEscapeSequences
-        );
-
-        return {
-            stdout: argumentsValue.join(' '),
-            stderr: null,
-            exitStatus: 0,
-            modifiedSystemAPI: systemAPI
-        };
-
-    }
-    catch(err: unknown) {
-        const errorObject = err as ExecutionTreeError;
-
-        return {
-            stdout: null,
-            stderr: errorObject.errorMessage,
-            exitStatus: errorObject.errorStatus,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
+    return commandDecorator(
+        'echo', 
+        commandOptions, 
+        commandArguments, 
+        systemAPI, 
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
+    );
 }

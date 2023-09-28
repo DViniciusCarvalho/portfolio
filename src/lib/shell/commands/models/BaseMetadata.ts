@@ -1,4 +1,4 @@
-import { Data } from "@/types/data";
+import { Data } from '@/types/data';
 
 export class BaseMetadata implements Data.FileAndDirectoryMetadata {
     constructor(

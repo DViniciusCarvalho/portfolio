@@ -1,18 +1,11 @@
 import { Shell } from '@/types/shell';
 import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
+import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+import { BREAK_LINE } from './common/patterns';
+import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [
-    {
-        short: '-L',
-        long: '--logical',
-        description: 'use PWD from environment, even if it contains symlinks'
-    },
-    {
-        short: '-P',
-        long: '--physical',
-        description: 'avoid all symlinks (default)'
-    },
     {
         short: null,
         long: '--help',
@@ -24,8 +17,37 @@ const COMMAND_OPTIONS: Shell.CommandOption[] = [
 export const help = (
     systemAPI: Shell.SystemAPI
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
+
+    const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
+    const name = 'pwd - print name of current/working directory';
+    const synopsis = 'pwd [OPTION]...';
+    const description = `Print the full filename of the current working directory.${BREAK_LINE}${formattedOptions}`;
+
+    const formattedHelp = helpPageSectionsAssembler(
+        name,
+        synopsis,
+        description
+    );
+
     return {
-        stdout: '',
+        stdout: formattedHelp,
+        stderr: null,
+        exitStatus: 0,
+        modifiedSystemAPI: systemAPI
+    };
+}
+
+
+const main = (
+    providedOptions: string[],
+    providedArguments: string[],
+    systemAPI: Shell.SystemAPI
+) => {
+
+    const currentWorkingDirectory = systemAPI.environmentVariables['PWD'];
+
+    return {
+        stdout: currentWorkingDirectory ?? ' ',
         stderr: null,
         exitStatus: 0,
         modifiedSystemAPI: systemAPI
@@ -40,35 +62,15 @@ export const pwd = (
     stdin: string | null
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
-    const { 
-        hasInvalidOption, 
-        invalidOptions 
-    } = commandHasInvalidOptions(commandOptions, COMMAND_OPTIONS);
+    return commandDecorator(
+        'pwd', 
+        commandOptions, 
+        commandArguments, 
+        systemAPI, 
+        stdin, 
+        COMMAND_OPTIONS, 
+        help, 
+        main
+    );
 
-    if (hasInvalidOption) {
-        return {
-            stdout: null,
-            stderr: getCommandInvalidOptionMessage('pwd', invalidOptions),
-            exitStatus: 2,
-            modifiedSystemAPI: systemAPI
-        };
-    }
-
-    const providedOptions = commandOptions.map(opt => opt.value);
-    const hasHelpOption = !!providedOptions.find(opt => opt === '--help');
-
-    if (hasHelpOption) {
-        return help(systemAPI);
-    }
-
-    // logica para considerar ou ignorar symlinks
-    
-    const currentWorkingDirectory = systemAPI.environmentVariables['PWD'];
-
-    return {
-        stdout: currentWorkingDirectory ?? ' ',
-        stderr: null,
-        exitStatus: 0,
-        modifiedSystemAPI: systemAPI
-    };
 }

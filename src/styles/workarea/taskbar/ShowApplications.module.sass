@@ -28,7 +28,12 @@
         object-fit: cover
         
 
-@media only screen and (max-width: 500px) 
+@media only screen and (max-width: 500px) and (min-width: 321px)
     .container.row, .container.column
         height: 100%
+        aspect-ratio: 1/1
+
+@media only screen and (max-width: 320px)
+    .container.row, .container.column
+        height: 85%
         aspect-ratio: 1/1
