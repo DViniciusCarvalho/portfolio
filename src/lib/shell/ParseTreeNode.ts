@@ -1,5 +1,6 @@
 import { Shell } from '@/types/shell';
 
+
 export class ParseTreeNode implements Shell.IParseTreeNode {
     public token: Shell.Token;
     public rightNode: ParseTreeNode | null;

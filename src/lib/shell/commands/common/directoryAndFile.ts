@@ -13,7 +13,7 @@ import {
 
 export const targetIsDirectory = (
     fileOrDirectory: File | Directory
-) => {
+): boolean => {
     return fileOrDirectory.hasOwnProperty('children');
 }
 
@@ -52,7 +52,9 @@ export const getResolvedPath = (
 }
 
 
-const getSplittedPathParts = (resolvedPath: string) => {
+const getSplittedPathParts = (
+    resolvedPath: string
+): string[] => {
     
     resolvedPath = resolvedPath.replace(FILESYSTEM_ROOT_PATTERN, '');
 
@@ -131,6 +133,7 @@ export const checkProvidedPath = (
 export const getParentPathAndTargetName = (
     resolvedPath: string
 ) => {
+    
     const lastSlashIndex = resolvedPath.lastIndexOf('/');
     const parentDirectoryPath = resolvedPath.slice(0, lastSlashIndex);
     const targetName = resolvedPath.slice(lastSlashIndex + 1);
@@ -147,11 +150,15 @@ export const getDirectoryIndex = (
     directoryArray: Directory[]
 ): number => {
 
-    let index = -1;
+    const index = directoryArray.reduce((
+        acc,
+        dir,
+        index
+    ) => {
+        acc = dir.name === name? index : acc;
 
-    for (let i = 0; i < directoryArray.length; i++) {
-        index = directoryArray[i].name === name? i : index;
-    }
+        return acc;
+    }, -1);
 
     return index;
 }
@@ -190,11 +197,15 @@ export const getFileIndex = (
     fileArray: File[]
 ) => {
 
-    let index = -1;
+    const index = fileArray.reduce((
+        acc,
+        file,
+        index
+    ) => {
+        acc = file.name === name? index : acc;
 
-    for (let i = 0; i < fileArray.length; i++) {
-        index = fileArray[i].name === name? i : index;
-    }
+        return acc;
+    }, -1);
 
     return index;
 }
@@ -203,7 +214,8 @@ export const getFileIndex = (
 export const getFileData = (
     directory: Directory,
     fileName: string
-) => {
+): File | undefined => {
+
     const directoryFiles = directory.children.files;
 
     const fileIndex = getFileIndex(fileName, directoryFiles);
@@ -225,7 +237,7 @@ export const getFileOrDirectoryBytesSize = (
 
 const logicalNOT = (
     binary: string
-) => {
+): string => {
 
     let result = '';
 
@@ -240,7 +252,7 @@ const logicalNOT = (
 const logicalAND = (
     binary1: string,
     binary2: string
-) => {
+): string => {
 
     let result = '';
 
@@ -254,10 +266,12 @@ const logicalAND = (
 
 export const getFilePermissionOctal = (
     umask: string
-) => {
+): string => {
+
     const DEFAULT_FILE_PERMISSION_IN_BASE_2 = ['110', '110', '110'];
 
     const umaskPermissionsInBase8 = umask.split('');
+    
     const umaskPermissionsInBase2 = umaskPermissionsInBase8.map(perm => {
         return parseInt(perm, 8).toString(2).padStart(3, '0');
     });
@@ -281,7 +295,8 @@ export const getFilePermissionOctal = (
 
 export const getDirectoryPermissionOctal = (
     umask: string
-) => {
+): string => {
+
     const DEFAULT_DIRECTORY_PERMISSION_IN_BASE_2 = ['111', '111', '111'];
 
     const umaskPermissionsInBase8 = umask.split('');
@@ -308,7 +323,7 @@ export const getDirectoryPermissionOctal = (
 
 export const resolveOctalPermissionInSymbolicFormat = (
     octal: string
-) => {
+): string => {
 
     const PERMISSIONS_MAPPING_BY_INDEX = [
         '---', 
@@ -384,18 +399,18 @@ export const resolveOctalPermissionInSymbolicFormat = (
 export const getOrderedDirsHierarchy = (
     path: string,
     order: 'asc' | 'desc' = 'asc'
-) => {
+): string[] => {
 
-    const pathsAcc: string[] = [];
+    const paths: string[] = [];
 
     let pathAcc = path;
 
     for (let i = 0; i < path.split('/').length; i++) {
-        pathsAcc.push(pathAcc);
+        paths.push(pathAcc);
 
         const lastSlashIndex = pathAcc.lastIndexOf('/');
         pathAcc = pathAcc.slice(0, lastSlashIndex);
     }
 
-    return order === 'asc'? pathsAcc : pathsAcc.reverse();
+    return order === 'asc'? paths : paths.reverse();
 }

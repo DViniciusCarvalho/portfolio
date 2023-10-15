@@ -1,6 +1,7 @@
 import { StaticImageData } from 'next/image';
-import { Data } from './data';
 import { MutableRefObject } from 'react';
+import { Data } from './data';
+
 
 export namespace Props {
 
@@ -73,6 +74,10 @@ export namespace Props {
         processName: string;
     }
 
+    interface TerminalProps {
+        initialPath?: string;
+    }
+
     interface CommandLineProps {
         user: string;
         domain: string;
@@ -83,11 +88,12 @@ export namespace Props {
         commandResult: string;
     }
 
-    interface NautilusProps {
+    interface FileManagerProps {
+        initiator: string;
         initialPath?: string;
     }
 
-    interface NautilusIconProps {
+    interface FileIconButtonProps {
         name: string;
         path: string;
         type: string;
@@ -121,6 +127,20 @@ export namespace Props {
         iconSrc: StaticImageData;
         iconAlt: string;
         locationPath: string;
-        openDirectory: (path: string) => void
+    }
+
+    interface PreviousTerminal {
+        terminalUserIsRootUser: boolean;
+    }
+
+    interface AppearanceColorSelectorProps {
+        color: string;
+        action: (value: string) => void;
+        title: string;
+        description?: string;
+    }
+
+    interface ApplicationWrapperProps {
+        url: string;
     }
 }

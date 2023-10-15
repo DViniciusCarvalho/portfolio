@@ -1,7 +1,13 @@
-import { Shell } from "@/types/shell";
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from "./options";
-import { resolveArguments } from "./arguments";
-import { ExecutionTreeError } from "../../exception";
+import { Shell } from '@/types/shell';
+
+import { 
+    commandHasInvalidOptions, 
+    getCommandInvalidOptionMessage 
+} from './options';
+
+import { resolveArguments } from './arguments';
+import { ExecutionTreeError } from '../../exception';
+
 
 export const commandDecorator = (
     commandName: string,
@@ -45,11 +51,11 @@ export const commandDecorator = (
     try {
 
         const { 
-            openForegroundProcess,
-            finishForegroundProcess
+            startNonGraphicalProcess,
+            finishNonGraphicalProcess
         } = systemAPI;
 
-        const commandProcessPID = openForegroundProcess(commandName);
+        const commandProcessPID = startNonGraphicalProcess(commandName);
 
         const commandResult = commandMainFunction(
             providedOptions, 
@@ -57,7 +63,7 @@ export const commandDecorator = (
             systemAPI
         );
 
-        finishForegroundProcess(commandProcessPID);
+        finishNonGraphicalProcess(commandProcessPID);
 
         return commandResult;
         

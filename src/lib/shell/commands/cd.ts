@@ -1,23 +1,20 @@
 import { Shell } from '@/types/shell';
-import { checkProvidedPath, getDirectoryData } from './common/directoryAndFile';
-import { resolveArguments } from './common/arguments';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage 
-} from './common/options';
-
-import { ExecutionTreeError } from '../exception';
-import { deepClone } from '@/lib/utils';
-import { changeReadingTimestamps } from './common/timestamps';
+    checkProvidedPath, 
+    getDirectoryData 
+} from './common/directoryAndFile';
 
 import { 
     formatHelpPageOptions, 
     helpPageSectionsAssembler 
 } from './common/formatters';
 
-import { BREAK_LINE } from './common/patterns';
+import { deepClone } from '@/lib/utils';
+import { changeReadingTimestamps } from './common/timestamps';
 import { commandDecorator } from './common/decorator';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

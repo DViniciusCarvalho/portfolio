@@ -1,12 +1,14 @@
 import { Shell } from '@/types/shell';
-import { Directory } from '../commands/models/Directory';
+
 import { 
     getDirectoryData, 
     getDirectoryPermissionOctal, 
     getFileOrDirectoryBytesSize, 
     getFilePermissionOctal 
 } from '../commands/common/directoryAndFile';
+
 import { File } from '../commands/models/File';
+import { Directory } from '../commands/models/Directory';
 
 
 export const registerProcessInProcDir = (

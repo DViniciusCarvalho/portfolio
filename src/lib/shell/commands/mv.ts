@@ -1,14 +1,6 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage 
-} from './common/options';
-
-import { resolveArguments } from './common/arguments';
-import { ExecutionTreeError } from '../exception';
-
-import { 
     checkProvidedPath, 
     getDirectoryData, 
     getDirectoryIndex, 
@@ -21,9 +13,15 @@ import {
     changeMetadataUpdateTimestamps, 
     changeReadingTimestamps 
 } from './common/timestamps';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
-import { BREAK_LINE } from './common/patterns';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

@@ -1,4 +1,4 @@
-import { Shell } from "@/types/shell";
+import { Shell } from '@/types/shell';
 
 
 export const ROOT_PROMPT = '#';

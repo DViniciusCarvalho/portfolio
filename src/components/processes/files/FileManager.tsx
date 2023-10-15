@@ -5,33 +5,39 @@ import React, {
     useState 
 } from 'react';
 
-import { StaticImageData } from 'next/image';
-
-import nautilusStyles from '@/styles/processes/Nautilus.module.sass';
+import fileManagerStyles from '@/styles/processes/files/FileManager.module.sass';
 import { MainContext } from '../../workarea/Main';
-import { Directory } from '@/lib/shell/commands/models/Directory';
-import { File } from '@/lib/shell/commands/models/File';
+import { Props } from '@/types/props';
 
 import { 
     checkProvidedPath,
     getDirectoryData, 
+    getParentPathAndTargetName, 
     targetIsDirectory 
 } from '@/lib/shell/commands/common/directoryAndFile';
-import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
 
-import NautilusIcon from './NautilusIcon';
-import ContextMenu from './ContextMenu';
+import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
+import { getCorrespondentWorkspace } from '@/lib/workspace';
+import { Directory } from '@/lib/shell/commands/models/Directory';
+import { File } from '@/lib/shell/commands/models/File';
+import { BREAK_LINE } from '@/lib/shell/commands/common/patterns';
+import FileIconButton from './buttons/FileIconButton';
+import FileManagerMenu from './menus/FileManagerMenu';
+import ContextMenu from './menus/ContextMenu';
 import RenameFilePrompt from './prompts/RenameFilePrompt';
 import NewFolderPrompt from './prompts/NewFolderPrompt';
-import LocationDirButton from './buttons/LocationDirButton';
-import { Props } from '@/types/props';
+
+import Terminal, { 
+    terminalProcessData 
+} from '../terminal/Terminal';
 
 
-export const NautilusContext = createContext<any>(null);
+export const FileManagerContext = createContext<any>(null);
 
-export default function Nautilus({
+export default function FileManager({
+    initiator,
     initialPath
-}: Props.NautilusProps) {
+}: Props.FileManagerProps) {
 
     const filesAndDirsSectionRef = useRef<HTMLDivElement | null>(null);
     const contextMenuRef = useRef<HTMLUListElement | null>(null);
@@ -40,8 +46,14 @@ export default function Nautilus({
         fileSystem,
         systemEnvironmentVariables,
         systemTheme,
-        basicCommandSystemAPI
+        basicCommandSystemAPI,
+        startGraphicalProcess,
+        workspaceActivitiesData, 
+        currentActiveWorkspaceUUID
     } = useContext(MainContext);
+
+
+    const initiatorIsNautilus = initiator === 'Nautilus';
 
     const currentUser = systemEnvironmentVariables['USER'];
     const currentUserHomeDir = `/home/${currentUser}`;
@@ -55,7 +67,9 @@ export default function Nautilus({
     const [ 
         pathsHistory, 
         setPathsHistory 
-    ] = useState([currentUserHomeDir]);
+    ] = useState([
+        initialPath ?? currentUserHomeDir
+    ]);
 
     const [ 
         contextMenuAndPromptsOrigin, 
@@ -103,53 +117,128 @@ export default function Nautilus({
     ] = useState(false);
 
 
-    const nautilusContextValues = {
+    const fileManagerContextValues = {
+        initiator,
+        currentUser,
+        currentUserHomeDir,
+        currentPath,
         contextMenuRef,
         clickContextMenuOptionDecorator,
         openDirectory,
         openContextMenu,
         copyFileAction,
-        cutFileAction
+        cutFileAction,
+        menuIsBeingShowed,
+        setMenuIsBeingShowed,
+        canShowHiddenFiles,
+        setCanShowHiddenFiles
     };
 
 
-    const SINGLE_FILE_CONTEXT_MENU_OPTIONS = [
-        {
-            text: 'Cut',
-            handler: cutFileAction
-        },
-        {
-            text: 'Copy',
-            handler: copyFileAction
-        },
-        {
-            text: 'Move to Trash',
-            handler: moveFileToTrashAction
-        },
-        {
-            text: 'Rename',
-            handler: renameFileAction
-        }
-    ];
+    const nautilusContextMenus = {
+        file: [
+            {
+                text: 'Cut',
+                handler: cutFileAction
+            },
+            {
+                text: 'Copy',
+                handler: copyFileAction
+            },
+            {
+                text: 'Move to Trash',
+                handler: moveFileToTrashAction
+            },
+            {
+                text: 'Rename',
+                handler: renameFileAction
+            }
+        ],
+        directory: [
+            {
+                text: 'Open',
+                handler: openDirectory
+            },
+            {
+                text: 'Cut',
+                handler: cutFileAction
+            },
+            {
+                text: 'Copy',
+                handler: copyFileAction
+            },
+            {
+                text: 'Move to Trash',
+                handler: moveFileToTrashAction
+            },
+            {
+                text: 'Rename',
+                handler: renameFileAction
+            },
+            {
+                text: 'Open in Terminal',
+                handler: openInTerminal
+            }
+        ],
+        section: [
+            {
+                text: 'New Folder',
+                handler: createFolderAction
+            },
+            {
+                text: 'Paste',
+                handler: pasteInFolderAction
+            },
+            {
+                text: 'Open in Terminal',
+                handler: openInTerminal
+            }
+        ]
+    }
 
-    const SINGLE_DIRECTORY_CONTEXT_MENU_OPTIONS = [
-        {
-            text: 'Open',
-            handler: openDirectory
-        },
-        ...SINGLE_FILE_CONTEXT_MENU_OPTIONS
-    ];
-
-    const FILES_SECTION_CONTEXT_MENU_OPTIONS = [
-        {
-            text: 'New Folder',
-            handler: createFolderAction
-        },
-        {
-            text: 'Paste',
-            handler: pasteInFolderAction
-        }
-    ];
+    const trashContextMenus = {
+        file: [
+            {
+                text: 'Cut',
+                handler: cutFileAction
+            },
+            {
+                text: 'Copy',
+                handler: copyFileAction
+            },
+            {
+                text: 'Delete from Trash',
+                handler: deleteFromTrash
+            },
+            {
+                text: 'Restore from Trash',
+                handler: restoreFromTrash
+            }
+        ],
+        directory: [
+            {
+                text: 'Open',
+                handler: openDirectory
+            },
+            {
+                text: 'Cut',
+                handler: cutFileAction
+            },
+            {
+                text: 'Copy',
+                handler: copyFileAction
+            },
+            {
+                text: 'Delete from Trash',
+                handler: deleteFromTrash
+            },
+            {
+                text: 'Restore from Trash',
+                handler: restoreFromTrash
+            }
+        ],
+        section: []
+    };
 
 
     function handleKeyDown(
@@ -294,10 +383,20 @@ export default function Nautilus({
         path: string
     ): void {
 
+        const {
+            targetName
+        } = getParentPathAndTargetName(path);
+
         const trashDirectoryPath = `${currentUserHomeDir}/.local/share/Trash`;
         const moveCommand = `mv ${path} ${trashDirectoryPath}`;
 
-        interpretCommand(moveCommand, basicCommandSystemAPI);
+        const echoText = `${targetName}:${path}${BREAK_LINE}`;
+        const echoCommand = `echo ${echoText} >> ~/.local/share/trashmap`;
+
+        interpretCommand(
+            `${moveCommand} && ${echoCommand}`, 
+            basicCommandSystemAPI
+        );
     }
 
 
@@ -305,10 +404,11 @@ export default function Nautilus({
         path: string
     ): void {
 
-        const lastSlashIndex = path.lastIndexOf('/');
-        const pathName = path.slice(lastSlashIndex + 1);
+        const {
+            targetName
+        } = getParentPathAndTargetName(path);
 
-        setOldPathNameToRename(previous => pathName);
+        setOldPathNameToRename(previous => targetName);
 
         setPromptsAreVisible(previous => {
             return {
@@ -330,11 +430,85 @@ export default function Nautilus({
     }
 
 
+    function openInTerminal(
+        path: string
+    ): void {
+
+        const terminalData = terminalProcessData;
+
+        const currentWorkspaceDoesNotExists = !getCorrespondentWorkspace(
+            workspaceActivitiesData, 
+            currentActiveWorkspaceUUID
+        );
+
+        const terminalElement = <Terminal initialPath={path}/>
+
+        const PID = startGraphicalProcess(
+            terminalData.processName, 
+            terminalData.processIconStaticImage,
+            terminalData.processIconAlt,
+            terminalElement,
+            currentWorkspaceDoesNotExists
+        );
+    }
+
+
+    function deleteFromTrash(
+        path: string
+    ): void {
+        const deleteCommand = `rm -r ${path}`;
+
+        interpretCommand(deleteCommand, basicCommandSystemAPI);
+    }
+
+
+    function restoreFromTrash(
+        path: string
+    ): void {
+
+        console.log(window.getSelection());
+
+        const {
+            targetName
+        } = getParentPathAndTargetName(path);
+
+        const grepCommand = `grep ${targetName}: ${currentUserHomeDir}/.local/share/trashmap`;
+
+        const { 
+            stdout
+        } = interpretCommand(
+            grepCommand, 
+            basicCommandSystemAPI
+        );
+
+        const stdoutLines = stdout!.split(BREAK_LINE);
+        const stdoutLastLine = stdoutLines.at(-2)!;
+
+        const lastLineStartSlashIndex = stdoutLastLine.indexOf('/');
+        const previousPath = stdoutLastLine.slice(lastLineStartSlashIndex);
+
+        const {
+            parentPath
+        } = getParentPathAndTargetName(previousPath);
+
+        const moveCommand = `mv ${path} ${parentPath}`;
+
+        interpretCommand(moveCommand, basicCommandSystemAPI);
+    }
+
+
+    function emptyTrash(): void {
+        const emptyCommand = `rm -r ${initialPath} && mkdir ${initialPath}`;
+
+        interpretCommand(emptyCommand, basicCommandSystemAPI);
+    }
+
+
     async function pasteInFolderAction(): Promise<void> {
 
-        const clipboardText = await navigator.clipboard.readText();
-
         try {
+            const clipboardText = await navigator.clipboard.readText();
+
             const jsonifiedContent = JSON.parse(clipboardText);
 
             const hasActionProperty = jsonifiedContent.hasOwnProperty('action');
@@ -357,79 +531,6 @@ export default function Nautilus({
             }
         }
         catch (err: unknown) {}
-    }
-
-
-    function getHomeDirMainChildrenDirectories(
-        homePath: string
-    ): {
-        icon: StaticImageData;
-        alt: string;
-        data: Directory;
-    }[] {
-
-        const homeMainDirsIconsMapping = {
-            'Documents': {
-                iconName: 'folder-documents-symbolic.svg',
-                iconAlt: 'Documents folder icon: it\'s a paper with straight horizontal lines as its lines'
-            },
-            'Downloads': {
-                iconName: 'folder-download-symbolic.svg',
-                iconAlt: 'Downloads folder icon: it\'s a down arrow above a straight horizontal line'
-            },
-            'Music': {
-                iconName: 'folder-music-symbolic.svg',
-                iconAlt: 'Music folder icon: it\'s a blass clef symbol'
-            },
-            'Pictures': {
-                iconName: 'folder-pictures-symbolic.svg',
-                iconAlt: 'Pictures folder icon: it\'s a landscape photo framed'
-            },
-            'Videos': {
-                iconName: 'folder-videos-symbolic.svg',
-                iconAlt: 'Videos folder icon: it\'s a piece of videotape'
-            }
-        } as {
-            [key: string]: {
-                iconName: string;
-                iconAlt: string;
-            }
-        };
-
-        const directoryData = getDirectoryData(
-            homePath,
-            currentPath,
-            currentUser,
-            fileSystem
-        );
-
-        const childrenDirectories = directoryData.children.directories;
-
-        const homeAvailableMainDirs = [] as {
-            icon: StaticImageData;
-            alt: string;
-            data: Directory;
-        }[];
-
-        for (const childDir of childrenDirectories) {
-            const currentDirIsMain = homeMainDirsIconsMapping.hasOwnProperty(childDir.name);
-
-            if (!currentDirIsMain) continue;
-
-            const { iconName } = homeMainDirsIconsMapping[childDir.name];
-
-            const icon = require(`../../../../public/assets/${systemTheme}/${iconName}`);
-
-            const mainDirData = {
-                icon: icon,
-                alt: homeMainDirsIconsMapping[childDir.name].iconAlt,
-                data: childDir
-            };
-
-            homeAvailableMainDirs.push(mainDirData);
-        }
-
-        return homeAvailableMainDirs;
     }
 
 
@@ -462,7 +563,10 @@ export default function Nautilus({
 
         setMenuIsBeingShowed(previous => false);
 
-        const { valid, resolvedPath } = checkProvidedPath(
+        const { 
+            valid, 
+            resolvedPath 
+        } = checkProvidedPath(
             path,
             currentPath,
             currentUser,
@@ -504,121 +608,80 @@ export default function Nautilus({
     return (
         <div 
             className={`
-                ${nautilusStyles.container} 
-                ${nautilusStyles[systemTheme]}   
+                ${fileManagerStyles.container} 
+                ${fileManagerStyles[systemTheme]}   
                 `
             }
         >
-            {menuIsBeingShowed && (
-                <div 
-                    className={nautilusStyles.menu__overlay}
-                    onClick={() => setMenuIsBeingShowed(previous => false)}
-                />
-            )}
-
-            <div className={nautilusStyles.locations__container}>
-                <button 
-                    className={nautilusStyles.nautilus__menu__button}
-                    onClick={() => setMenuIsBeingShowed(previous => !previous)}
-                >
-                    <span/>
-                    <span/>
-                    <span/>
-                </button>
-                <nav 
-                    className={`
-                        ${nautilusStyles.locations__and__options__wrapper}
-                        ${nautilusStyles[menuIsBeingShowed? 'showed' : 'non--showed']}
-                        `
-                    }
-                >
-                    <ul className={nautilusStyles.home__dirs__list}>
-
-                        <LocationDirButton
-                            title={'Home'}
-                            locationPath={currentUserHomeDir}
-                            openDirectory={openDirectory}
-                            iconSrc={require(
-                                `../../../../public/assets/${systemTheme}/user-home-symbolic.svg`
-                            )}
-                            iconAlt={'Home folder icon: it\'s a simple drawing of a house with a square base, a triangular roof, and a front door'}
-                        />
-
-                        {getHomeDirMainChildrenDirectories(currentUserHomeDir)
-                        .sort((a, b) => a.data.name.localeCompare(b.data.name))
-                        .map((dir, index) => (
-                            <LocationDirButton
-                                key={index}
-                                title={dir.data.name}
-                                locationPath={`${currentUserHomeDir}/${dir.data.name}`}
-                                openDirectory={openDirectory}
-                                iconSrc={dir.icon}
-                                iconAlt={dir.alt}
-                            />
-                        ))}
-
-                        <LocationDirButton
-                            title={'Trash'}
-                            locationPath={'~/.local/share/Trash'}
-                            openDirectory={openDirectory}
-                            iconSrc={require(
-                                `../../../../public/assets/${systemTheme}/user-trash-symbolic.svg`
-                            )}
-                            iconAlt={'Trash folder icon: it\'s a garbage image, with straight vertical lines in it\'s body'}
-                        />
-
-                        <LocationDirButton
-                            title={'System Root'}
-                            locationPath={'/'}
-                            openDirectory={openDirectory}
-                            iconSrc={require(
-                                `../../../../public/assets/${systemTheme}/drive-harddisk-symbolic.svg`
-                            )}
-                            iconAlt={'Hard disk icon: it\'s a rectangular shape with a circular area in the center referred to as the platter, and there\'s a diagonal line inside the platter, representing the actuator.'}
-                        />
-
-                    </ul>
-                    <label 
-                        htmlFor="show__hidden__files" 
-                        className={nautilusStyles.show__hidden__files__wrapper}
-                    >
-                        <input 
-                            type="checkbox" 
-                            id="show__hidden__files" 
-                            className={nautilusStyles.show__hidden__files__check__box}
-                            onChange={(event) => setCanShowHiddenFiles(
-                                previous => event.target.checked
-                            )}
-                            checked={canShowHiddenFiles}
-                        />
-                        Show Hidden Files
-                    </label>
-                </nav>
-            </div>
-            <main className={nautilusStyles.current__location__container}>
-                <div className={nautilusStyles.location__path__container}>
-                    <div className={nautilusStyles.path__history__navigation__container}>
-                        <button 
-                            className={nautilusStyles.navigate__path__history__button}
-                            onClick={() => backInTheHistory(currentPath)}
-                        >
-                            &lt;
-                        </button>
-                        <button 
-                            className={nautilusStyles.navigate__path__history__button}
-                            onClick={() => forwardInTheHistory(currentPath)}
-                        >
-                            &gt;
-                        </button>
-                    </div>
-                    <div className={nautilusStyles.current__path__container}>
-                        {currentPath}
-                    </div>
-                </div>
-                <NautilusContext.Provider value={{...nautilusContextValues}}>
+            <FileManagerContext.Provider value={{...fileManagerContextValues}}>
+                {menuIsBeingShowed && (
                     <div 
-                        className={nautilusStyles.current__location__files__and__dirs}
-                        onContextMenu={(e) => openContextMenu(e, 'filesSection', currentPath)}
+                        className={fileManagerStyles.menu__overlay}
+                        onClick={() => setMenuIsBeingShowed(previous => false)}
+                    />
+                )}
+
+                <FileManagerMenu/>
+                <main className={fileManagerStyles.current__location__container}>
+                    <div className={fileManagerStyles.location__path__container}>
+                        <div className={fileManagerStyles.path__history__navigation__container}>
+                            <button 
+                                className={fileManagerStyles.navigate__path__history__button}
+                                onClick={() => backInTheHistory(currentPath)}
+                            >
+                                &lt;
+                            </button>
+                            <button 
+                                className={fileManagerStyles.navigate__path__history__button}
+                                onClick={() => forwardInTheHistory(currentPath)}
+                            >
+                                &gt;
+                            </button>
+                        </div>
+                        <div className={fileManagerStyles.current__path__container}>
+                            {currentPath}
+                        </div>
+                    </div>
+
+                    {initiator === 'Trash' && (
+                        <div className={fileManagerStyles.trash__actions__wrapper}>
+                            <p className={fileManagerStyles.trash__label}>
+                                Trash
+                            </p>
+                            <button 
+                                className={`
+                                    ${fileManagerStyles.action__button}
+                                    ${fileManagerStyles[
+                                        getDirectoryChildren(
+                                            initialPath!, 
+                                            canShowHiddenFiles
+                                        ).length
+                                        ? 'enabled' 
+                                        : 'disabled'
+                                    ]}
+                                    `
+                                }
+                                disabled={
+                                    getDirectoryChildren(
+                                        initialPath!, 
+                                        canShowHiddenFiles
+                                    ).length
+                                    ? false
+                                    : true
+                                }
+                                onClick={() => emptyTrash()}
+                            >
+                                Empty
+                            </button>
+                        </div>
+                    )}
+                    <div 
+                        className={fileManagerStyles.current__location__files__and__dirs}
+                        onContextMenu={(e) => openContextMenu(
+                            e, 
+                            'filesSection', 
+                            currentPath
+                        )}
                         onKeyDown={handleKeyDown}
                         ref={filesAndDirsSectionRef}
                         tabIndex={0}
@@ -626,7 +689,7 @@ export default function Nautilus({
                         {getDirectoryChildren(currentPath, canShowHiddenFiles)
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map(fileOrDirData => (
-                            <NautilusIcon
+                            <FileIconButton
                                 name={fileOrDirData.name}
                                 key={fileOrDirData.name}
                                 path={`${currentPath === '/'? '' : currentPath}/${fileOrDirData.name}`}
@@ -636,17 +699,21 @@ export default function Nautilus({
 
                         {(promptsAreVisible.renameFile || promptsAreVisible.createFolder) && (
                             <div 
-                                className={nautilusStyles.prompt__overlay}
+                                className={fileManagerStyles.prompt__overlay}
                                 onClick={closePrompts}
                                 onContextMenu={closePrompts}
                             />
                         )}
-                        
+                            
                         {contextMenusAreVisible.singleFile && (
                             <ContextMenu 
                                 origin={contextMenuAndPromptsOrigin}
                                 targetPath={contextMenuTargetPath}
-                                options={SINGLE_FILE_CONTEXT_MENU_OPTIONS}
+                                options={
+                                    initiatorIsNautilus
+                                    ? nautilusContextMenus.file
+                                    : trashContextMenus.file
+                                }
                             />
                         )}
 
@@ -654,7 +721,11 @@ export default function Nautilus({
                             <ContextMenu 
                                 origin={contextMenuAndPromptsOrigin} 
                                 targetPath={contextMenuTargetPath}
-                                options={SINGLE_DIRECTORY_CONTEXT_MENU_OPTIONS}
+                                options={
+                                    initiatorIsNautilus
+                                    ? nautilusContextMenus.directory
+                                    : trashContextMenus.directory
+                                }
                             />
                         )}
 
@@ -662,12 +733,16 @@ export default function Nautilus({
                             <ContextMenu 
                                 origin={contextMenuAndPromptsOrigin} 
                                 targetPath={contextMenuTargetPath}
-                                options={FILES_SECTION_CONTEXT_MENU_OPTIONS}
+                                options={
+                                    initiatorIsNautilus
+                                    ? nautilusContextMenus.section
+                                    : trashContextMenus.section
+                                }
                             />
                         )}
 
                         {promptsAreVisible.renameFile && (
-                            <RenameFilePrompt
+                             <RenameFilePrompt
                                 currentPath={currentPath}
                                 oldName={oldPathNameToRename}
                                 closePrompts={closePrompts}
@@ -682,8 +757,8 @@ export default function Nautilus({
                         )}
 
                     </div>
-                </NautilusContext.Provider>
-            </main>
+                </main>
+            </FileManagerContext.Provider>
         </div>
     );
 }

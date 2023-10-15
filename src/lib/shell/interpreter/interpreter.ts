@@ -1,8 +1,9 @@
-import { ParseTreeError } from '../exception';
-import { executeAST } from './ASTanalyzer';
+import { Shell } from '@/types/shell';
+
 import { lexer } from './lexer';
 import { parser } from './parser';
-import { Shell } from '@/types/shell';
+import { executeAST } from './ASTanalyzer';
+import { ParseTreeError } from '../exception';
 
 
 export const interpretCommand = (

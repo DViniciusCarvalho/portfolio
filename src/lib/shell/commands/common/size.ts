@@ -1,5 +1,6 @@
 import { SIZE_PREFIX_PATTERN } from './patterns';
 
+
 const PREFIX_MAPPING: {[key: string]: number} = {
     'K': 10e3,
     'M': 10e6,
@@ -14,10 +15,11 @@ export const getSizeNotation = (
     prefix: string | null = null
 ): string => {
 
-    const dividend = prefix ?? 'K';
+    prefix = prefix ?? 'K';
 
-    return `${(size / PREFIX_MAPPING[dividend]).toFixed(2)}${dividend}`
+    const dividend = PREFIX_MAPPING[prefix];
 
+    return `${(size / dividend).toFixed(2)}${prefix}`
 }
 
 
@@ -29,8 +31,11 @@ export const resolveSizeNotationInNumber = (
 
     const numberPart = sizeInString.replace(SIZE_PREFIX_PATTERN, '');
 
-    return Number(prefixPart? eval(`${numberPart} * ${PREFIX_MAPPING[prefixPart[0]]}`) : sizeInString);
-
+    return Number(
+        prefixPart
+        ? eval(`${numberPart} * ${PREFIX_MAPPING[prefixPart[0]]}`) 
+        : sizeInString
+    );
 }
 
 
@@ -40,6 +45,7 @@ export const isExactlySizeValue = (
 ): boolean => {
     
     const resolvedSizeToCompare = resolveSizeNotationInNumber(sizeToCompare);
+
     return fileSize === resolvedSizeToCompare;
 }
 
@@ -50,6 +56,7 @@ export const isGreaterThanSizeValue = (
 ): boolean => {
 
     const resolvedSizeToCompre = resolveSizeNotationInNumber(sizeIntervalToCompare);
+
     return fileSize > resolvedSizeToCompre;
 }
 
@@ -60,5 +67,6 @@ export const isLessThanSizeValue = (
 ): boolean => {
 
     const resolvedSizeToCompre = resolveSizeNotationInNumber(sizeIntervalToCompare);
+    
     return fileSize < resolvedSizeToCompre;
 }

@@ -1,15 +1,6 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage, 
-    optionIsPresent 
-} from './common/options';
-
-import { resolveArguments } from './common/arguments';
-import { ExecutionTreeError } from '../exception';
-
-import { 
     checkProvidedPath, 
     getDirectoryData, 
     getFileData, 
@@ -18,22 +9,24 @@ import {
     getParentPathAndTargetName 
 } from './common/directoryAndFile';
 
-import { File } from './models/File';
-import { Directory } from './models/Directory';
-import { deepClone } from '@/lib/utils';
-
 import { 
     changeContentUpdateTimestamps, 
     changeMetadataUpdateTimestamps, 
     changeReadingTimestamps 
 } from './common/timestamps';
-import { BREAK_LINE } from './common/patterns';
 
 import { 
     formatHelpPageOptions, 
     helpPageSectionsAssembler 
 } from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { deepClone } from '@/lib/utils';
+import { optionIsPresent } from './common/options';
+import { File } from './models/File';
+import { Directory } from './models/Directory';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

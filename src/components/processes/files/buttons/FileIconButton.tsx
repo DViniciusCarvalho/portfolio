@@ -1,26 +1,40 @@
-import React, { useContext, useState } from 'react';
-import nautilusStyles from '@/styles/processes/Nautilus.module.sass';
-import Image from 'next/image';
-import { Props } from '@/types/props';
-import { NautilusContext } from './Nautilus';
+import React, { 
+    useContext, 
+    useState 
+} from 'react';
 
-export default function NautilusIcon({
+import Image from 'next/image';
+import fileIconButtonStyles from '@/styles/processes/files/buttons/FileIconButton.module.sass';
+import { FileManagerContext } from '../FileManager';
+import { MainContext } from '@/components/workarea/Main';
+import { Props } from '@/types/props';
+
+
+export default function FileIconButton({
     name,
     path,
     type,
-}: Props.NautilusIconProps) {
+}: Props.FileIconButtonProps) {
 
     const {
+        systemTheme
+    } = useContext(MainContext);
+    
+    const {
+        currentUserHomeDir,
+        currentPath,
         openDirectory,
         openContextMenu,
         copyFileAction,
         cutFileAction
-    } = useContext(NautilusContext);
+    } = useContext(FileManagerContext);
+
 
     const [
         lastTouchTime, 
         setLastTouchTime
     ] = useState(0);
+
 
     const isDirectory = type === 'directory';
     const contextMenuType = isDirectory? 'singleDir' : 'singleFile';
@@ -59,11 +73,11 @@ export default function NautilusIcon({
 
 
     function getFileIconElement(): JSX.Element {
-        const fileIconImage = require(`../../../../public/assets/emblem-documents.png`);
+        const fileIconImage = require(`../../../../../public/assets/emblem-documents.png`);
 
         const fileIconElement = (
             <Image
-                className={nautilusStyles.icon}
+                className={fileIconButtonStyles.file__type__icon}
                 src={fileIconImage}
                 alt={'File icon: it\'s a white paper with horizontal black lines'}
             />
@@ -108,8 +122,8 @@ export default function NautilusIcon({
         const isHomeMainFolder = mainFoldersIconsMapping.hasOwnProperty(folderName);
 
         const folderIconImage = require(
-            `../../../../public/assets/${
-                isHomeMainFolder
+            `../../../../../public/assets/${
+                isHomeMainFolder && currentPath === currentUserHomeDir
                 ? mainFoldersIconsMapping[folderName].iconName 
                 : 'folder.png'
             }`
@@ -121,7 +135,7 @@ export default function NautilusIcon({
 
         const folderIconElement = (
             <Image
-                className={nautilusStyles.icon}
+                className={fileIconButtonStyles.file__type__icon}
                 src={folderIconImage}
                 alt={folderIconAlt}
             />
@@ -133,15 +147,19 @@ export default function NautilusIcon({
 
     return (
         <button 
-            className={nautilusStyles.nautilus__icon__wrapper}
+            className={`
+                ${fileIconButtonStyles.file__icon__wrapper}
+                ${fileIconButtonStyles[systemTheme]}
+                `
+            }
             onDoubleClick={() => isDirectory && openDirectory(path)}
             onTouchStart={() => isDirectory && handleTouchStart()}
             onContextMenu={(e) => openContextMenu(e, contextMenuType, path)}
             onKeyDown={handleKeyDown}
+            id={path}
         >
             {isDirectory? getFolderIconElement(name) : getFileIconElement()}
-            <p>{name}</p>
+            <p className={fileIconButtonStyles.file__name}>{name}</p>
         </button>
     );
 }
-

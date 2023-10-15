@@ -1,6 +1,7 @@
-import { ParseTreeNode } from '@/lib/shell/ParseTree';
 import { Data } from './data';
+import { ParseTreeNode } from '@/lib/shell/ParseTree';
 import { Directory } from '@/lib/shell/commands/models/Directory';
+
 
 export namespace Shell {
     interface Token {
@@ -50,8 +51,8 @@ export namespace Shell {
         setSystemEnvironmentVariables: React.Dispatch<React.SetStateAction<EnvironmentVariables>>;
         opennedProcessesData: Data.OpennedProcessData[];
         setOpennedProcessesData: React.Dispatch<React.SetStateAction<Data.OpennedProcessData[]>>;
-        openForegroundProcess: (processTitle: string) => number;
-        finishForegroundProcess: (PID: number) => void;
+        startNonGraphicalProcess: (processTitle: string) => number;
+        finishNonGraphicalProcess: (PID: number) => void;
         finishGraphicalProcess: (PID: number) => void;
         fileSystem: Directory;
         setFileSystem: React.Dispatch<React.SetStateAction<Directory>>;
@@ -70,6 +71,5 @@ export namespace Shell {
         name: string;
         handler: any;
     }
-
 
 }

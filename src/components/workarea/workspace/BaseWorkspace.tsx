@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import workspaceStyles from '@/styles/workarea/Workspace.module.sass';
-import { Props } from '@/types/props';
 import { MainContext } from '../Main';
+import { Props } from '@/types/props';
 import { getBaseWorkspaceStyles } from '@/lib/style';
 
 
@@ -27,7 +27,9 @@ export default function BaseWorkspace({
             className={`
                 ${workspaceStyles.container} 
                 ${workspaceStyles[systemLayout]}
-                ${workspaceStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+                ${workspaceStyles[
+                    applicationsAreBeingShowed? 'app--showed' : 'app--not--showed'
+                ]}
                 `
             }
             style={{

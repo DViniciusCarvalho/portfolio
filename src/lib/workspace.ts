@@ -1,5 +1,6 @@
 import { Data } from '@/types/data';
 
+
 export const parentWorkspaceIsNowVoid = (
     opennedProcessesData: Data.OpennedProcessData[], 
     desktopUUID: string

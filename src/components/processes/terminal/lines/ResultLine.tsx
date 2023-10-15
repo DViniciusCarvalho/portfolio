@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import terminalStyles from '@/styles/processes/Terminal.module.sass';
-import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
+import { Props } from '@/types/props';
 
 import { 
     BREAK_LINE,

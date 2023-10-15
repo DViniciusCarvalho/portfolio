@@ -1,14 +1,6 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage 
-} from './common/options';
-
-import { ExecutionTreeError } from '../exception';
-import { resolveArguments } from './common/arguments';
-
-import { 
     checkProvidedPath, 
     getDirectoryData, 
     targetIsDirectory
@@ -27,20 +19,21 @@ import {
     isLessThanDaysValue 
 } from './common/timestamps';
 
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
+import { commandDecorator } from './common/decorator';
 import { Directory } from './models/Directory';
 import { File } from './models/File';
+import { ExecutionTreeError } from '../exception';
 
 import { 
     ALL_CHARACTERS_PATTERN, 
     ALL_PERMISSIONS_PATTERN, 
     BREAK_LINE 
 } from './common/patterns';
-
-import { 
-    formatHelpPageOptions, 
-    helpPageSectionsAssembler 
-} from './common/formatters';
-import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

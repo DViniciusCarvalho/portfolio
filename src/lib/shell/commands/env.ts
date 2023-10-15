@@ -1,27 +1,21 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    checkOption, 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage 
-} from './common/options';
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
 
 import { deepClone } from '@/lib/utils';
+import { checkOption } from './common/options';
 import { checkProvidedPath } from './common/directoryAndFile';
-import { ExecutionTreeError } from '../exception';
 import { interpretCommand } from '../interpreter/interpreter';
-import { resolveArguments } from './common/arguments';
+import { commandDecorator } from './common/decorator';
+import { ExecutionTreeError } from '../exception';
 
 import { 
     BREAK_LINE, 
     VARIABLE_ASSIGNMENT_PATTERN
 } from './common/patterns';
-
-import { 
-    formatHelpPageOptions, 
-    helpPageSectionsAssembler 
-} from './common/formatters';
-import { commandDecorator } from './common/decorator';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

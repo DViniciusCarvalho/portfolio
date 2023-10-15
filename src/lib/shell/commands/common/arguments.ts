@@ -1,5 +1,6 @@
 import { Shell } from '@/types/shell';
-import { interpretCommand } from '../../interpreter/interpreter';
+
+import { interpretCommand } from '../../interpreter/interpreter'
 import { ExecutionTreeError } from '../../exception';
 
 import { 

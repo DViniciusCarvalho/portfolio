@@ -1,6 +1,7 @@
+import { StaticImageData } from 'next/image';
 import { Directory } from '@/lib/shell/commands/models/Directory';
 import { File } from '@/lib/shell/commands/models/File';
-import { StaticImageData } from 'next/image';
+
 
 export namespace Data {
 

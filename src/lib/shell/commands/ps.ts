@@ -1,12 +1,20 @@
 import { Shell } from '@/types/shell';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage, optionIsPresent } from './common/options';
-import { ExecutionTreeError } from '../exception';
-import { resolveArguments } from './common/arguments';
-import { BREAK_LINE } from './common/patterns';
-import { getDirectoryData, getFileData } from './common/directoryAndFile';
-import { alignLineItems, formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+
+import { 
+    getDirectoryData, 
+    getFileData 
+} from './common/directoryAndFile';
+
+import { 
+    alignLineItems, 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
+import { optionIsPresent } from './common/options';
 import { changeReadingTimestamps } from './common/timestamps';
 import { commandDecorator } from './common/decorator';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

@@ -1,7 +1,11 @@
-import React, { useContext, useState } from 'react';
-import nautilusStyles from '@/styles/processes/Nautilus.module.sass';
+import React, { 
+    useContext, 
+    useState 
+} from 'react';
+
+import renameFilePromptStyles from '@/styles/processes/files/prompts/RenameFilePrompt.module.sass';
 import { MainContext } from '@/components/workarea/Main';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { Props } from '@/types/props';
 
 import { 
     checkProvidedPath, 
@@ -11,9 +15,10 @@ import {
     getParentPathAndTargetName, 
     targetIsDirectory
 } from '@/lib/shell/commands/common/directoryAndFile';
-import { Props } from '@/types/props';
+
 import { File } from '@/lib/shell/commands/models/File';
 import { Directory } from '@/lib/shell/commands/models/Directory';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function RenameFilePrompt({    
@@ -23,6 +28,7 @@ export default function RenameFilePrompt({
 }: Props.RenameFilePromptProps) {
 
     const {
+        systemTheme,
         systemColorPalette,
         basicCommandSystemAPI
     } = useContext(MainContext);
@@ -135,15 +141,21 @@ export default function RenameFilePrompt({
 
 
     return (
-        <div className={nautilusStyles.rename__file__prompt}>
+        <div 
+            className={`
+                ${renameFilePromptStyles.rename__file__prompt}
+                ${renameFilePromptStyles[systemTheme]}
+                `
+            }
+        >
             <h3 
-                className={nautilusStyles.rename__file__new__name__title}
+                className={renameFilePromptStyles.rename__file__new__name__title}
             >
                 Rename {targetType}
             </h3>
             <input 
                 type='text' 
-                className={nautilusStyles.rename__file__new__name__input} 
+                className={renameFilePromptStyles.rename__file__new__name__input} 
                 style={{
                     outlineColor: COLOR_PALETTE_OPTIONS[systemColorPalette].settingsColor
                 }}
@@ -154,7 +166,7 @@ export default function RenameFilePrompt({
                 aria-label='new file or directory name input'
             />
             <p 
-                className={nautilusStyles.hidden__file__description} 
+                className={renameFilePromptStyles.hidden__file__description} 
                 aria-label='hidden files and directories description'
             >
                 {
@@ -163,11 +175,15 @@ export default function RenameFilePrompt({
                     : ''
                 }
             </p>
-            <div className={nautilusStyles.rename__button__wrapper}>
+            <div className={renameFilePromptStyles.rename__button__wrapper}>
                 <button 
                     className={`
-                        ${nautilusStyles.rename__button}
-                        ${isCurrentNameAvailable(fileName)? nautilusStyles.non__void__name : ''}
+                        ${renameFilePromptStyles.rename__button}
+                        ${renameFilePromptStyles[
+                            isCurrentNameAvailable(fileName)
+                            ? 'non--void--name' 
+                            : 'void--name'
+                        ]}
                         `
                     }
                     disabled={!isCurrentNameAvailable(fileName)}

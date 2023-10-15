@@ -1,12 +1,14 @@
 import React, { useContext } from 'react';
-import settingsStyles from '@/styles/processes/Settings.module.sass';
+import terminalSectionStyles from '@/styles/processes/settings/sections/TerminalSection.module.sass';
 import { MainContext } from '@/components/workarea/Main';
 import PreviousTerminal from './PreviousTerminal';
+import AppearanceColorSelector from './AppearanceSelector';
 
 
 export default function TerminalSection() {
 
 	const {
+		systemTheme,
 		terminalFontSizeInPixels,
 		terminalUserHostColor,
 		terminalRootHostColor,
@@ -36,20 +38,29 @@ export default function TerminalSection() {
 	return (
 		<React.Fragment>
 			<p 
-				className={`${settingsStyles.terminal__label} ${settingsStyles.label}`}
-				aria-label='terminal styles section label'
+				className={`
+					${terminalSectionStyles.terminal__label}
+					${terminalSectionStyles[systemTheme]}
+					`
+				}
 			>
 				Terminal
 			</p>
-			<div className={`${settingsStyles.terminal__wrapper} ${settingsStyles.wrapper}`}>
-				<div className={settingsStyles.terminal__previous__section}>
+			<div 
+				className={`
+					${terminalSectionStyles.terminal__wrapper} 
+					${terminalSectionStyles[systemTheme]}
+					`
+				}
+			>
+				<div className={terminalSectionStyles.terminal__previous__section}>
 					<PreviousTerminal terminalUserIsRootUser={false}/>
 					<PreviousTerminal terminalUserIsRootUser={true}/>
 				</div>
-				<div className={settingsStyles.terminal__appearance__selectors__wrapper}>
-					<div className={settingsStyles.terminal__appearance__selector}>
+				<div className={terminalSectionStyles.terminal__appearance__selectors__wrapper}>
+					<div className={terminalSectionStyles.terminal__appearance__selector}>
 						Font-size
-						<div className={settingsStyles.fontsize__input__wrapper}>
+						<div className={terminalSectionStyles.fontsize__input__wrapper}>
 							<button
 								onClick={() => changeTerminalFontSizeInPixels(
 									terminalFontSizeInPixels - 1
@@ -58,8 +69,8 @@ export default function TerminalSection() {
 								-
 							</button>
 							<input 
-								type='text'
-								className={settingsStyles.fontsize__input}
+								type={'text'}
+								className={terminalSectionStyles.fontsize__input}
 								value={terminalFontSizeInPixels}
 								onInput={(e) => handleFontSizeChanging(
 									(e.target as HTMLInputElement).value
@@ -74,146 +85,41 @@ export default function TerminalSection() {
 							</button>
 						</div>
 					</div>
-					<div className={settingsStyles.terminal__appearance__selector}>
-						<div className={settingsStyles.terminal__appearance__selector__label}>
-							Normal User Prompt Color
-							<p className={settingsStyles.label__description}>
-								Is the "username@domain".
-							</p>
-						</div>
-						<input 
-							type="color" 
-							id='user_host_color_input'
-							className={settingsStyles.color__input}
-							value={terminalUserHostColor}
-							onInput={e => changeTerminalUserHostColor(
-								(e.target as HTMLInputElement).value
-							)}
-						/>
-						<label 
-							htmlFor='user_host_color_input'
-							className={settingsStyles.color__input__label}
-						>
-							<span 
-								className={settingsStyles.color__demonstration}
-								style={{
-									backgroundColor: terminalUserHostColor
-								}}
-							/>
-							{terminalUserHostColor}
-						</label>
-					</div>
-					<div className={settingsStyles.terminal__appearance__selector}>
-						<div className={settingsStyles.terminal__appearance__selector__label}>
-							Root User Prompt Color
-							<p className={settingsStyles.label__description}>
-								Is the "root@domain".
-							</p>
-						</div>
-						<input 
-							type="color" 
-							id='root_host_color_input'
-							className={settingsStyles.color__input}
-							value={terminalRootHostColor}
-							onInput={e => changeTerminalRootHostColor(
-								(e.target as HTMLInputElement).value
-							)}
-						/>
-						<label 
-							htmlFor='root_host_color_input'
-							className={settingsStyles.color__input__label}
-						>
-							<span 
-								className={settingsStyles.color__demonstration}
-								style={{
-									backgroundColor: terminalRootHostColor
-								}}
-							/>
-							{terminalRootHostColor}
-						</label>
-					</div>
-					<div className={settingsStyles.terminal__appearance__selector}>
-						<div className={settingsStyles.terminal__appearance__selector__label}>
-							Current Directory Color
-							<p className={settingsStyles.label__description}>
-								Is the "~".
-							</p>
-						</div>
-						<input 
-							type="color" 
-							id='current_dir_color_input'
-							className={settingsStyles.color__input}
-							value={terminalCurrentDirectoryColor}
-							onInput={e => changeTerminalCurrentDirectoryColor(
-								(e.target as HTMLInputElement).value
-							)}
-						/>
-						<label 
-							htmlFor='current_dir_color_input'
-							className={settingsStyles.color__input__label}
-						>
-							<span 
-								className={settingsStyles.color__demonstration}
-								style={{
-									backgroundColor: terminalCurrentDirectoryColor
-								}}
-							/>
-							{terminalCurrentDirectoryColor}
-						</label>
-					</div>
-					<div className={settingsStyles.terminal__appearance__selector}>
-						<div className={settingsStyles.terminal__appearance__selector__label}>
-							Default Color
-							<p className={settingsStyles.label__description}>
-								Is the color of ":", "$", "#" and "clear".
-							</p>
-						</div>
-						<input 
-							type="color" 
-							id='default_color_input'
-							className={settingsStyles.color__input}
-							value={terminalDefaultColor}
-							onInput={e => changeTerminalDefaultColor(
-								(e.target as HTMLInputElement).value
-							)}
-						/>
-						<label 
-							htmlFor='default_color_input'
-							className={settingsStyles.color__input__label}
-						>
-							<span 
-								className={settingsStyles.color__demonstration}
-								style={{
-									backgroundColor: terminalDefaultColor
-								}}
-							/>
-							{terminalDefaultColor}
-						</label>
-					</div>
-					<div className={settingsStyles.terminal__appearance__selector}>
-						Background Color
-						<input 
-							type="color" 
-							id='background_color_input'
-							className={settingsStyles.color__input}
-							value={terminalBackgroundColor}
-							onInput={e => changeTerminalBackgroundColor(
-								(e.target as HTMLInputElement).value
-							)}
-						/>
-						<label 
-							htmlFor='background_color_input'
-							className={settingsStyles.color__input__label}
-						>
-							<span 
-								className={settingsStyles.color__demonstration}
-								style={{
-									backgroundColor: terminalBackgroundColor
-								}}
-							/>
-							{terminalBackgroundColor}
-						</label>
-					</div>
+
+					<AppearanceColorSelector
+						color={terminalUserHostColor}
+						action={changeTerminalUserHostColor}
+						title={'Normal User Prompt Color'}
+						description={'Is the "username@domain".'}
+					/>
+
+					<AppearanceColorSelector
+						color={terminalRootHostColor}
+						action={changeTerminalRootHostColor}
+						title={'Root User Prompt Color'}
+						description={'Is the "root@domain".'}
+					/>
+
+					<AppearanceColorSelector
+						color={terminalCurrentDirectoryColor}
+						action={changeTerminalCurrentDirectoryColor}
+						title={'Current Directory Color'}
+						description={'Is the "~".'}
+					/>
+
+					<AppearanceColorSelector
+						color={terminalDefaultColor}
+						action={changeTerminalDefaultColor}
+						title={'Default Color'}
+						description={'Is the color of ":", "$", "#" and "clear".'}
+					/>
+
+					<AppearanceColorSelector
+						color={terminalBackgroundColor}
+						action={changeTerminalBackgroundColor}
+						title={'Background Color'}
+					/>
+
 				</div>
 			</div>
 		</React.Fragment>

@@ -82,7 +82,6 @@ const createInitialFile = (
 }
 
 
-// Initial directories
 const binDirectory = createInitialDir('bin', true, 1, '/usr/bin', '0777');
 const devDirectory = createInitialDir('dev', false, 1, '', '0755');
 const etcDirectory = createInitialDir('etc', false, 1, '', '0755');
@@ -106,20 +105,22 @@ const tmpDirectory = createInitialDir('tmp', false, 1, '', '1777');
 const usrDirectory = createInitialDir('usr', false, 1, '', '0755');
 const varDirectory = createInitialDir('var', false, 1, '', '0755');
 
-// Initial files
 const passwdFile = createInitialFile('passwd', '', false, 1, '', '0644');
 const groupFile = createInitialFile('group', '', false, 1, '', '0644');
 const shadowFile = createInitialFile('shadow', '', false, 1, '', '0640');
 const gshadowFile = createInitialFile('gshadow', '', false, 1, '', '0640');
+const trashmapFile = createInitialFile('trashmap', '', false, 1, '', '0755');
 
-// Pushing the files and directories to their respective directories
+
 etcDirectory.children.files.push(passwdFile);
 etcDirectory.children.files.push(groupFile);
 etcDirectory.children.files.push(shadowFile);
 etcDirectory.children.files.push(gshadowFile);
+localShareDirectory.children.files.push(trashmapFile);
 
 localDirectory.children.directories.push(localShareDirectory);
 localShareDirectory.children.directories.push(trashDirectory);
+
 
 visitorDirectory.children.directories.push(
     documentsDirectory,

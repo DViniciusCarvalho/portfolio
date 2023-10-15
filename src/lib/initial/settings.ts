@@ -1,4 +1,5 @@
-import { Data } from "@/types/data";
+import { Data } from '@/types/data';
+
 
 export const INITIAL_SYSTEM_LAYOUT = 'row';
 

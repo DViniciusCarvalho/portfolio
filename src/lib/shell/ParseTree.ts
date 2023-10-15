@@ -1,5 +1,5 @@
-import { Shell } from "@/types/shell";
-import { ParseTreeNode } from "./ParseTreeNode";
+import { Shell } from '@/types/shell';
+import { ParseTreeNode } from './ParseTreeNode';
 
 
 export class ParseTree implements Shell.IParseTree {    

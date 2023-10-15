@@ -60,7 +60,7 @@ export const commandHasInvalidOptions = (
 export const getCommandInvalidOptionMessage = (
     commandName: string,
     invalidOptions: string[]
-) => {
+): string => {
 
     const invalidOptionsMessageLines = invalidOptions.reduce((acc: string, curr) => {
         const message = `${commandName}: invalid option -- '${curr}'\n`;

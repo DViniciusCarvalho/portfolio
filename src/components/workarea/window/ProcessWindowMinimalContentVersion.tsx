@@ -1,7 +1,8 @@
 import React from 'react';
-import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import Image from 'next/image';
+import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import { Props } from '@/types/props';
+
 
 export default function ProcessWindowMinimalContentVersion({ 
     processIcon, 

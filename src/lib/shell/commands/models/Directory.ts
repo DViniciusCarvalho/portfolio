@@ -2,6 +2,7 @@ import { Data } from '@/types/data';
 import { BaseMetadata } from './BaseMetadata';
 import { File } from './File';
 
+
 export class Directory extends BaseMetadata {
     constructor(
         public name: string,

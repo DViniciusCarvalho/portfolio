@@ -1,10 +1,14 @@
-import React, { useContext, useState } from 'react';
-import nautilusStyles from '@/styles/processes/Nautilus.module.sass';
+import React, { 
+    useContext, 
+    useState 
+} from 'react';
+
+import newFolderPromptStyles from '@/styles/processes/files/prompts/NewFolderPrompt.module.sass';
 import { MainContext } from '@/components/workarea/Main';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { Props } from '@/types/props';
 import { getDirectoryData } from '@/lib/shell/commands/common/directoryAndFile';
 import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
-import { Props } from '@/types/props';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function NewFolderPrompt({    
@@ -13,6 +17,7 @@ export default function NewFolderPrompt({
 }: Props.NewFolderPromptProps) {
 
     const {
+        systemTheme,
         systemColorPalette,
         basicCommandSystemAPI
     } = useContext(MainContext);
@@ -61,19 +66,29 @@ export default function NewFolderPrompt({
 
 
     return (
-        <div className={nautilusStyles.new__folder__prompt}>
-            <div className={nautilusStyles.prompt__header}>
+        <div 
+            className={`
+                ${newFolderPromptStyles.new__folder__prompt}
+                ${newFolderPromptStyles[systemTheme]}
+                `
+            }
+        >
+            <div className={newFolderPromptStyles.prompt__header}>
                 <button 
-                    className={nautilusStyles.cancel__button}
+                    className={newFolderPromptStyles.cancel__button}
                     onClick={closePrompts}
                 >
                     Cancel
                 </button>
-                <h3 className={nautilusStyles.prompt__title}>New Folder</h3>
+                <h3 className={newFolderPromptStyles.prompt__title}>New Folder</h3>
                 <button 
                     className={`
-                        ${nautilusStyles.create__button}
-                        ${isCurrentNameAvailable(folderName)? nautilusStyles.non__void__name : ''}
+                        ${newFolderPromptStyles.create__button}
+                        ${newFolderPromptStyles[
+                            isCurrentNameAvailable(folderName)
+                            ? 'non--void--name' 
+                            : 'void--name'
+                        ]}
                         `
                     }
                     disabled={!isCurrentNameAvailable(folderName)}
@@ -82,16 +97,16 @@ export default function NewFolderPrompt({
                     Create
                 </button>
             </div>
-            <div className={nautilusStyles.prompt__input__wrapper}>
+            <div className={newFolderPromptStyles.prompt__input__wrapper}>
                 <label 
                     htmlFor="new__folder__name" 
-                    className={nautilusStyles.new__folder__name__label}
+                    className={newFolderPromptStyles.new__folder__name__label}
                 >
                     Folder name
                 </label>
                 <input 
                     type="text" 
-                    className={nautilusStyles.new__folder__name__input} 
+                    className={newFolderPromptStyles.new__folder__name__input} 
                     id="new__folder__name"
                     style={{
                         outlineColor: COLOR_PALETTE_OPTIONS[systemColorPalette].settingsColor
@@ -101,7 +116,7 @@ export default function NewFolderPrompt({
                     )}
                 />
                 <p 
-                    className={nautilusStyles.hidden__file__description} 
+                    className={newFolderPromptStyles.hidden__file__description} 
                     aria-label='hidden files and directories description'
                 >
                     {

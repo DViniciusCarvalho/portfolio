@@ -8,7 +8,7 @@
     text-decoration: none
     transition: background-color 0.1s
 
-    &.current-active-process
+    &.current--active--process
         background-color: #ffffff2c
     
     &.row
@@ -34,6 +34,13 @@
             height: 5px
             border-radius: 50%
 
+    .openned__indicator
+        &.process--running
+            display: block
+
+        &.process--not--running
+            display: none
+            
     &:hover
         background-color: #ffffff2c
 

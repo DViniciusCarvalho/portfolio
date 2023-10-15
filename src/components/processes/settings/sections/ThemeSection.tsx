@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
-import settingsStyles from '@/styles/processes/Settings.module.sass';
+import themeSectionStyles from '@/styles/processes/settings/sections/ThemeSection.module.sass';
 import { MainContext } from '@/components/workarea/Main';
 import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+
 
 export default function ThemeSection() {
 
@@ -14,17 +15,28 @@ export default function ThemeSection() {
     return (
         <React.Fragment>
             <p 
-                className={`${settingsStyles.theme__label} ${settingsStyles.label}`}
+                className={`
+                    ${themeSectionStyles.theme__label}
+                    ${themeSectionStyles[systemTheme]}
+                    `
+                }
                 aria-label='theme styles section label'
             >
                 Theme
             </p>
-            <div className={`${settingsStyles.theme__wrapper} ${settingsStyles.wrapper}`}>
-                <div className={settingsStyles.light__theme__wrapper}>
+            <div 
+                className={`
+                    ${themeSectionStyles.theme__wrapper}
+                    ${themeSectionStyles[systemTheme]}
+                    `
+                }
+            
+            >
+                <div className={themeSectionStyles.light__theme__wrapper}>
                     <div 
                         className={`
-                            ${settingsStyles.light__theme__previous}
-                            ${settingsStyles[systemTheme === 'light'? 'selected-theme': '']}
+                            ${themeSectionStyles.light__theme__previous}
+                            ${themeSectionStyles[systemTheme === 'light'? 'selected-theme': '']}
                             `
                         }
                         style={{
@@ -43,23 +55,24 @@ export default function ThemeSection() {
                             `
                         }}
                         onClick={() => changeSystemTheme('light')}
+                        tabIndex={0}
                     >
-                        <div className={settingsStyles.light__theme__process__window__previous}>
-                            <div className={settingsStyles.title__bar__previous}/>
-                            <div className={settingsStyles.process__window__content__previous}/>
+                        <div className={themeSectionStyles.light__theme__process__window__previous}>
+                            <div className={themeSectionStyles.title__bar__previous}/>
+                            <div className={themeSectionStyles.process__window__content__previous}/>
                         </div>
-                        <div className={settingsStyles.system__theme__process__window}>
-                            <div className={settingsStyles.title__bar__previous}/>
-                            <div className={settingsStyles.process__window__content__previous}/>
+                        <div className={themeSectionStyles.system__theme__process__window}>
+                            <div className={themeSectionStyles.title__bar__previous}/>
+                            <div className={themeSectionStyles.process__window__content__previous}/>
                         </div>
                     </div>
-                    <p className={settingsStyles.light__theme__label}>Light</p>
+                    <p className={themeSectionStyles.light__theme__label}>Light</p>
                 </div>
-                <div className={settingsStyles.dark__theme__wrapper}>
+                <div className={themeSectionStyles.dark__theme__wrapper}>
                     <div 
                         className={`
-                            ${settingsStyles.dark__theme__previous}
-                            ${settingsStyles[systemTheme === 'dark'? 'selected-theme': '']}
+                            ${themeSectionStyles.dark__theme__previous}
+                            ${themeSectionStyles[systemTheme === 'dark'? 'selected-theme': '']}
                             `
                         }
                         style={{
@@ -78,17 +91,18 @@ export default function ThemeSection() {
                             `
                         }}
                         onClick={() => changeSystemTheme('dark')}
+                        tabIndex={0}
                     >
-                        <div className={settingsStyles.dark__theme__process__window__previous}>
-                            <div className={settingsStyles.title__bar__previous}/>
-                            <div className={settingsStyles.process__window__content__previous}/>
+                        <div className={themeSectionStyles.dark__theme__process__window__previous}>
+                            <div className={themeSectionStyles.title__bar__previous}/>
+                            <div className={themeSectionStyles.process__window__content__previous}/>
                         </div>
-                        <div className={settingsStyles.system__theme__process__window}>
-                            <div className={settingsStyles.title__bar__previous}/>
-                            <div className={settingsStyles.process__window__content__previous}/>
+                        <div className={themeSectionStyles.system__theme__process__window}>
+                            <div className={themeSectionStyles.title__bar__previous}/>
+                            <div className={themeSectionStyles.process__window__content__previous}/>
                         </div>
                     </div>
-                    <p className={settingsStyles.dark__theme__label}>Dark</p>
+                    <p className={themeSectionStyles.dark__theme__label}>Dark</p>
                 </div>
             </div>
         </React.Fragment>

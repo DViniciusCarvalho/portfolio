@@ -34,4 +34,3 @@ export const OCTAL_NUMBER_PATTERN = /^[0-7]*$/g;
 export const ALL_PERMISSIONS_PATTERN = /^[0-7]{3|4}$/g;
 export const ALL_CHARACTERS_PATTERN = /.*/g;
 export const POSITIVE_INTEGER_PATTERN = /\d+/;
-

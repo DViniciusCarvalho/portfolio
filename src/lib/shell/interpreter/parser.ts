@@ -1,8 +1,12 @@
-import { Shell } from "@/types/shell";
-import { ParseTree } from "../ParseTree";
-import { ParseTreeNode } from "../ParseTreeNode";
-import { ParseTreeError } from "../exception";
-import { SHELL_OPERATORS, RESERVED_WORDS } from "../grammar";
+import { Shell } from '@/types/shell';
+import { ParseTree } from '../ParseTree';
+import { ParseTreeNode } from '../ParseTreeNode';
+import { ParseTreeError } from '../exception';
+
+import { 
+    SHELL_OPERATORS,
+    RESERVED_WORDS 
+} from '../grammar';
 
 
 const doCommandTree = (

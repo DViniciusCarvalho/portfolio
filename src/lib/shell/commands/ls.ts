@@ -1,18 +1,6 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage,
-    optionIsPresent
-} from './common/options';
-
-import { 
-    resolveArguments 
-} from './common/arguments';
-
-import { ExecutionTreeError } from '../exception';
-
-import { 
     checkProvidedPath, 
     getDirectoryData, 
     getFileData, 
@@ -21,18 +9,24 @@ import {
     targetIsDirectory
 } from './common/directoryAndFile';
 
-import { getSizeNotation } from './common/size';
-import { Directory } from './models/Directory';
-import { File } from './models/File';
-import { changeReadingTimestamps } from './common/timestamps';
-import { BREAK_LINE, COLORED_WORD_TEMPLATE } from './common/patterns';
-
 import { 
     alignLineItems, 
     formatHelpPageOptions, 
     helpPageSectionsAssembler 
 } from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { optionIsPresent} from './common/options';
+import { getSizeNotation } from './common/size';
+import { changeReadingTimestamps } from './common/timestamps';
+import { Directory } from './models/Directory';
+import { File } from './models/File';
+import { ExecutionTreeError } from '../exception';
+
+import { 
+    BREAK_LINE, 
+    COLORED_WORD_TEMPLATE 
+} from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

@@ -1,11 +1,10 @@
 import { Data } from '@/types/data';
+import { generateUUID } from './utils';
 
 import { 
     INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, 
     INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS 
 } from './initial/process';
-
-import { generateUUID } from './utils';
 
 
 export const getCorrespondentRunningProcess = (

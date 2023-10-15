@@ -1,0 +1,31 @@
+.file__icon__wrapper
+    display: flex
+    flex-direction: column
+    gap: 3%
+    padding: 10px
+    background-color: transparent
+    align-self: flex-start
+    align-items: center
+    border-radius: 10px
+    font-size: 1em
+    transition: color 0.1s
+
+    &.light
+        color: black
+
+        &:hover
+            color: #adadad
+
+    &.dark
+        color: white
+
+        &:hover
+            color: #868686
+
+    .file__type__icon
+        width: 42px
+        height: 42px
+
+    .file__name
+        color: inherit
+        text-align: center

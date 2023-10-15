@@ -1,16 +1,4 @@
 import { Shell } from '@/types/shell';
-import { ParseTree } from '../ParseTree';
-import { ParseTreeNode } from '../ParseTreeNode';
-import { SHELL_OPERATORS } from '../grammar';
-import { deepClone } from '@/lib/utils';
-
-import { 
-    END_COMMAND_SUBSTITUTION_PATTERN, 
-    ESCAPE_SEQUENCES_SUBSTITUTION, 
-    FULL_COMMAND_SUBSTITUTION_PATTERN, 
-    START_COMMAND_SUBSTITUTION_PATTERN, 
-    VARIABLE_ASSIGNMENT_PATTERN 
-} from '../commands/common/patterns';
 
 import { 
     checkProvidedPath, 
@@ -19,7 +7,19 @@ import {
     getParentPathAndTargetName 
 } from '../commands/common/directoryAndFile';
 
+import { deepClone } from '@/lib/utils';
+import { ParseTree } from '../ParseTree';
+import { ParseTreeNode } from '../ParseTreeNode';
 import { ExecutionTreeError } from '../exception';
+import { SHELL_OPERATORS } from '../grammar';
+
+import { 
+    END_COMMAND_SUBSTITUTION_PATTERN, 
+    ESCAPE_SEQUENCES_SUBSTITUTION, 
+    FULL_COMMAND_SUBSTITUTION_PATTERN, 
+    START_COMMAND_SUBSTITUTION_PATTERN, 
+    VARIABLE_ASSIGNMENT_PATTERN 
+} from '../commands/common/patterns';
 
 
 const getCommandOptionsArray = (
@@ -30,18 +30,15 @@ const getCommandOptionsArray = (
 
     const tokensAccumulator: Shell.Token[] = [];
 
-    let nodeAccumulator = initialNode;
+    let nodeAccumulator: ParseTreeNode | null = initialNode;
 
-    while (true) {
+    while (nodeAccumulator) {
         tokensAccumulator.push({
             type: nodeAccumulator.token.type,
             value: nodeAccumulator.token.value
         });
 
-        if (nodeAccumulator.leftNode === null) break;
-
         nodeAccumulator = nodeAccumulator.leftNode;
-
     }
 
     return tokensAccumulator;
@@ -56,18 +53,15 @@ const getCommandArgumentsArray = (
 
     const tokensAccumulator: Shell.Token[] = [];
 
-    let nodeAccumulator = initialNode;
+    let nodeAccumulator: ParseTreeNode | null = initialNode;
 
-    while (true) {
+    while (nodeAccumulator) {
         tokensAccumulator.push({
             type: nodeAccumulator.token.type,
             value: nodeAccumulator.token.value
         });
 
-        if (nodeAccumulator.rightNode === null) break;
-
         nodeAccumulator = nodeAccumulator.rightNode;
-
     }
 
     return tokensAccumulator;
@@ -93,25 +87,30 @@ export const executeSingleCommand = (
                         
     const commandIsVariableAssignment = commandName.match(VARIABLE_ASSIGNMENT_PATTERN);
 
-    const cwd = systemAPI.environmentVariables['PWD'];
-    const currentUser = systemAPI.currentShellUser;
-    const fileSystem = systemAPI.fileSystem;
+    const {
+        environmentVariables,
+        setEnvironmentVariables,
+        fileSystem
+    } = systemAPI;
 
-    const commandIsPathCheck = checkProvidedPath(
+    const currentWorkingDirectory = environmentVariables['PWD'];
+    const currentUser = environmentVariables['USER'];
+
+    const checkedCommandPath = checkProvidedPath(
         commandName,
-        cwd,
+        currentWorkingDirectory,
         currentUser,
         fileSystem
     );
 
-    const commandIsNotExecutablePath = commandIsPathCheck.valid;
+    const commandIsNotExecutablePath = checkedCommandPath.valid;
 
 
     if (commandIsVariableAssignment) {
         const variableName = commandName.split('=')[0];
         const variableValue = commandName.split('=')[1];
 
-        systemAPI.setEnvironmentVariables(previous => {
+        setEnvironmentVariables(previous => {
             const previousDeepCopy = deepClone(previous);
 
             previousDeepCopy[variableName] = variableValue;
@@ -121,7 +120,7 @@ export const executeSingleCommand = (
             return previousDeepCopy;
         });
 
-        systemAPI.environmentVariables[variableName] = variableValue;
+        environmentVariables[variableName] = variableValue;
 
         return {
             stdout: null,
@@ -134,7 +133,7 @@ export const executeSingleCommand = (
     try {
         if (commandIsNotExecutablePath) {
             if (isRedirectAction) {
-                if (commandIsPathCheck.validAs === 'directory') {
+                if (checkedCommandPath.validAs === 'directory') {
                     throw new ExecutionTreeError(
                         `${commandName}: Is a directory`,
                         1
@@ -144,11 +143,11 @@ export const executeSingleCommand = (
                 const {
                     parentPath,
                     targetName
-                } = getParentPathAndTargetName(commandIsPathCheck.resolvedPath);
+                } = getParentPathAndTargetName(checkedCommandPath.resolvedPath);
 
                 const parentDirectoryData = getDirectoryData(
                     parentPath,
-                    cwd,
+                    currentWorkingDirectory,
                     currentUser,
                     fileSystem
                 );

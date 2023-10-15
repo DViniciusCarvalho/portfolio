@@ -1,15 +1,6 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage, 
-    optionIsPresent 
-} from './common/options';
-
-import { ExecutionTreeError } from '../exception';
-import { resolveArguments } from './common/arguments';
-
-import { 
     changeMetadataUpdateTimestamps, 
     changeReadingTimestamps 
 } from './common/timestamps';
@@ -23,15 +14,21 @@ import {
     targetIsDirectory 
 } from './common/directoryAndFile';
 
-import { Directory } from './models/Directory';
-import { File } from './models/File';
-import { BREAK_LINE, OCTAL_NUMBER_PATTERN } from './common/patterns';
-
 import { 
     formatHelpPageOptions, 
     helpPageSectionsAssembler 
 } from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { optionIsPresent } from './common/options';
+import { Directory } from './models/Directory';
+import { File } from './models/File';
+import { ExecutionTreeError } from '../exception';
+
+import { 
+    BREAK_LINE, 
+    OCTAL_NUMBER_PATTERN 
+} from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

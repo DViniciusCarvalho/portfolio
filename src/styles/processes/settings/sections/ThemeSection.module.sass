@@ -1,0 +1,131 @@
+@use 'mixins'
+    
+.theme__label
+    @include mixins.settings_section_label()
+
+    &.light
+        color: black
+
+    &.dark
+        color: white
+    
+.theme__wrapper
+    @include mixins.settings_section_wrapper()
+    display: flex
+    padding: 20px
+    justify-content: center
+    align-items: center
+
+    &.light
+        background-color: #f3f2f2
+        border: 0.5px solid #cfcfcfd3
+
+        .light__theme__previous, .dark__theme__previous
+            border-color: #f3f2f2
+
+    &.dark
+        background-color: #272727
+        border: 0.5px solid #13131391
+
+        .light__theme__previous, .dark__theme__previous
+            border-color: #242323
+
+
+    .title__bar__previous
+        width: 100%
+        height: 25%
+        border-width: 0px 0px 0.1px 0px
+        border-style: solid
+        
+    .process__window__content__previous
+        width: 100%
+        height: 75%
+
+    .light__theme__wrapper, .dark__theme__wrapper
+        display: flex
+        flex-direction: column
+        align-items: center
+        gap: 4%
+        height: 100%
+        width: 40%
+        max-width: 303px
+        padding: 20px
+
+        .light__theme__previous, .dark__theme__previous
+            position: relative
+            width: 100%
+            height: 80%
+            box-shadow: 0px 0px 2px #000000b9
+            border-radius: 10px
+
+            &.selected-theme
+                border-width: 3px 
+                border-style: solid 
+                outline-width: 5px
+                outline-style: solid
+
+            .light__theme__process__window__previous, .dark__theme__process__window__previous
+                position: absolute
+                z-index: 2
+                left: 20%
+                top: 38%
+                width: 45%
+                height: 45%
+                border-radius: 8px
+                overflow: hidden
+                box-shadow: 0px 0px 4px #0000006e
+
+            .light__theme__process__window__previous
+                .title__bar__previous
+                    background-color: #eeeeee
+                    border-color: #5a5a5a62
+
+                .process__window__content__previous
+                    background-color: #f3f2f2
+
+            .dark__theme__process__window__previous
+                .title__bar__previous
+                    background-color: #1f1f1f
+                    border-color: #414141cb
+                        
+                .process__window__content__previous
+                    background-color: #1b1b1d
+
+            .system__theme__process__window
+                position: absolute
+                left: 38%
+                top: 15%
+                width: 45%
+                height: 45%
+                border-radius: 8px
+                overflow: hidden
+
+                .title__bar__previous
+                    background-color: #2c2b2b
+                    border-color: #474747b9
+
+                .process__window__content__previous
+                    background-color: #2c2b2b
+
+
+@media only screen and (max-width: 800px) and (min-width: 651px)
+    .theme__wrapper
+        justify-content: center
+        align-items: center
+
+        .light__theme__wrapper, .dark__theme__wrapper
+            width: 50% !important
+            min-width: 237px
+
+
+@media only screen and (max-width: 650px)
+    .theme__wrapper
+        flex-direction: column
+        justify-content: center
+        align-items: center
+        min-height: 550px !important
+
+        .light__theme__wrapper, .dark__theme__wrapper
+            width: 100% !important
+            min-width: 237px
+            padding: 10px !important

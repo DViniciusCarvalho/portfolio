@@ -1,19 +1,33 @@
-import React, { useContext, useEffect, useState } from 'react';
-import applicationsWindowStyles from '@/styles/workarea/applications/ApplicationsWindow.module.sass';
+import React, { 
+	useContext, 
+	useEffect, 
+	useState 
+} from 'react';
+
 import Image from 'next/image';
+
+import applicationsWindowStyles from '@/styles/workarea/applications/ApplicationsWindow.module.sass';
+
+import { MainContext } from '../Main';
+
+import { Data } from '@/types/data';
+import { Props } from '@/types/props';
+
+import { generateJSXKey } from '@/lib/utils';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
+import { getFilteredApplicationsByNameAndMetadata } from '@/lib/application';
+
+import ApplicationIcon from './ApplicationIcon';
+import Workspace from '../workspace/Workspace';
+import BaseWorkspace from '../workspace/BaseWorkspace';
+import APITester from '@/components/processes/applications/APITester';
+import IPLocator from '@/components/processes/applications/IPLocator';
+import Goalcket from '@/components/processes/applications/Goalcket';
+
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
 import A from '../../../../public/assets/terminal.png';
 import B from '../../../../public/assets/nautilus.png';
 import C from '../../../../public/assets/preferences-desktop.png';
-import ApplicationIcon from './ApplicationIcon';
-import Workspace from '../workspace/Workspace';
-import BaseWorkspace from '../workspace/BaseWorkspace';
-import { MainContext } from '../Main';
-import { Data } from '@/types/data';
-import { Props } from '@/types/props';
-import { generateJSXKey } from '@/lib/utils';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
-import { getFilteredApplicationsByNameAndMetadata } from '@/lib/application';
 
 
 export default function ApplicationsWindow({ 
@@ -29,7 +43,17 @@ export default function ApplicationsWindow({
 		applicationsAreBeingShowed 
 	} = useContext(MainContext);
 
-	const [ applicationsWindowRefLoaded, setApplicationsWindowRefLoaded ] = useState(false);
+
+	const [ 
+		applicationsWindowRefLoaded, 
+		setApplicationsWindowRefLoaded 
+	] = useState(false);
+
+	const [ 
+		searchFilterString, 
+		setSearchFilterString 
+	] = useState('');
+
 
 	useEffect(() => {
 		setApplicationsWindowRefLoaded(previous => true);
@@ -42,106 +66,96 @@ export default function ApplicationsWindow({
 		applicationsWindowRef
 	};
 
-	const [ searchFilterString, setSearchFilterString ] = useState('');
-
-	const applicationsIconProps: (Props.ApplicationIconProps & Data.ApplicationMetadata)[] = [
+	const applicationsIconProps: (
+		Props.ApplicationIconProps & Data.ApplicationMetadata
+	)[] = [
 		{
 			applicationIconStaticImage: A,
 			applicationIconAlt: '',
-			applicationName: 'Terminal',
-			applicationElement: <></>,
+			applicationName: 'API Tester',
+			applicationElement:	<APITester/>,
 			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
-			}
+				description: 'It\'s an API tester, that receives and send data in JSON format',
+				keyWords: [
+					'API',
+					'Test'
+				],
+				category: [
+					'API',
+					'Test'
+				]
+			} 
 		},
 		{
 			applicationIconStaticImage: B,
 			applicationIconAlt: '',
-			applicationName: 'nautilus',
-			applicationElement: <></>,
+			applicationName: 'Goalcket',
+			applicationElement: <Goalcket/>,
 			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
+				description: 'It\'s a Kanban, that allows you to create and manage goals, single or in a group',
+				keyWords: [
+					'Kanban',
+					'Goals',
+					'Enterprise',
+					'Productivity'
+				],
+				category: [
+					'Management',
+					'Productivity'
+				]
 			}
 		},
 		{
 			applicationIconStaticImage: C,
 			applicationIconAlt: '',
-			applicationName: 'settings',
-			applicationElement: <></>,
+			applicationName: 'IP Locator',
+			applicationElement: <IPLocator/>,
 			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
+				description: 'It\'s a interface that allows you to obtain the geographic location of any IP address',
+				keyWords: [
+					'IP',
+					'Location',
+					'Network'
+				],
+				category: [
+					'Network',
+					'Geographic Location'
+				]
 			}
 		},
 		{
 			applicationIconStaticImage: A,
 			applicationIconAlt: '',
-			applicationName: 'Terminal',
+			applicationName: 'SecNoting',
 			applicationElement: <></>,
 			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
+				description: 'It\'s a note app that allows you to store your data in format of notes',
+				keyWords: [
+					'Notes',
+					'Data',
+				],
+				category: [
+					'Notes',
+					'Data'
+				]
 			}
 		},
 		{
 			applicationIconStaticImage: B,
 			applicationIconAlt: '',
-			applicationName: 'nautilus',
+			applicationName: 'Tic Tac Toe',
 			applicationElement: <></>,
 			metadata: {
-				description: '',
-				keyWords: ['storage'],
-				category: ['']
-			}
-		},
-		{
-			applicationIconStaticImage: C,
-			applicationIconAlt: '',
-			applicationName: 'settings',
-			applicationElement: <></>,
-			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
-			}
-		},
-		{
-			applicationIconStaticImage: A,
-			applicationIconAlt: '',
-			applicationName: 'Terminal',
-			applicationElement: <></>,
-			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
-			}
-		},
-		{
-			applicationIconStaticImage: B,
-			applicationIconAlt: '',
-			applicationName: 'nautilus',
-			applicationElement: <></>,
-			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
-			}
-		},
-		{
-			applicationIconStaticImage: C,
-			applicationIconAlt: '',
-			applicationName: 'settings',
-			applicationElement: <></>,
-			metadata: {
-				description: '',
-				keyWords: [''],
-				category: ['']
+				description: 'It\'s a tic tac toe game, with an IA as the enemy',
+				keyWords: [
+					'Tic Tac Toe',
+					'Game',
+					'IA'
+				],
+				category: [
+					'Game',
+					'IA'
+				]
 			}
 		}
 	];
@@ -152,7 +166,9 @@ export default function ApplicationsWindow({
 			className={`
 				${applicationsWindowStyles.container} 
 				${applicationsWindowStyles[systemLayout]}
-				${applicationsWindowStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+				${applicationsWindowStyles[
+					applicationsAreBeingShowed? 'showed' : 'not--showed'
+				]}
 				`
 			}
 			ref={applicationsWindowRef}

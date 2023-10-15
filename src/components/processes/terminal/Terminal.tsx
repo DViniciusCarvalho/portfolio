@@ -1,16 +1,39 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { 
+    useContext, 
+    useEffect, 
+    useRef, 
+    useState 
+} from 'react';
+
 import terminalStyles from '@/styles/processes/Terminal.module.sass';
+import { MainContext } from '@/components/workarea/Main';
+import { Data } from '@/types/data';
+import { Shell } from '@/types/shell';
+import { Props } from '@/types/props';
+
+import { 
+    deepClone, 
+    generateUUID 
+} from '@/lib/utils';
+
+import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
+import { ESCAPE_SEQUENCES_SUBSTITUTION } from '@/lib/shell/commands/common/patterns';
 import CommandLine from './lines/CommandLine';
 import ResultLine from './lines/ResultLine';
-import { Data } from '@/types/data';
-import { MainContext } from '@/components/workarea/Main';
-import { interpretCommand } from '@/lib/shell/interpreter/interpreter';
-import { Shell } from '@/types/shell';
-import { deepClone, generateUUID } from '@/lib/utils';
-import { ESCAPE_SEQUENCES_SUBSTITUTION } from '@/lib/shell/commands/common/patterns';
+import TerminalIconImage from '../../../../public/assets/terminal.png';
 
 
-export default function Terminal() {
+export const terminalProcessData = {
+    processIconStaticImage: TerminalIconImage,
+    processIconAlt: 'Terminal icon: it\'s a black square with a ">_" prompt inside',
+    processName: 'Terminal',
+    processElement: <Terminal/>
+};
+
+
+export default function Terminal({
+    initialPath
+}: Props.TerminalProps) {
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
 
@@ -25,8 +48,8 @@ export default function Terminal() {
         terminalBackgroundColor,
         fileSystem,
         setFileSystem,
-        openForegroundProcess,
-        finishForegroundProcess,
+        startNonGraphicalProcess,
+        finishNonGraphicalProcess,
         finishGraphicalProcess,
         opennedProcessesData,
         setOpennedProcessesData
@@ -37,6 +60,8 @@ export default function Terminal() {
         environmentVariables, 
         setEnvironmentVariables 
     ] = useState<Shell.EnvironmentVariables>(deepClone(systemEnvironmentVariables));
+
+    initialPath && (environmentVariables['PWD'] = initialPath);
 
     const [
         bashHistory,
@@ -258,8 +283,8 @@ export default function Terminal() {
             environmentVariables,
             setEnvironmentVariables,
             setSystemEnvironmentVariables,
-            openForegroundProcess,
-            finishForegroundProcess,
+            startNonGraphicalProcess,
+            finishNonGraphicalProcess,
             finishGraphicalProcess,
             opennedProcessesData,
             setOpennedProcessesData,

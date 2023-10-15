@@ -1,5 +1,9 @@
 import { Shell } from '@/types/shell';
-import { BREAK_LINE, COLORED_WORD_TEMPLATE } from './patterns';
+
+import { 
+    BREAK_LINE, 
+    COLORED_WORD_TEMPLATE 
+} from './patterns';
 
 
 export const alignLineItems = (
@@ -8,9 +12,12 @@ export const alignLineItems = (
     alignSide: 'left' | 'right'
 ): string[] => {
 
+    const alignLeft = (text: string, maxLength: number) => text.padEnd(maxLength, ' ');
+    const alignRight = (text: string, maxLength: number) => text.padStart(maxLength, ' ');
+
     const alignFunction = alignSide === 'left'
-                          ? (text: string, maxLength: number) => text.padEnd(maxLength, ' ')
-                          : (text: string, maxLength: number) => text.padStart(maxLength, ' ');
+                          ? alignLeft
+                          : alignRight;
 
     const separatedLines = lines.map(line => line.split(separator));
 
@@ -56,7 +63,6 @@ export const alignLineItems = (
     });
 
     return joinedFormattedLines;
-
 }
 
 
@@ -87,7 +93,6 @@ export const helpPageSectionsAssembler = (
     const stdout = `${nameSection}${BREAK_LINE}${synopsisSection}${BREAK_LINE}${descriptionSection}`;
 
     return stdout;
-
 }
 
 

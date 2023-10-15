@@ -1,4 +1,3 @@
-
 export const getXAxisInterference = (
     taskBarRef: React.MutableRefObject<HTMLDivElement | null>,
     currentSystemLayout: string

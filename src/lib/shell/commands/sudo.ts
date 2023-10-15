@@ -1,6 +1,11 @@
 import { Shell } from '@/types/shell';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { executeSingleCommand } from '../interpreter/ASTanalyzer';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
 import { BREAK_LINE } from './common/patterns';
 
 

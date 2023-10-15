@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import workspaceStyles from '@/styles/workarea/Workspace.module.sass';
-import ProcessWindow from '../window/ProcessWindow';
-import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
+import { Props } from '@/types/props';
 import { getWorkspaceStyles } from '@/lib/style';
 import { getCurrentWorkspaceProcessesWindow } from '@/lib/workspace';
+import ProcessWindow from '../window/ProcessWindow';
 
 
 export default function Workspace({ 
@@ -29,7 +29,9 @@ export default function Workspace({
             className={`
                 ${workspaceStyles.container} 
                 ${workspaceStyles[systemLayout]}
-                ${workspaceStyles[applicationsAreBeingShowed? 'app-showed' : 'app-not-showed']}
+                ${workspaceStyles[
+                    applicationsAreBeingShowed? 'app--showed' : 'app--not--showed'
+                ]}
                 `
             }
             style={{
@@ -41,8 +43,7 @@ export default function Workspace({
                     systemColorPalette,
                     backgroundIsImageBlob, 
                     backgroundImageUrl
-                ),
-
+                )
             }}
             id={UUID}
             onClick={() => changeCurrentWorkspace(UUID)}

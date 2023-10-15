@@ -1,11 +1,16 @@
 .container
-    display: inline-block
     margin: 10px
     border-radius: 14px
     background-color: transparent
     align-self: flex-start
     text-decoration: none
     transition: background-color 0.1s
+
+    &.visible
+        display: inline-block
+
+    &.non--visible
+        display: none
     
     .icon__wrapper
         position: relative
@@ -18,6 +23,8 @@
         padding: 14px
         color: white
         font-size: 0.95em
+        text-align: center
+        text-overflow: ellipsis
 
         .icon
             margin-bottom: 5px
@@ -29,6 +36,12 @@
             height: 5px
             border-radius: 50%
             background-color: #e74b03
-    
+
+            &.process--running
+                display: block
+
+            &.process--not--running
+                display: none
+
     &:hover
         background-color: #ffffff2c

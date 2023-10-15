@@ -1,18 +1,22 @@
-import React, { useContext, useRef, useState } from 'react';
-import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
-import Image from 'next/image';
+import React, { 
+	useContext, 
+	useRef, 
+	useState 
+} from 'react';
 
-import { Props } from '@/types/props';
+import Image from 'next/image';
+import processWindowStyles from '@/styles/workarea/window/ProcessWindow.module.sass';
 import { MainContext } from '../Main';
+import { Props } from '@/types/props';
 
 import { 
 	getProcessWindowDisplayStyle, 
 	getRelativeDimensionAndCoordinatesStyle 
 } from '@/lib/style';
 
-import ProcessWindowMinimalContentVersion from './ProcessWindowMinimalContentVersion';
 import { delay } from '@/lib/utils';
 import { getResizeSide } from '@/lib/resize';
+import ProcessWindowMinimalContentVersion from './ProcessWindowMinimalContentVersion';
 
 
 export default function ProcessWindow({ 
@@ -43,10 +47,7 @@ export default function ProcessWindow({
 		updateProcessWindowDimensions,
 		currentActiveWorkspaceUUID,
 		applicationsAreBeingShowed,
-		updateProcessWindowCoordinates,
-		currentShellUser,
-        hostName,
-        currentDirectory
+		updateProcessWindowCoordinates
 	} = useContext(MainContext);
 
 
@@ -97,8 +98,6 @@ export default function ProcessWindow({
 			y: 0
 		}
 	});
-
-	const isDarkTheme = systemTheme === 'dark';
 
 
 	const processWindowMinimizedVersionProps: Props.ProcessWindowMinimalContentVersionProps = {
@@ -274,30 +273,11 @@ export default function ProcessWindow({
 	}
 
 
-	function getProcessWindowTitle(
-		originalProcessTitle: string
-	): string {
-
-		const currentProcessIsTerminal = originalProcessTitle === 'Terminal';
-
-		if (currentProcessIsTerminal) {
-			const resolvedDirectory = currentDirectory === `/home/${currentShellUser}`
-									  ? '~'
-									  : currentDirectory;
-			const terminalTitle = `${currentShellUser}@${hostName}:${resolvedDirectory}`;
-			
-			return terminalTitle;
-		}
-
-		return originalProcessTitle;
-	}
-
-
     return (
         <div 
 			className={`
 				${processWindowStyles.container} 
-				${processWindowStyles[isMinimized? 'minimized' : 'non-minimized']}
+				${processWindowStyles[isMinimized? 'minimized' : 'non--minimized']}
 				${processWindowStyles[systemTheme]}
 				`
 			}
@@ -349,13 +329,13 @@ export default function ProcessWindow({
 				className={`
 					${processWindowStyles.window__title__bar}
 					${processWindowStyles[
-						applicationsAreBeingShowed? 'app-showed' : 'app-not-showed'
+						applicationsAreBeingShowed? 'app--showed' : 'app--not--showed'
 					]}
 					`
 				}
 				ref={processWindowTitleBarRef}
 			>
-				{getProcessWindowTitle(processTitle)}
+				{processTitle}
 				<div className={processWindowStyles.buttons__wrapper}>
 					<button onClick={() => minimizeProcessWindow(PID)}>
 						<Image 
@@ -365,7 +345,13 @@ export default function ProcessWindow({
 							alt={'Window minimize icon: it\'s a simple horizontal straight line, a minus symbol'}
 						/>
 					</button>
-					<button onClick={() => handleRestoreMaximizeWindow(PID, isMaximized, processWindowRef)}>
+					<button 
+						onClick={() => handleRestoreMaximizeWindow(
+							PID, 
+							isMaximized, 
+							processWindowRef
+						)}
+					>
 						<Image 
 							src={require(
 								`../../../../public/assets/${systemTheme}/${
@@ -391,17 +377,15 @@ export default function ProcessWindow({
 				className={`
 					${processWindowStyles.process__application__section} 
 					${processWindowStyles[
-						applicationsAreBeingShowed? 'app-showed' : 'app-not-showed'
+						applicationsAreBeingShowed? 'app--showed' : 'app--not--showed'
 					]}
 					`
 				}
 			>
-
 				{applicationsAreBeingShowed
 					? <ProcessWindowMinimalContentVersion {...processWindowMinimizedVersionProps}/> 
 					: processElement
 				}
-
 			</div>
         </div>
     );

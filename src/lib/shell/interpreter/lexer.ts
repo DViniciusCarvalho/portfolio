@@ -1,3 +1,5 @@
+import { Shell } from '@/types/shell';
+
 import { 
     SHELL_OPERATORS, 
     RESERVED_WORDS, 
@@ -6,8 +8,6 @@ import {
     SHELL_STRING_QUOTE, 
     SHELL_VARIABLE_SIGN 
 } from '@/lib/shell/grammar';
-
-import { Shell } from '@/types/shell';
 
 
 const splitCommand = (

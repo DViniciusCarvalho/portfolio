@@ -1,0 +1,150 @@
+@use 'mixins'
+    
+.background__label
+    @include mixins.settings_section_label()
+
+    &.light
+        color: black
+
+    &.dark
+        color: white
+    
+
+.background__wrapper
+    @include mixins.settings_section_wrapper()
+    display: flex
+    flex-direction: column
+    justify-content: center
+    gap: 4%
+    padding: 0px 3%
+
+    &.light
+        background-color: #f3f2f2
+        border: 0.5px solid #cfcfcfd3
+
+        .background__color__palette__radio:checked
+            border-color: #f3f2f2
+
+        .select__background__file__label
+            background-color: #eeeeee
+            border-color: #b8b8b8e5
+            color: black
+
+            &:hover
+                background-color: #ffffff
+
+
+    &.dark
+        background-color: #272727
+        border: 0.5px solid #13131391
+
+        .background__color__palette__radio:checked
+            border-color:#242323
+
+        .select__background__file__label
+            background-color: #252525
+            border-color: #181818
+            color: white
+
+            &:hover
+                background-color: #363636
+
+
+    .background__previous
+        display: flex
+        height: 55%
+        width: 80%
+        max-width: 300px
+        box-shadow: 2px 2px 3px #03030367
+        border-radius: 8px
+        overflow: hidden
+
+        .background__previous__workspace
+            background-size: cover
+
+        &.row
+            flex-direction: row
+
+            .background__previous__taskbar
+                width: 10%
+                height: 100%
+
+            .background__previous__workspace
+                width: 90%
+                height: 100%
+
+        &.column
+            flex-direction: column-reverse
+
+            .background__previous__taskbar
+                height: 15%
+                width: 100%
+
+            .background__previous__workspace
+                height: 85%
+                width: 100%
+
+    .background__color__palette__radios__wrapper
+        display: flex
+        gap: 3%
+        width: 60%
+        height: 9%
+
+        .background__color__palette__radio
+            appearance: none
+            -webkit-appearance: none
+            -moz-appearance: none
+            height: 100%
+            aspect-ratio: 1/1
+            border-radius: 50%
+
+            &:checked
+                border-width: 3px 
+                border-style: solid 
+                outline-width: 4px
+                outline-style: solid
+
+    .select__background__file__wrapper
+        display: flex
+        flex-wrap: wrap
+        gap: 2%
+        height: 10%
+        width: 100%
+        padding-bottom: 5px
+
+        .select__background__file__input
+            display: none
+
+        .select__background__file__label
+            display: flex
+            align-items: center
+            justify-content: center
+            height: 100%
+            padding: 15px
+            border-radius: 8px
+            border-width: 0.1px
+            border-style: solid
+            transition: background-color 0.3s
+
+        .select__background__file__name
+            display: flex
+            align-items: center
+            justify-content: center
+            height: 100%
+            color: white
+            font-size: 0.9em
+
+
+@media only screen and (max-width: 800px) and (min-width: 651px)
+    .background__wrapper
+        padding: 0px 8% !important
+
+        .background__previous
+            width: 90% !important
+
+@media only screen and (max-width: 650px)
+    .background__wrapper
+        padding: 0px 8% !important
+
+        .background__previous
+            width: 90% !important

@@ -9,14 +9,21 @@ import {
     getParentPathAndTargetName
 } from './common/directoryAndFile';
 
-import { Directory } from './models/Directory';
-import { resolveArguments } from './common/arguments';
-import { ExecutionTreeError } from '../exception';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage, optionIsPresent } from './common/options';
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { changeContentUpdateTimestamps } from './common/timestamps';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
-import { BREAK_LINE, OCTAL_NUMBER_PATTERN } from './common/patterns';
 import { commandDecorator } from './common/decorator';
+import { optionIsPresent } from './common/options';
+import { Directory } from './models/Directory';
+import { ExecutionTreeError } from '../exception';
+
+import { 
+    BREAK_LINE, 
+    OCTAL_NUMBER_PATTERN 
+} from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

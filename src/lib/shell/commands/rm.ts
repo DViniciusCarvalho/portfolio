@@ -1,13 +1,4 @@
 import { Shell } from '@/types/shell';
-import { ExecutionTreeError } from '../exception';
-
-import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage, 
-    optionIsPresent 
-} from './common/options';
-
-import { resolveArguments } from './common/arguments';
 
 import { 
     checkProvidedPath, 
@@ -17,10 +8,16 @@ import {
     getParentPathAndTargetName 
 } from './common/directoryAndFile';
 
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { changeContentUpdateTimestamps } from './common/timestamps';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
-import { BREAK_LINE } from './common/patterns';
+import { optionIsPresent } from './common/options';
 import { commandDecorator } from './common/decorator';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

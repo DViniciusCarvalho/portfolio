@@ -9,20 +9,17 @@ import {
     getParentPathAndTargetName
 } from './common/directoryAndFile';
 
-import { resolveArguments } from './common/arguments';
-import { ExecutionTreeError } from '../exception';
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
 
-import {  
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage,
-    optionIsPresent, 
-} from './common/options';
-
-import { File } from './models/File';
+import { optionIsPresent } from './common/options';
 import { changeContentUpdateTimestamps } from './common/timestamps';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
-import { BREAK_LINE } from './common/patterns';
 import { commandDecorator } from './common/decorator';
+import { File } from './models/File';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

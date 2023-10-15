@@ -1,4 +1,3 @@
-
 export class ParseTreeError {
     constructor(public errorMessage: string, public errorStatus: number) {}
 }

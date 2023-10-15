@@ -1,8 +1,16 @@
-import React, { useContext, useRef } from 'react';
+import React, { 
+    useContext, 
+    useRef 
+} from 'react';
+
 import terminalStyles from '@/styles/processes/Terminal.module.sass';
-import { Props } from '@/types/props';
 import { MainContext } from '@/components/workarea/Main';
-import { NORMAL_USER_PROMPT, ROOT_PROMPT } from '@/lib/initial/shell';
+import { Props } from '@/types/props';
+
+import { 
+    NORMAL_USER_PROMPT, 
+    ROOT_PROMPT 
+} from '@/lib/initial/shell';
 
 
 export default function CommandLine({

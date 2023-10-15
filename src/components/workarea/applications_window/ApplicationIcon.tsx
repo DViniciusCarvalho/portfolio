@@ -1,11 +1,22 @@
-import React, { useState, useContext } from 'react';
-import applicationIconStyles from '@/styles/workarea/applications/ApplicationIcon.module.sass';
+import React, { 
+    useState, 
+    useContext, 
+    useEffect 
+} from 'react';
+
 import Image from 'next/image';
-import { Props } from '@/types/props';
+import applicationIconStyles from '@/styles/workarea/applications/ApplicationIcon.module.sass';
 import { MainContext } from '@/components/workarea/Main';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
-import { getCorrespondentRunningProcess, processIsRunning } from '@/lib/process';
+import { Data } from '@/types/data';
+import { Props } from '@/types/props';
+
+import { 
+    getCorrespondentRunningProcess, 
+    processIsRunning 
+} from '@/lib/process';
+
 import { getCorrespondentWorkspace } from '@/lib/workspace';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function ApplicationIcon({ 
@@ -21,7 +32,7 @@ export default function ApplicationIcon({
         workspaceActivitiesData,
         currentActiveWorkspaceUUID,
         applicationsAreBeingShowed, 
-        openGraphicalProcess,
+        startGraphicalProcess,
         elevateProcessWindowZIndex,
         restoreProcessWindowPreviousDimensions,
         changeCurrentWorkspace,
@@ -29,35 +40,73 @@ export default function ApplicationIcon({
         transferApplicationIconToTaskbarOtherProcessesIcons
     } = useContext(MainContext);
 
-    const [ processPID, setProcessPID ] = useState(0);
 
-    const startProcessMiddleware = (): void => {
+    const [ 
+        processPID, 
+        setProcessPID 
+    ] = useState(0);
 
-		const processFound = getCorrespondentRunningProcess(
+
+    useEffect(() => {
+        const processData = (opennedProcessesData as Data.OpennedProcessData[]).find(
+            processData => processData.processTitle === applicationName
+        );
+
+        if (processData && processPID !== processData.PID) {
+            setProcessPID(previous => processData.PID);
+
+            transferApplicationIconToTaskbarOtherProcessesIcons(
+                applicationIconStaticImage,
+                applicationIconAlt,
+                applicationName,
+                applicationElement,
+                processData.PID
+            );
+        }
+    }, [opennedProcessesData]);
+
+
+    function startProcessMiddleware(
+        opennedProcessesData: Data.OpennedProcessData[], 
+        workspaceActivitiesData: Data.WorkspaceActivityData[],
+        processPID: number,
+        currentActiveWorkspaceUUID: string
+    ): void {
+
+		const process = getCorrespondentRunningProcess(
             opennedProcessesData, 
             processPID
         );
 
-        const processIsAlreadyRunning = processIsRunning(
-            opennedProcessesData, 
-            processPID
-        );
+        const processIsRunning = Boolean(process);
+        const processIsMinimized = process?.isMinimized;
 
-        const processIsNotRunning = !processIsAlreadyRunning;
+        const processIsInOtherWorkspace = process?.parentWorkspaceUUID 
+                                          !== currentActiveWorkspaceUUID;
 
         const currentWorkspaceDoesNotExists = !getCorrespondentWorkspace(
             workspaceActivitiesData, 
             currentActiveWorkspaceUUID
         );
 
-        const processIsMinimized = processFound?.isMinimized;
 
-        const processIsRunningAndNotInTheCurrentWorkspace = processIsAlreadyRunning 
-                                                            && processFound?.parentWorkspaceUUID 
-                                                            !== currentActiveWorkspaceUUID;
+        if (processIsRunning) {
+            elevateProcessWindowZIndex(processPID);
 
-        if (processIsNotRunning) {
-            const startedProcessPID = openGraphicalProcess(
+            if (processIsMinimized) {
+                restoreProcessWindowPreviousDimensions(processPID);
+            }
+    
+            if (processIsInOtherWorkspace) {
+                changeCurrentWorkspace(process!.parentWorkspaceUUID);
+            }
+    
+            if (applicationsAreBeingShowed) {
+                changeApplicationsAreBeingShowed(false);
+            }
+        }
+        else {
+            const startedProcessPID = startGraphicalProcess(
                 applicationName, 
                 applicationIconStaticImage,
                 applicationIconAlt,
@@ -67,39 +116,32 @@ export default function ApplicationIcon({
                 
             transferApplicationIconToTaskbarOtherProcessesIcons(
                 applicationIconStaticImage,
+                applicationIconAlt,
                 applicationName,
                 applicationElement,
                 startedProcessPID
             );
 
             setProcessPID(previous => startedProcessPID);
-
-        }
-
-        if (processIsAlreadyRunning) {
-            elevateProcessWindowZIndex(processPID);
-        }
-
-        if (processIsMinimized) {
-            restoreProcessWindowPreviousDimensions(processPID);
-        }
-
-        if (processIsRunningAndNotInTheCurrentWorkspace) {
-            changeCurrentWorkspace(processFound!.parentWorkspaceUUID);
-        }
-
-        if (processIsAlreadyRunning && applicationsAreBeingShowed) {
-            changeApplicationsAreBeingShowed(false);
         }
     }
 
+
     return (
         <abbr 
-            className={applicationIconStyles.container}
-            style={{
-                display: applicationsAreBeingShowed? 'inline-block' : 'none'
-            }}
-            onClick={startProcessMiddleware}
+            className={`
+                ${applicationIconStyles.container} 
+                ${applicationIconStyles[
+                    applicationsAreBeingShowed? 'visible' : 'non--visible'
+                ]}
+                `
+            }
+            onClick={() => startProcessMiddleware(
+                opennedProcessesData, 
+                workspaceActivitiesData, 
+                processPID, 
+                currentActiveWorkspaceUUID
+            )}
             title={applicationName}
         >
             <div className={applicationIconStyles.icon__wrapper}>
@@ -112,10 +154,17 @@ export default function ApplicationIcon({
                 {applicationName}
 
                 <div 
-                    className={applicationIconStyles.openned__indicator}
+                    className={`
+                        ${applicationIconStyles.openned__indicator}
+                        ${applicationIconStyles[
+                            processIsRunning(opennedProcessesData, processPID)
+                            ? 'process--running'
+                            : 'process--not--running'
+                        ]}
+                        `
+                    }
                     style={{
-                        backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor,
-                        display: processIsRunning(opennedProcessesData, processPID)? 'block' : 'none'
+                        backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor
                     }}
                 />
             </div>

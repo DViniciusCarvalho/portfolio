@@ -1,10 +1,28 @@
-import React, { useState, createContext, useRef, useEffect } from 'react';
+import React, { 
+    useState, 
+    createContext, 
+    useRef, 
+    useEffect 
+} from 'react';
+
+import { StaticImageData } from 'next/image';
+
 import mainStyles from '@/styles/workarea/Main.module.sass';
-import GlobalMenuBar from './menu/GlobalMenuBar';
-import TaskBar from './taskbar/TaskBar';
-import ApplicationsWindow from './applications_window/ApplicationsWindow';
+
 import { Data } from '@/types/data';
 import { Props } from '@/types/props';
+import { Shell } from '@/types/shell';
+
+import { 
+    registerProcessInProcDir, 
+    removeProcessFromProcDir 
+} from '@/lib/shell/background/process';
+
+import { 
+    getCorrespondentRunningProcess, 
+    getInitialProcessWindowDimensions, 
+    getProcessWindowParentWorkspaceUUID
+} from '@/lib/process';
 
 import { 
     getXAxisInterference, 
@@ -23,13 +41,7 @@ import {
     generateUUID,
 } from '@/lib/utils';
 
-import { StaticImageData } from 'next/image';
-import { Shell } from '@/types/shell';
-
-import { 
-    registerProcessInProcDir, 
-    removeProcessFromProcDir 
-} from '@/lib/shell/background/process';
+import { parentWorkspaceIsNowVoid } from '@/lib/workspace';
 
 import {
     INITIAL_PROCESS_WINDOW_HIGHEST_ZINDEX, 
@@ -55,13 +67,9 @@ import {
     INITIAL_UMASK, SHELL_HOSTNAME 
 } from '@/lib/initial/shell';
 
-import { 
-    getCorrespondentRunningProcess, 
-    getInitialProcessWindowDimensions, 
-    getProcessWindowParentWorkspaceUUID
-} from '@/lib/process';
-
-import { parentWorkspaceIsNowVoid } from '@/lib/workspace';
+import GlobalMenuBar from './menu/GlobalMenuBar';
+import TaskBar from './taskbar/TaskBar';
+import ApplicationsWindow from './applications_window/ApplicationsWindow';
 
 
 export const MainContext = createContext<any>(null);
@@ -196,8 +204,8 @@ export default function Main() {
         fileSystem: fileSystem,
         environmentVariables: systemEnvironmentVariables,
         umask: umask,
-        openForegroundProcess: openForegroundProcess,
-        finishForegroundProcess: finishForegroundProcess
+        startNonGraphicalProcess: startNonGraphicalProcess,
+        finishNonGraphicalProcess: finishNonGraphicalProcess
     } as Shell.SystemAPI;
 
     
@@ -205,9 +213,9 @@ export default function Main() {
         opennedProcessesData,
         workspaceActivitiesData,
         setOpennedProcessesData,
-        openGraphicalProcess,
-        openForegroundProcess,
-        finishForegroundProcess,
+        startGraphicalProcess,
+        startNonGraphicalProcess,
+        finishNonGraphicalProcess,
         finishGraphicalProcess,
         removeWorkspaceActivity,
     };
@@ -312,7 +320,7 @@ export default function Main() {
     }, []);
 
 
-    function openGraphicalProcess(
+    function startGraphicalProcess(
         processTitle: string, 
         processIcon: StaticImageData,
         processIconAlt: string,
@@ -375,13 +383,7 @@ export default function Main() {
             newProcessData
         ]);
 
-        const partialSystemAPI = {
-            environmentVariables: systemEnvironmentVariables,
-            fileSystem: fileSystem,
-            umask: umask
-        } as Shell.SystemAPI;
-
-        registerProcessInProcDir(nextPID, processTitle, partialSystemAPI);
+        registerProcessInProcDir(nextPID, processTitle, basicCommandSystemAPI);
 
         return nextPID;
     }
@@ -408,7 +410,6 @@ export default function Main() {
             return opennedProcessesDataWithoutElementPIDOwner;
         });
 
-
         setApplicationsPropsDataInTaskbar(previous => {
             const filteredPreviousDeepCopy = previous.filter(
                 processData => processData.initialPID !== PID
@@ -417,16 +418,11 @@ export default function Main() {
             return filteredPreviousDeepCopy;
         });
 
-        const partialSystemAPI = {
-            environmentVariables: systemEnvironmentVariables,
-            fileSystem: fileSystem,
-        } as Shell.SystemAPI;
-
-        removeProcessFromProcDir(PID, partialSystemAPI);
+        removeProcessFromProcDir(PID, basicCommandSystemAPI);
     }
 
 
-    function openForegroundProcess(
+    function startNonGraphicalProcess(
         processTitle: string
     ): number {
         const nextPID = lastPID + 1;
@@ -438,7 +434,7 @@ export default function Main() {
     }
 
 
-    function finishForegroundProcess(
+    function finishNonGraphicalProcess(
         PID: number
     ): void {
         removeProcessFromProcDir(PID, basicCommandSystemAPI);
@@ -781,7 +777,13 @@ export default function Main() {
         <div className={mainStyles.container}>
             <MainContext.Provider value={{...contextValues}}>
                 <GlobalMenuBar {...globalMenuProps}/>
-                <div className={`${mainStyles.taskbar__workspace__wrapper} ${mainStyles[systemLayout]}`}>
+                <div 
+                    className={`
+                        ${mainStyles.taskbar__workspace__wrapper} 
+                        ${mainStyles[systemLayout]}
+                        `
+                    }
+                >
                     <TaskBar {...taskbarProps}/>
                     <ApplicationsWindow {...applicationsWindowProps}/>
                 </div>

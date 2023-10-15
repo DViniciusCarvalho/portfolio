@@ -1,12 +1,13 @@
 import React, { useContext } from 'react';
-import settingsStyles from '@/styles/processes/Settings.module.sass';
+import terminalSectionStyles from '@/styles/processes/settings/sections/TerminalSection.module.sass';
 import { MainContext } from '@/components/workarea/Main';
+import { Props } from '@/types/props';
 import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function PreviousTerminal({
     terminalUserIsRootUser
-}: { terminalUserIsRootUser: boolean }) {
+}: Props.PreviousTerminal) {
 
     const { 
         systemColorPalette, 
@@ -18,9 +19,9 @@ export default function PreviousTerminal({
     } = useContext(MainContext);
 
     return (
-        <div className={settingsStyles.terminal__previous__wrapper}>
+        <div className={terminalSectionStyles.terminal__previous__wrapper}>
             <div
-                className={settingsStyles.terminal__previous}
+                className={terminalSectionStyles.terminal__previous}
                 style={{
                     backgroundImage: `linear-gradient(
                         to top, 
@@ -37,30 +38,30 @@ export default function PreviousTerminal({
                 }}
             >
                 <div
-                    className={settingsStyles.previous__terminal__container}
+                    className={terminalSectionStyles.previous__terminal__container}
                 >
-                    <div className={settingsStyles.terminal__title__bar}>
+                    <div className={terminalSectionStyles.terminal__title__bar}>
                         <div
-                            className={settingsStyles.terminal__title__bar__buttons}
+                            className={terminalSectionStyles.terminal__title__bar__buttons}
                         >
-                            <button/>
-                            <button/>
-                            <button/>
+                            <button tabIndex={1}/>
+                            <button tabIndex={1}/>
+                            <button tabIndex={1}/>
                         </div>
                     </div>
                     <div
-                        className={settingsStyles.previous__terminal__background}
+                        className={terminalSectionStyles.previous__terminal__background}
                         style={{
                             backgroundColor: terminalBackgroundColor
                         }}
                     >
                         <div 
-                            className={settingsStyles.previous__terminal__line}
+                            className={terminalSectionStyles.previous__terminal__line}
                             style={{
                                 color: terminalDefaultColor
                             }}
                         >
-                            <span className={settingsStyles.previous__terminal__prompt}>
+                            <span className={terminalSectionStyles.previous__terminal__prompt}>
                                 <span style={{
                                     color: terminalUserIsRootUser
                                            ? terminalRootHostColor

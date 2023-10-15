@@ -1,24 +1,22 @@
 import { Shell } from '@/types/shell';
 
 import { 
-    commandHasInvalidOptions, 
-    getCommandInvalidOptionMessage, 
-    optionIsPresent 
-} from './common/options';
-
-import { ExecutionTreeError } from '../exception';
-import { resolveArguments } from './common/arguments';
-
-import { 
     checkProvidedPath, 
     getDirectoryData, 
     getFileIndex, 
     getParentPathAndTargetName 
 } from './common/directoryAndFile';
-import { resolveSizeNotationInNumber } from './common/size';
-import { BREAK_LINE } from './common/patterns';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { optionIsPresent } from './common/options';
+import { resolveSizeNotationInNumber } from './common/size';
+import { ExecutionTreeError } from '../exception';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

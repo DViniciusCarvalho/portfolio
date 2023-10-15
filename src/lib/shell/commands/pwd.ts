@@ -1,8 +1,12 @@
 import { Shell } from '@/types/shell';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
-import { BREAK_LINE } from './common/patterns';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { BREAK_LINE } from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

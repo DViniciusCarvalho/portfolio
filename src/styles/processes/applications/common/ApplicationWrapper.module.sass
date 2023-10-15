@@ -1,0 +1,34 @@
+.container
+    width: 100%
+    height: 100%
+    display: flex
+    flex-direction: column
+
+    &.light
+        .url__wrapper
+            background-color: #eeeeee
+            border-color: #000000ef #000000ef #5a5a5a62 #000000ef
+            color: black
+
+    &.dark
+        .url__wrapper
+            background-color: #222224
+            border-color: #000000ef #000000ef #1b1b1bcb #000000ef
+            color: white
+
+
+    .url__wrapper
+        width: 100%
+        height: 50px
+        display: flex
+        align-items: center
+        padding-left: 4%
+        border-style: solid
+        border-width: 0px 0px 0.1px 0px
+
+        a
+            color: #47aaa2
+
+    .project__iframe
+        flex: 1
+        width: 100%

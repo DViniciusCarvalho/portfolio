@@ -1,11 +1,18 @@
 import { Shell } from '@/types/shell';
-import { commandHasInvalidOptions, getCommandInvalidOptionMessage } from './common/options';
-import { ExecutionTreeError } from '../exception';
 import { Data } from '@/types/data';
-import { resolveArguments } from './common/arguments';
-import { BREAK_LINE, POSITIVE_INTEGER_PATTERN } from './common/patterns';
-import { formatHelpPageOptions, helpPageSectionsAssembler } from './common/formatters';
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
 import { commandDecorator } from './common/decorator';
+import { ExecutionTreeError } from '../exception';
+
+import { 
+    BREAK_LINE, 
+    POSITIVE_INTEGER_PATTERN 
+} from './common/patterns';
 
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [

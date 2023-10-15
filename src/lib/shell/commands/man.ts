@@ -1,7 +1,13 @@
-import { Shell } from "@/types/shell"
-import { BREAK_LINE } from "./common/patterns";
-import { commandDecorator } from "./common/decorator";
-import { formatHelpPageOptions, helpPageSectionsAssembler } from "./common/formatters";
+import { Shell } from '@/types/shell'
+
+import { 
+    formatHelpPageOptions, 
+    helpPageSectionsAssembler 
+} from './common/formatters';
+
+import { commandDecorator } from './common/decorator';
+import { BREAK_LINE } from './common/patterns';
+
 
 const COMMAND_OPTIONS: Shell.CommandOption[] = [];
 

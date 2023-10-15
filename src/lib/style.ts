@@ -1,16 +1,16 @@
 import { Data } from '@/types/data';
 
 import { 
+    workspaceCanBeShowed, 
+    getCorrespondentWorkspace 
+} from './workspace';
+
+import { 
     INITIAL_PROCESS_WINDOW_HEIGHT_IN_PERCENTAGE, 
     INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE, INITIAL_PROCESS_WINDOW_WIDTH_IN_PERCENTAGE_IF_WINDOW_LE_LIMIT, LIMIT_TO_CHANGE_INITIAL_PROCESS_WINDOW_DIMENSION_PERCENTAGE_IN_PIXELS 
 } from './initial/process';
 
 import { COLOR_PALETTE_OPTIONS } from './initial/settings';
-
-import { 
-    workspaceCanBeShowed, 
-    getCorrespondentWorkspace 
-} from './workspace';
 
 
 export const getProcessWindowDisplayStyle = (
@@ -97,21 +97,24 @@ export const getWorkspaceStyles = (
     const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
 
-    return {
-        display: applicationsAreHiddenAndIsNotCurrentWorkspace? 'none' : 'block',
-        position: currentWorkspaceCanBeShowed? 'absolute' : 'relative',
-        width: currentWorkspaceCanBeShowed? applicationsWindowWidth : '220px',
-        height: currentWorkspaceCanBeShowed? applicationsWindowHeight : '90%',
-        top: currentWorkspaceCanBeShowed? 0 : 0,
-        left: currentWorkspaceCanBeShowed? 0 : 0,
-        transform: `scale(${currentWorkspaceCanBeShowed? 1 : 0.9})`,
-        backgroundImage: backgroundIsImageBlob
-                        ? `url(${backgroundImageUrl})` 
-                        : colorPaletteStyles.workspace.backgroundImage,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat'
-    };
+    const display = applicationsAreHiddenAndIsNotCurrentWorkspace? 'none' : 'block';
+    const position = currentWorkspaceCanBeShowed? 'absolute' : 'relative';
+    const width = currentWorkspaceCanBeShowed? applicationsWindowWidth : '220px';
+    const height = currentWorkspaceCanBeShowed? applicationsWindowHeight : '90%';
+    const transform = currentWorkspaceCanBeShowed? 'scale(1)' : 'scale(0.9)';
 
+    const backgroundImage = backgroundIsImageBlob
+                            ? `url(${backgroundImageUrl})`
+                            : colorPaletteStyles.workspace.backgroundImage;
+
+    return {
+        display,
+        position,
+        width,
+        height,
+        transform,
+        backgroundImage
+    };
 }
 
 
@@ -133,46 +136,49 @@ export const getBaseWorkspaceStyles = (
         currentActiveWorkspaceUUID
     );
 
-    const anInvalidWorkspaceIsBeingShowed = !applicationsAreBeingShowed && !currentActiveWorkspace;
+    const anInvalidWorkspaceIsBeingShowed = !applicationsAreBeingShowed 
+                                            && !currentActiveWorkspace;
 
     const baseWorkspaceIsBeingShowed = currentActiveWorkspaceUUID === baseWorkspaceUUID 
                                        && !applicationsAreBeingShowed;
 
-    const baseWorkspaceAndCanBeShowed = anInvalidWorkspaceIsBeingShowed || baseWorkspaceIsBeingShowed;
+    const baseWorkspaceAndCanBeShowed = anInvalidWorkspaceIsBeingShowed 
+                                        || baseWorkspaceIsBeingShowed;
 
     const applicationsAreHiddenAndIsNotCurrentWorkspace = !applicationsAreBeingShowed 
-                                                        && currentActiveWorkspaceUUID 
-                                                        !== baseWorkspaceUUID;
+                                                          && currentActiveWorkspaceUUID 
+                                                          !== baseWorkspaceUUID;
 
     const applicationsWindowWidth = applicationsWindowRef.current?.getBoundingClientRect().width;
     const applicationsWindowHeight = applicationsWindowRef.current?.getBoundingClientRect().height;
 
-    const stylesWithoutTransform = {
-        display: applicationsAreHiddenAndIsNotCurrentWorkspace && !baseWorkspaceAndCanBeShowed? 'none' : 'block',
-        position: baseWorkspaceAndCanBeShowed? 'absolute' : 'relative',
-        width: baseWorkspaceAndCanBeShowed? applicationsWindowWidth : '220px',
-        height: baseWorkspaceAndCanBeShowed? applicationsWindowHeight : '90%',
-        top: baseWorkspaceAndCanBeShowed? 0 : 0,
-        left: baseWorkspaceAndCanBeShowed? 0 : 0,
-        backgroundImage: backgroundIsImageBlob
-                        ? `url(${backgroundImageUrl})` 
-                        : colorPaletteStyles.workspace.backgroundImage,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat'
-    };
 
+    const display = applicationsAreHiddenAndIsNotCurrentWorkspace && !baseWorkspaceAndCanBeShowed
+                    ? 'none' 
+                    : 'block';
+
+    const position = baseWorkspaceAndCanBeShowed? 'absolute' : 'relative';
+    const width = baseWorkspaceAndCanBeShowed? applicationsWindowWidth : '220px';
+    const height = baseWorkspaceAndCanBeShowed? applicationsWindowHeight : '90%';
+    const transform = baseWorkspaceAndCanBeShowed? 'scale(1)' : 'scale(0.9)';
+
+    const backgroundImage = backgroundIsImageBlob
+                            ? `url(${backgroundImageUrl})` 
+                            : colorPaletteStyles.workspace.backgroundImage;
 
     return {
-        ...stylesWithoutTransform,
-        transform: `scale(${baseWorkspaceAndCanBeShowed? 1 : 0.9})`
+        display,
+        position,
+        width,
+        height,
+        backgroundImage,
+        transform
     };
-
 }
 
 
 export const getTaskBarStyles = (
-    backgroundColorPalette: string,
-    backgroundIsImageBlob: boolean
+    backgroundColorPalette: string
 ) => {
 
     return {

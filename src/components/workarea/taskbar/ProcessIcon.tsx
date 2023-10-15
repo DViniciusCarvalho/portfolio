@@ -1,12 +1,23 @@
-import React, { useContext, useState } from 'react';
-import processIconStyles from '@/styles/workarea/taskbar/ProcessIcon.module.sass';
+import React, { 
+    useContext, 
+    useEffect, 
+    useState 
+} from 'react';
+
 import Image from 'next/image';
-import { Props } from '@/types/props';
+import processIconStyles from '@/styles/workarea/taskbar/ProcessIcon.module.sass';
 import { MainContext } from '../Main';
 import { Data } from '@/types/data';
-import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
-import { getCorrespondentRunningProcess, processIsRunning, processIsTheCurrentOpenned } from '@/lib/process';
+import { Props } from '@/types/props';
+
+import { 
+    getCorrespondentRunningProcess, 
+    processIsRunning, 
+    processIsTheCurrentOpenned 
+} from '@/lib/process';
+
 import { getCorrespondentWorkspace } from '@/lib/workspace';
+import { COLOR_PALETTE_OPTIONS } from '@/lib/initial/settings';
 
 
 export default function ProcessIcon({ 
@@ -25,7 +36,7 @@ export default function ProcessIcon({
         elevateProcessWindowZIndex, 
         currentActiveWorkspaceUUID,
         changeCurrentWorkspace,
-        openGraphicalProcess,
+        startGraphicalProcess,
         restoreProcessWindowPreviousDimensions,
         applicationsAreBeingShowed,
         changeApplicationsAreBeingShowed
@@ -36,6 +47,17 @@ export default function ProcessIcon({
         processPID, 
         setProcessPID 
     ] = useState(initialPID!);
+
+
+    useEffect(() => {
+        const processData = (opennedProcessesData as Data.OpennedProcessData[]).find(
+            processData => processData.processTitle === processName
+        );
+
+        if (processData) {
+            setProcessPID(previous => processData.PID);
+        }   
+    }, [opennedProcessesData]);
 
 	
     function startProcessMiddleware(
@@ -50,22 +72,35 @@ export default function ProcessIcon({
             processPID
         );
 
-        const processIsAlreadyRunning = !!process;
-        const processIsNotRunning = !processIsAlreadyRunning;
+        const processIsRunning = Boolean(process);
+        const processIsMinimized = process?.isMinimized;
+
+        const processIsInOtherWorkspace = process?.parentWorkspaceUUID 
+                                          !== currentActiveWorkspaceUUID;
 
         const currentWorkspaceDoesNotExists = !getCorrespondentWorkspace(
             workspaceActivitiesData, 
             currentActiveWorkspaceUUID
         );
 
-        const processIsMinimized = process?.isMinimized;
 
-        const processIsRunningAndNotInTheCurrentWorkspace = processIsAlreadyRunning 
-                                                        && process?.parentWorkspaceUUID 
-                                                        !== currentActiveWorkspaceUUID;
+        if (processIsRunning) {
+            elevateProcessWindowZIndex(processPID);
 
-        if (processIsNotRunning) {
-            const startedProcessPID = openGraphicalProcess(
+            if (processIsMinimized) {
+                restoreProcessWindowPreviousDimensions(processPID);
+            }
+
+            if (processIsInOtherWorkspace) {
+                changeCurrentWorkspace(process!.parentWorkspaceUUID);
+            }
+    
+            if (applicationsAreBeingShowed) {
+                changeApplicationsAreBeingShowed(false);
+            }
+        }
+        else {
+            const startedProcessPID = startGraphicalProcess(
                 processName, 
                 processIconStaticImage,
                 processIconAlt,
@@ -74,23 +109,6 @@ export default function ProcessIcon({
             );
 
             setProcessPID(previous => startedProcessPID);
-
-        }
-
-        if (processIsAlreadyRunning) {
-            elevateProcessWindowZIndex(processPID);
-        }
-
-        if (processIsMinimized) {
-            restoreProcessWindowPreviousDimensions(processPID);
-        }
-
-        if (processIsRunningAndNotInTheCurrentWorkspace) {
-            changeCurrentWorkspace(process!.parentWorkspaceUUID);
-        }
-
-        if (processIsAlreadyRunning && applicationsAreBeingShowed) {
-            changeApplicationsAreBeingShowed(false);
         }
     }
 
@@ -102,8 +120,8 @@ export default function ProcessIcon({
 				${processIconStyles[systemLayout]} 
 				${processIconStyles[
 					processIsTheCurrentOpenned(opennedProcessesData, processPID)
-                    ? 'current-active-process' 
-                    : 'not-the-current-active-process'
+                    ? 'current--active--process' 
+                    : 'not--current--active--process'
 				]}
 				`
 			}  
@@ -121,10 +139,17 @@ export default function ProcessIcon({
                 className={processIconStyles.icon}
             />
             <div 
-				className={processIconStyles.openned__indicator}
+				className={`
+                    ${processIconStyles.openned__indicator}
+                    ${processIconStyles[
+                        processIsRunning(opennedProcessesData, processPID)
+                        ? 'process--running'
+                        : 'process--not--running'
+                    ]}
+                    `
+                }
 				style={{
-                    backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor,
-					display: processIsRunning(opennedProcessesData, processPID) ? 'block' : 'none'
+                    backgroundColor: COLOR_PALETTE_OPTIONS[systemColorPalette].opennedIndicatorColor
 				}}
             />
         </abbr>

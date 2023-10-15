@@ -1,7 +1,9 @@
 import React, { useContext } from 'react';
-import nautilusStyles from '@/styles/processes/Nautilus.module.sass';
+import contextMenuStyles from '@/styles/processes/files/menus/ContextMenu.module.sass';
+import { FileManagerContext } from '../FileManager';
+import { MainContext } from '@/components/workarea/Main';
 import { Props } from '@/types/props';
-import { NautilusContext } from './Nautilus';
+
 
 export default function ContextMenu({
     origin,
@@ -10,13 +12,21 @@ export default function ContextMenu({
 }: Props.ContextMenuProps) {
  
     const {
+        systemTheme
+    } = useContext(MainContext);
+
+    const {
         contextMenuRef,
         clickContextMenuOptionDecorator
-    } = useContext(NautilusContext);
+    } = useContext(FileManagerContext);
 
-    return (
+    return options.length? (
         <ul 
-            className={nautilusStyles.menu__wrapper}
+            className={`
+                ${contextMenuStyles.menu__wrapper}
+                ${contextMenuStyles[systemTheme]}
+                `
+            }
             ref={contextMenuRef}
             style={{
                 left: origin.x,
@@ -25,7 +35,7 @@ export default function ContextMenu({
         >
             {options.map((option, index) => (
                 <li 
-                    className={nautilusStyles.menu__option}
+                    className={contextMenuStyles.menu__option}
                     onClick={(event) => clickContextMenuOptionDecorator(
                         event, 
                         option.handler, 
@@ -37,5 +47,5 @@ export default function ContextMenu({
                 </li>
             ))}
         </ul>
-    );
+    ) : <></>;
 }
