@@ -3,7 +3,8 @@ import '@/styles/globals.sass';
 
 export const metadata = {
 	title: 'Portfolio',
-	description: 'Douglas\' Portfolio'
+	description: 'Douglas\' Portfolio',
+	viewport: 'width=device-width, initial-scale=1.0, interactive-widget=resizes-content'
 }
 
 

@@ -75,6 +75,8 @@ export default function TerminalSection() {
 								onInput={(e) => handleFontSizeChanging(
 									(e.target as HTMLInputElement).value
 								)}
+								onFocus={() => document.body.classList.remove('field--focused')}
+								onBlur={() => document.body.classList.add('field--focused')}
 							/>
 							<button
 								onClick={() => changeTerminalFontSizeInPixels(

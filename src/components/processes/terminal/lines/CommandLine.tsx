@@ -66,7 +66,7 @@ export default function CommandLine({
             element.focus();
         }
     }
- 
+
 
     return (
         <p className={terminalStyles.command__line}>
@@ -105,6 +105,8 @@ export default function CommandLine({
                 }}
                 onPaste={handlePaste}
                 onInput={handleInput}
+                onFocus={() => document.body.classList.remove('field--focused')}
+                onBlur={() => document.body.classList.add('field--focused')}
                 ref={contentEditableRef}
                 contentEditable={true}
             />

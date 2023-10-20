@@ -2,7 +2,7 @@ import React, {
     useState, 
     createContext, 
     useRef, 
-    useEffect 
+    useEffect
 } from 'react';
 
 import { StaticImageData } from 'next/image';
@@ -37,7 +37,9 @@ import {
 } from '@/lib/resize';
 
 import { 
+    debounce,
     deepClone, 
+    delay, 
     generateUUID,
 } from '@/lib/utils';
 
@@ -193,11 +195,6 @@ export default function Main() {
         applicationsAreBeingShowed, 
         setApplicationsAreBeingShowed 
     ] = useState(false);
-    
-    const [ 
-        canChangeApplicationsState,
-        setCanChangeApplicationsState
-    ] = useState(true);
 
 
     const basicCommandSystemAPI = {
@@ -310,10 +307,16 @@ export default function Main() {
         baseWorkspaceUUID
     };
 
-    
+
     useEffect(() => {
+        if ('virtualKeyboard' in navigator) {
+            (navigator.virtualKeyboard as any)['overlaysContent'] = true;
+        }
+
         window!.addEventListener('resize', () => {
-            if (!applicationsAreBeingShowed) {
+            const fieldIsFocused = document.body.classList.contains('field--focused');
+
+            if (!applicationsAreBeingShowed && fieldIsFocused) {
                 changeApplicationsAreBeingShowed(true);
             }
         });

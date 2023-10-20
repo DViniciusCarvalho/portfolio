@@ -4,6 +4,6 @@ import ApplicationWrapper from './common/ApplicationWrapper';
 
 export default function APITester() {
     return (
-        <ApplicationWrapper url={'http://localhost:5501'}/>
+        <ApplicationWrapper url={'https://dviniciuscarvalho.github.io/apitester/'}/>
     );
 }

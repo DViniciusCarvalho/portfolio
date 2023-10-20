@@ -4,6 +4,6 @@ import ApplicationWrapper from './common/ApplicationWrapper';
 
 export default function IPLocator() {
     return (
-        <ApplicationWrapper url={'http://localhost:5500'}/>
+        <ApplicationWrapper url={'https://dviniciuscarvalho.github.io/iplocator/'}/>
     );
 }

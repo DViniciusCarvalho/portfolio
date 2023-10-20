@@ -23,11 +23,15 @@ import BaseWorkspace from '../workspace/BaseWorkspace';
 import APITester from '@/components/processes/applications/APITester';
 import IPLocator from '@/components/processes/applications/IPLocator';
 import Goalcket from '@/components/processes/applications/Goalcket';
+import TicTacToe from '@/components/processes/applications/TicTacToe';
+import SecNoting from '@/components/processes/applications/SecNoting';
 
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
-import A from '../../../../public/assets/terminal.png';
-import B from '../../../../public/assets/nautilus.png';
-import C from '../../../../public/assets/preferences-desktop.png';
+import APITesterIcon from '../../../../public/assets/api.png';
+import GoalcketIcon from '../../../../public/assets/rocket.png';
+import IPLocatorIcon from '../../../../public/assets/geolocation.png';
+import SecnotingIcon from '../../../../public/assets/notes.png';
+import TicTacToeIcon from '../../../../public/assets/tic-tac-toe.png';
 
 
 export default function ApplicationsWindow({ 
@@ -70,7 +74,7 @@ export default function ApplicationsWindow({
 		Props.ApplicationIconProps & Data.ApplicationMetadata
 	)[] = [
 		{
-			applicationIconStaticImage: A,
+			applicationIconStaticImage: APITesterIcon,
 			applicationIconAlt: '',
 			applicationName: 'API Tester',
 			applicationElement:	<APITester/>,
@@ -87,7 +91,7 @@ export default function ApplicationsWindow({
 			} 
 		},
 		{
-			applicationIconStaticImage: B,
+			applicationIconStaticImage: GoalcketIcon,
 			applicationIconAlt: '',
 			applicationName: 'Goalcket',
 			applicationElement: <Goalcket/>,
@@ -106,7 +110,7 @@ export default function ApplicationsWindow({
 			}
 		},
 		{
-			applicationIconStaticImage: C,
+			applicationIconStaticImage: IPLocatorIcon,
 			applicationIconAlt: '',
 			applicationName: 'IP Locator',
 			applicationElement: <IPLocator/>,
@@ -124,10 +128,10 @@ export default function ApplicationsWindow({
 			}
 		},
 		{
-			applicationIconStaticImage: A,
+			applicationIconStaticImage: SecnotingIcon,
 			applicationIconAlt: '',
 			applicationName: 'SecNoting',
-			applicationElement: <></>,
+			applicationElement: <SecNoting/>,
 			metadata: {
 				description: 'It\'s a note app that allows you to store your data in format of notes',
 				keyWords: [
@@ -141,10 +145,10 @@ export default function ApplicationsWindow({
 			}
 		},
 		{
-			applicationIconStaticImage: B,
+			applicationIconStaticImage: TicTacToeIcon,
 			applicationIconAlt: '',
 			applicationName: 'Tic Tac Toe',
-			applicationElement: <></>,
+			applicationElement: <TicTacToe/>,
 			metadata: {
 				description: 'It\'s a tic tac toe game, with an IA as the enemy',
 				keyWords: [
