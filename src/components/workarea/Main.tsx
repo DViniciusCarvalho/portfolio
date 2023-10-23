@@ -316,7 +316,11 @@ export default function Main() {
         window!.addEventListener('resize', () => {
             const fieldIsFocused = document.body.classList.contains('field--focused');
 
-            if (!applicationsAreBeingShowed && fieldIsFocused) {
+            const deviceIsAndroid = navigator.userAgent.includes('android');
+
+            if (deviceIsAndroid && fieldIsFocused) return;
+
+            if (!applicationsAreBeingShowed) {
                 changeApplicationsAreBeingShowed(true);
             }
         });

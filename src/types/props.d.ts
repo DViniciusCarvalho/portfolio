@@ -143,4 +143,13 @@ export namespace Props {
     interface ApplicationWrapperProps {
         url: string;
     }
+
+    interface TutorialWrapper {
+        name: string;
+        description: string;
+        screenshots: StaticImageData[];
+        repoUrl: string;
+        setURL: React.Dispatch<React.SetStateAction<string>>;
+        setCanDisplayAppWrapper: React.Dispatch<React.SetStateAction<boolean>>;
+    }
 }

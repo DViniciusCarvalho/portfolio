@@ -1,0 +1,74 @@
+.container
+    width: 100%
+    height: 100%
+    display: flex
+    flex-direction: column
+    padding: 20px
+    overflow-y: auto
+
+    &.light
+        .url__input
+            border-color: #5a5a5a62
+            background-color: #eeeeee
+            outline-color: #5a5a5a62 !important
+            color: black
+
+        .display__button
+            background-color: #eeeeee
+            border-color: #b8b8b8e5
+            color: black
+
+            &:hover
+                background-color: #ffffff
+
+    &.dark
+        .url__input
+            border-color: #1b1b1bcb
+            background-color: #1c1c1d
+            outline-color: #1b1b1bcb !important
+            color: white
+
+        .display__button
+            background-color: #1b1b1b
+            border-color: #181818
+            color: white
+
+            &:hover
+                background-color: #363636
+
+    .app__description
+        a
+            color: #47aaa2
+
+    .app__screenshots__wrapper
+        display: flex
+        flex-direction: row
+        overflow-x: auto
+        width: 100%
+        height: 200px
+        padding-bottom: 5px
+        gap: 2%
+
+        &::-webkit-scrollbar 
+            height: 4px
+            background-color: rgb(65, 65, 65)
+
+        .app__screenshot
+            height: 100%
+            min-width: 300px
+
+    .url__input
+        height: 25px
+        width: 200px
+        border-style: solid
+        border-width: 0.1px
+        padding: 1%
+        font-size: 1em
+
+    .display__button
+        width: 250px
+        height: 40px
+        border: 1px solid black
+        border-radius: 6px
+        font-size: 1.1em
+        transition: background-color 0.3s
