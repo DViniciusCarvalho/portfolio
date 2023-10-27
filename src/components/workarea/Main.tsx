@@ -313,17 +313,14 @@ export default function Main() {
             (navigator.virtualKeyboard as any)['overlaysContent'] = true;
         }
 
-        window!.addEventListener('resize', () => {
+        window!.addEventListener('resize', debounce(() => {
+            const deviceIsAndroid = navigator.userAgent.toLowerCase().includes('android');
             const fieldIsFocused = document.body.classList.contains('field--focused');
 
-            const deviceIsAndroid = navigator.userAgent.includes('android');
-
-            if (deviceIsAndroid && fieldIsFocused) return;
-
-            if (!applicationsAreBeingShowed) {
+            if (!applicationsAreBeingShowed && !fieldIsFocused) {
                 changeApplicationsAreBeingShowed(true);
             }
-        });
+        }, 20, true));
     }, []);
 
 
