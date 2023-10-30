@@ -309,19 +309,33 @@ export default function Main() {
 
 
     useEffect(() => {
-        if ('virtualKeyboard' in navigator) {
-            (navigator.virtualKeyboard as any)['overlaysContent'] = true;
-        }
+        (navigator as any).virtualKeyboard.overlaysContent = true;
+        
+        window.addEventListener('resize', debounce(async () => {
+            await delay(2000);
 
-        window!.addEventListener('resize', debounce(() => {
             const deviceIsAndroid = navigator.userAgent.toLowerCase().includes('android');
-            const fieldIsFocused = document.body.classList.contains('field--focused');
+            const virtualKeyboardVisible = isVirtualKeyboardVisible();
 
-            if (!applicationsAreBeingShowed && !fieldIsFocused) {
+            if (deviceIsAndroid && virtualKeyboardVisible) return;
+            
+            if (!applicationsAreBeingShowed) {
                 changeApplicationsAreBeingShowed(true);
             }
-        }, 20, true));
+        }, 60, true));
+
     }, []);
+
+
+    function isVirtualKeyboardVisible(): boolean {
+
+        const { 
+            width,
+            height
+        } = (navigator as any).virtualKeyboard.boundingRect;
+
+        return width !== 0 && height !== 0;
+    }
 
 
     function startGraphicalProcess(

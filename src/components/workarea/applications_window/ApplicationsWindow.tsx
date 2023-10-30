@@ -25,6 +25,7 @@ import IPLocator from '@/components/processes/applications/IPLocator';
 import Goalcket from '@/components/processes/applications/Goalcket';
 import TicTacToe from '@/components/processes/applications/TicTacToe';
 import SecNoting from '@/components/processes/applications/SecNoting';
+import PersonalSite from '@/components/processes/applications/PersonalSite';
 
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
 import APITesterIcon from '../../../../public/assets/api.png';
@@ -32,6 +33,7 @@ import GoalcketIcon from '../../../../public/assets/rocket.png';
 import IPLocatorIcon from '../../../../public/assets/geolocation.png';
 import SecnotingIcon from '../../../../public/assets/notes.png';
 import TicTacToeIcon from '../../../../public/assets/tic-tac-toe.png';
+import PersonalSiteIcon from '../../../../public/assets/profile.png';
 
 
 export default function ApplicationsWindow({ 
@@ -75,7 +77,7 @@ export default function ApplicationsWindow({
 	)[] = [
 		{
 			applicationIconStaticImage: APITesterIcon,
-			applicationIconAlt: '',
+			applicationIconAlt: 'It\'s a gear with a cloud next to it, and \'API\' is written on the gear.',
 			applicationName: 'API Tester',
 			applicationElement:	<APITester/>,
 			metadata: {
@@ -92,7 +94,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: GoalcketIcon,
-			applicationIconAlt: '',
+			applicationIconAlt: 'It\'s a rocket taking off.',
 			applicationName: 'Goalcket',
 			applicationElement: <Goalcket/>,
 			metadata: {
@@ -111,7 +113,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: IPLocatorIcon,
-			applicationIconAlt: '',
+			applicationIconAlt: 'It\'s a red location marker on a map, that is colored by yellow, green and blue.',
 			applicationName: 'IP Locator',
 			applicationElement: <IPLocator/>,
 			metadata: {
@@ -129,7 +131,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: SecnotingIcon,
-			applicationIconAlt: '',
+			applicationIconAlt: 'It\'s a red pin holding yellow note papers.',
 			applicationName: 'SecNoting',
 			applicationElement: <SecNoting/>,
 			metadata: {
@@ -146,7 +148,7 @@ export default function ApplicationsWindow({
 		},
 		{
 			applicationIconStaticImage: TicTacToeIcon,
-			applicationIconAlt: '',
+			applicationIconAlt: 'It\'s a yellow tic-tac-toe game board, with the "X" colored by red and the "O" colored by blue.',
 			applicationName: 'Tic Tac Toe',
 			applicationElement: <TicTacToe/>,
 			metadata: {
@@ -159,6 +161,25 @@ export default function ApplicationsWindow({
 				category: [
 					'Game',
 					'IA'
+				]
+			}
+		},
+		{
+			applicationIconStaticImage: PersonalSiteIcon,
+			applicationIconAlt: 'It\'s a fictional resume with a yellow pencil on top.',
+			applicationName: 'Personal Site',
+			applicationElement: <PersonalSite/>,
+			metadata: {
+				description: 'It\'s Douglas\' personal website, that has information about him',
+				keyWords: [
+					'Personal',
+					'Info'
+				],
+				category: [
+					'Portfolio',
+					'Personal',
+					'Profile',
+					'Info'
 				]
 			}
 		}

@@ -17,9 +17,9 @@ export const help = (
 ): Shell.ExitFlux & { modifiedSystemAPI: Shell.SystemAPI } => {
 
     const formattedOptions = formatHelpPageOptions(COMMAND_OPTIONS);
-    const name = 'rm - remove files or directories';
-    const synopsis = 'rm [OPTION]... [FILE]...';
-    const description = `Remove (unlink) the FILE(s).${BREAK_LINE}${formattedOptions}`;
+    const name = 'man - an interface to the system reference manuals';
+    const synopsis = 'man [COMMAND_NAME]';
+    const description = `Show the manual of a command.${BREAK_LINE}${formattedOptions}`;
 
     const formattedHelp = helpPageSectionsAssembler(
         name,

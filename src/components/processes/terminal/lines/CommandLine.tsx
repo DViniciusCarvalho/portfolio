@@ -105,9 +105,8 @@ export default function CommandLine({
                 }}
                 onPaste={handlePaste}
                 onInput={handleInput}
-                onFocus={() => document.body.classList.remove('field--focused')}
-                onBlur={() => document.body.classList.add('field--focused')}
                 ref={contentEditableRef}
+                spellCheck={false}
                 contentEditable={true}
             />
         </p>

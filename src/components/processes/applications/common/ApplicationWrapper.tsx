@@ -21,12 +21,12 @@ export default function ApplicationWrapper({
             }
         >
             <div className={applicationWrapperStyles.url__wrapper}>
-                Original URL:&nbsp;
                 <a 
                     href={url} 
                     target='blank'
+                    className={applicationWrapperStyles.original__url__button}
                 >
-                    {url}
+                    Original URL
                 </a>
             </div>
             <iframe 
