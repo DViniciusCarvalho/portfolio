@@ -26,6 +26,8 @@ import Goalcket from '@/components/processes/applications/Goalcket';
 import TicTacToe from '@/components/processes/applications/TicTacToe';
 import SecNoting from '@/components/processes/applications/SecNoting';
 import PersonalSite from '@/components/processes/applications/PersonalSite';
+import CineMaster from '@/components/processes/applications/CineMaster';
+import Contabilidadls from '@/components/processes/applications/Contabilidadls';
 
 import SearchIcon from '../../../../public/assets/system-search-symbolic.symbolic.png';
 import APITesterIcon from '../../../../public/assets/api.png';
@@ -34,6 +36,8 @@ import IPLocatorIcon from '../../../../public/assets/geolocation.png';
 import SecnotingIcon from '../../../../public/assets/notes.png';
 import TicTacToeIcon from '../../../../public/assets/tic-tac-toe.png';
 import PersonalSiteIcon from '../../../../public/assets/profile.png';
+import CineMasterIcon from '../../../../public/assets/clapperboard.png';
+import ContabilidadlsIcon from '../../../../public/assets/logo.png';
 
 
 export default function ApplicationsWindow({ 
@@ -180,6 +184,45 @@ export default function ApplicationsWindow({
 					'Personal',
 					'Profile',
 					'Info'
+				]
+			}
+		},
+		{
+			applicationIconStaticImage: CineMasterIcon,
+			applicationIconAlt: 'It\'s a cinema clapperboard.',
+			applicationName: 'CineMaster',
+			applicationElement: <CineMaster/>,
+			metadata: {
+				description: 'It\'s an anime cinema made in college using HTML, CSS and JS',
+				keyWords: [
+					'Cinema',
+					'Anime',
+					'Movie'
+				],
+				category: [
+					'Cinema',
+					'Entertainment',
+					'College'
+				]
+			}
+		},
+		{
+			applicationIconStaticImage: ContabilidadlsIcon,
+			applicationIconAlt: 'It\'s a pizza graphic with \'contabilidadls\' at the bottom.',
+			applicationName: 'Contabilidadls',
+			applicationElement: <Contabilidadls/>,
+			metadata: {
+				description: 'It\'s a professional accounting website made in wordpress',
+				keyWords: [
+					'Accounting',
+					'Wordpress',
+					'Professional'
+				],
+				category: [
+					'Accounting',
+					'Professional',
+					'Wordpress',
+					'Real experience'
 				]
 			}
 		}
